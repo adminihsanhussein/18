@@ -5,49 +5,9 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>سجل الوصولات الكامل - نظام الجباية</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&amp;family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+    <link href="./lib/app-style.css" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-    <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "primary-container": "#003366",
-                        "background": "#f7f9fc",
-                        "on-background": "#191c1e",
-                        "surface": "#f7f9fc",
-                        "on-primary": "#ffffff",
-                        "surface-container": "#eceef1",
-                        "primary": "#001e40",
-                        "surface-container-low": "#f2f4f7",
-                        "surface-container-lowest": "#ffffff",
-                        "surface-container-high": "#e6e8eb",
-                        "on-surface-variant": "#43474f",
-                        "error": "#d32f2f",
-                        "success": "#2e7d32"
-                    },
-                    borderRadius: {
-                        "lg": "1rem",
-                        "xl": "1.5rem",
-                        "2xl": "2rem"
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body { font-family: 'Tajawal', sans-serif; }
-        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-        .receipt-card:hover { transform: scale(1.01); }
-        .glass-header {
-            background: rgba(247, 249, 252, 0.8);
-            backdrop-filter: blur(12px);
-        }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #001e4020; border-radius: 10px; }
-    </style>
+    <script src="./lib/theme-config.js"></script>
 </head>
 <body class="bg-background text-on-background min-h-screen flex flex-col">
 

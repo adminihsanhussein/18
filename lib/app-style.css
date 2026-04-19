@@ -1,0 +1,78 @@
+/* Global App Styles for Al-Bunyan Professional APK */
+
+/* Import matching professional Arabic fonts */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@300;400;500;700;800;900&display=swap');
+
+:root {
+    --safe-area-inset-top: env(safe-area-inset-top, 0px);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* {
+    -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Tajawal', 'Cairo', sans-serif;
+    background-color: #f7f9fc;
+    color: #191c1e;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    /* Prevent web behaviors that feel "websitey" */
+    user-select: none;
+    -webkit-user-select: none;
+    overscroll-behavior-y: none;
+    /* Respect hardware notches/safe areas */
+    padding-top: var(--safe-area-inset-top);
+    padding-bottom: var(--safe-area-inset-bottom);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Cairo', sans-serif;
+    font-weight: 900;
+}
+
+/* Allow selection only in inputs and text areas */
+input, textarea, [contenteditable="true"] {
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+/* Glass Effect Standard */
+.glass-effect {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Smooth transitions between screens */
+.page-transition {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mobile Friendly Buttons */
+button {
+    touch-action: manipulation;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:active {
+    transform: scale(0.96);
+}
+
+/* Hide scrollbars for a cleaner app look but allow scrolling */
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
