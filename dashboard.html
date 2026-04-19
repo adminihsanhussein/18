@@ -49,10 +49,9 @@
     </a>
 
     <!-- Month Header -->
-    <section class="flex justify-between items-end animate-fade-in">
         <div>
             <p class="text-on-surface-variant font-bold text-sm mb-1 opacity-60">الشهر الحالي</p>
-            <h2 class="text-primary font-black text-2xl md:text-4xl tracking-tight">جباية شهر: <span id="monthNameText">جاري التحميل...</span></h2>
+            <h2 class="text-primary font-black text-xl md:text-3xl tracking-tight">جباية شهر: <span id="monthNameText">جاري التحميل...</span></h2>
         </div>
         <div class="relative shrink-0">
             <button id="openMonthPickerBtn" class="bg-surface-container-high text-primary hover:bg-primary hover:text-on-primary px-5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-sm">
@@ -74,8 +73,8 @@
                     إجمالي المبالغ المحصلة
                 </p>
                 <div class="flex items-baseline gap-3">
-                    <span class="text-primary font-black text-5xl tracking-tighter counter" data-target="250000">250,000</span>
-                    <span class="text-on-surface-variant font-bold text-xl">د.ع</span>
+                    <span class="text-primary font-black text-3xl md:text-5xl tracking-tighter counter" data-target="250000">250,000</span>
+                    <span class="text-on-surface-variant font-bold text-lg">د.ع</span>
                 </div>
             </div>
         </div>
@@ -90,8 +89,8 @@
                     عدد الوصولات المنجزة
                 </p>
                 <div class="flex items-baseline gap-3">
-                    <span class="text-secondary font-black text-5xl tracking-tighter counter" data-target="45">45</span>
-                    <span class="text-on-surface-variant font-bold text-xl">وصل</span>
+                    <span class="text-secondary font-black text-3xl md:text-5xl tracking-tighter counter" data-target="45">45</span>
+                    <span class="text-on-surface-variant font-bold text-lg">وصل</span>
                 </div>
             </div>
         </div>
@@ -120,13 +119,13 @@
         
         <div class="grid gap-4">
             <!-- Receipt Item 1 -->
-            <div class="bg-surface-container-lowest rounded-2xl p-5 flex items-center justify-between hover:shadow-lg hover:shadow-primary/5 transition-all cursor-pointer group border border-transparent hover:border-primary/10">
-                <div class="flex items-center gap-5">
-                    <div class="bg-primary-fixed w-14 h-14 rounded-2xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-all shadow-inner">
-                        <span class="material-symbols-outlined text-2xl">receipt_long</span>
+            <div class="bg-surface-container-lowest rounded-2xl p-4 flex items-center justify-between hover:shadow-lg hover:shadow-primary/5 transition-all cursor-pointer group border border-transparent hover:border-primary/10">
+                <div class="flex items-center gap-4">
+                    <div class="bg-primary-fixed w-12 h-12 rounded-2xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-all shadow-inner">
+                        <span class="material-symbols-outlined text-xl">receipt_long</span>
                     </div>
                     <div>
-                        <p class="font-black text-on-background text-xl mb-1">أحمد محمد علي</p>
+                        <p class="font-black text-on-background text-lg mb-1">أحمد محمد علي</p>
                         <div class="flex items-center gap-2">
                             <span class="bg-surface-container-high text-on-surface-variant text-[10px] font-bold px-2 py-0.5 rounded uppercase">رقم الوصل</span>
                             <p class="text-primary font-bold text-sm">#12345</p>
@@ -134,8 +133,8 @@
                     </div>
                 </div>
                 <div class="text-left">
-                    <p class="text-primary font-black text-2xl">5,000 <span class="text-xs">د.ع</span></p>
-                    <p class="text-on-surface-variant text-xs font-bold opacity-60">اليوم، 10:30 ص</p>
+                    <p class="text-primary font-black text-xl">5,000 <span class="text-[10px]">د.ع</span></p>
+                    <p class="text-on-surface-variant text-[10px] font-bold opacity-60">اليوم، 10:30 ص</p>
                 </div>
             </div>
 
@@ -346,7 +345,7 @@
                                     <span class="material-symbols-outlined text-2xl">receipt_long</span>
                                 </div>
                                 <div>
-                                    <p class="font-black text-on-background text-xl mb-1">${r.subscriber_name}</p>
+                                    <p class="font-black text-on-background text-lg mb-1">${r.subscriber_name}</p>
                                     <div class="flex items-center gap-2">
                                         <span class="bg-surface-container-high text-on-surface-variant text-[10px] font-bold px-2 py-0.5 rounded uppercase">رقم الوصل</span>
                                         <p class="text-primary font-bold text-sm">#${r.receipt_number}</p>
@@ -354,7 +353,7 @@
                                 </div>
                             </div>
                             <div class="text-left">
-                                <p class="text-primary font-black text-2xl">${r.amount.toLocaleString()} <span class="text-xs">د.ع</span></p>
+                                <p class="text-primary font-black text-xl">${r.amount.toLocaleString()} <span class="text-[10px]">د.ع</span></p>
                                 <div class="flex flex-col items-end mt-1 gap-1">
                                     <p class="text-orange-600 bg-orange-50 px-2 py-0.5 rounded text-[10px] font-bold">الورقي: ${r.receipt_date ? new Date(r.receipt_date).toLocaleDateString('ar-EG') : new Date(r.created_at).toLocaleDateString('ar-EG')}</p>
                                     <p class="text-on-surface-variant text-[10px] font-bold opacity-60">تاريخ النظام: ${new Date(r.created_at).toLocaleDateString('ar-EG')}</p>

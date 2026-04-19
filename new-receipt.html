@@ -90,14 +90,14 @@
                     <!-- Custom Input -->
                     <div class="relative">
                         <input type="number" id="amount" placeholder="أدخل مبلغاً آخر..." 
-                               class="w-full bg-blue-50 text-[#0056b3] text-center border-transparent rounded-[24px] py-6 focus:ring-2 focus:ring-blue-100 text-4xl font-black transition-all"
+                               class="w-full bg-blue-50 text-[#0056b3] text-center border-transparent rounded-[24px] py-6 focus:ring-2 focus:ring-blue-100 text-3xl font-black transition-all"
                                min="250" step="250" required>
                         <span class="absolute left-6 top-1/2 -translate-y-1/2 text-blue-900/10 font-black">د.ع</span>
                     </div>
                 </div>
 
                 <!-- Submit Action -->
-                <button type="submit" class="w-full bg-[#0056b3] text-white font-black py-5 rounded-[24px] shadow-xl shadow-blue-700/20 active:scale-95 transition-all flex items-center justify-center gap-3 text-xl group mt-4">
+                <button type="submit" class="w-full bg-[#0056b3] text-white font-black py-4 rounded-[24px] shadow-xl shadow-blue-700/20 active:scale-95 transition-all flex items-center justify-center gap-3 text-lg group mt-2">
                     <span class="material-symbols-outlined text-2xl group-hover:scale-110 transition-transform">cloud_done</span>
                     <span>رفع الوصل الآن</span>
                 </button>
@@ -163,10 +163,11 @@
             if (!user) { window.location.href = 'index.html'; return; }
             currentUser = user;
 
+        async function loadBooks() {
             const { data: books, error } = await supabase
                 .from('books')
                 .select('*')
-                .eq('ally_id', user.id)
+                .eq('ally_id', currentUser.id)
                 .eq('status', 'open')
                 .is('received_date', null);
                 
@@ -174,11 +175,22 @@
 
             openBooks = books || [];
             if (openBooks.length === 0) {
-                bookSelect.innerHTML = '<option value="">لا توجد عهدة مفتوحة</option>';
+                bookSelect.innerHTML = '<option value="">لا يوجد لديك دفتر حاليا</option>';
             } else {
                 bookSelect.innerHTML = '<option value="">اختر الدفتر العهدة...</option>' + 
                     openBooks.map(b => `<option value="${b.id}" data-serial="${b.serial_number}" data-count="${b.receipt_count}" data-month="${b.month_year || ''}">${b.book_name} (${b.month_year || 'بلا تاريخ'})</option>`).join('');
             }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const today = new Date().toISOString().slice(0, 10);
+            document.getElementById('receiptDate').value = today;
+            
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) { window.location.href = 'index.html'; return; }
+            currentUser = user;
+
+            await loadBooks();
         });
 
         // Search Lookup
@@ -270,7 +282,15 @@
 
                 if (error) throw error;
                 showToast('تم التسجيل وحفظ الوصل');
-                setTimeout(() => location.reload(), 1500);
+                
+                // Optimized Reset instead of Refresh
+                form.reset();
+                document.getElementById('receiptDate').value = new Date().toISOString().slice(0, 10);
+                document.querySelectorAll('.preset-btn').forEach(b => b.classList.replace('bg-[#0056b3]', 'bg-[#f8faff]'));
+                document.querySelectorAll('.preset-btn').forEach(b => b.classList.replace('text-white', 'text-[#0056b3]'));
+                
+                // Trigger serial number update
+                bookSelect.dispatchEvent(new Event('change'));
 
             } catch (err) {
                 console.error(err);
