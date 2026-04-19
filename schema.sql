@@ -134,3 +134,37 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trg_update_book_totals
 AFTER INSERT OR UPDATE OR DELETE ON receipts
 FOR EACH ROW EXECUTE FUNCTION update_book_totals();
+
+-- Create Notifications Table
+CREATE TABLE IF NOT EXISTS notifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    message TEXT,
+    type TEXT, -- 'receipt_added', 'book_assigned', 'status_update'
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enable RLS for notifications
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+
+-- Notifications Policies
+CREATE POLICY "Users can view their own notifications" ON notifications FOR SELECT USING (
+    user_id = auth.uid()
+);
+CREATE POLICY "Users can update their own notifications (mark as read)" ON notifications FOR UPDATE USING (
+    user_id = auth.uid()
+);
+-- Admins can create notifications for any user
+CREATE POLICY "Admins can insert notifications" ON notifications FOR INSERT WITH CHECK (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+);
+-- Allow users to insert notifications for themselves (e.g. on personal actions)
+CREATE POLICY "Users can insert notifications for themselves" ON notifications FOR INSERT WITH CHECK (
+    user_id = auth.uid()
+);
+
+-- Enable Realtime for notifications
+-- Note: This requires running as a superuser/on the dashboard, but adding here for completeness.
+ALTER PUBLICATION supabase_realtime ADD TABLE notifications;

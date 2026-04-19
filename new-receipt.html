@@ -126,6 +126,7 @@
 
     <script type="module">
         import { supabase } from './lib/supabase.js';
+        import { notify } from './lib/notifications.js';
 
         const form = document.getElementById('receiptForm');
         const subscriberNameInput = document.getElementById('subscriberName');
@@ -139,20 +140,6 @@
 
         let currentUser = null;
         let openBooks = [];
-
-        function showToast(message, isError = false) {
-            toastMessage.textContent = message;
-            toastIcon.textContent = isError ? 'error' : 'check_circle';
-            toastIcon.className = isError ? 'material-symbols-outlined text-red-400' : 'material-symbols-outlined text-green-400';
-            
-            toastNotification.classList.remove('opacity-0', 'translate-y-20');
-            toastNotification.classList.add('opacity-100', 'translate-y-0');
-            
-            setTimeout(() => {
-                toastNotification.classList.add('opacity-0', 'translate-y-20');
-                toastNotification.classList.remove('opacity-100', 'translate-y-0');
-            }, 4000);
-        }
 
         async function loadBooks() {
             const { data: books, error } = await supabase
@@ -273,7 +260,8 @@
                     });
 
                 if (error) throw error;
-                showToast('تم التسجيل وحفظ الوصل');
+                
+                await notify('تم تسجيل الوصل', `تم حفظ وصل بقيمة ${parseInt(amountInput.value).toLocaleString()} د.ع للمساهم ${subscriberNameInput.value}`, { native: true, toast: true, type: 'success' });
                 
                 // Optimized Reset instead of Refresh
                 form.reset();
@@ -286,7 +274,8 @@
 
             } catch (err) {
                 console.error(err);
-                showToast(err.message === 'Failed to fetch' ? 'لا يوجد اتصال بالانترنت' : 'حدث خطأ في الرفع', true);
+                const msg = err.message === 'Failed to fetch' ? 'لا يوجد اتصال بالانترنت' : 'حدث خطأ في الرفع';
+                await notify('خطأ في العملية', msg, { native: false, toast: true, type: 'error' });
             } finally {
                 btn.disabled = false;
             }

@@ -255,6 +255,7 @@
 
     <script type="module">
         import { supabase } from './lib/supabase.js';
+        import { notify } from './lib/notifications.js';
 
         let bookData = null;
         let receipts = [];
@@ -682,10 +683,12 @@
                 const { error } = await supabase.from('receipts').delete().eq('id', receiptToDelete.id);
                 if (error) throw error;
                 
+                await notify('تم حذف الوصل', `تم مسح الوصل الخاص بـ (${receiptToDelete.name}) نهائياً`, { native: true, toast: true, type: 'success' });
+                
                 closeDeleteReceiptModal();
                 fetchData(bookData.id); // Refresh
             } catch (err) {
-                alert('خطأ في الحذف: ' + err.message);
+                await notify('خطأ في الحذف', err.message, { native: false, toast: true, type: 'error' });
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = 'نعم، احذف الوصل';
@@ -722,11 +725,13 @@
                     .eq('id', id);
 
                 if (error) throw error;
-                alert('تم التعديل بنجاح');
+                
+                await notify('تم التعديل', `تم تحديث بيانات المساهم ${name} بنجاح`, { native: true, toast: true, type: 'success' });
+                
                 closeEditModal();
                 fetchData(bookData.id);
             } catch (err) {
-                alert('خطأ في التعديل: ' + err.message);
+                await notify('خطأ في التعديل', err.message, { native: false, toast: true, type: 'error' });
             }
         };
 

@@ -256,6 +256,7 @@
     <script type="module">
         console.log('--- Settings Module Trace: 1 ---');
         import { supabase } from './lib/supabase.js';
+        import { notify } from './lib/notifications.js';
         
         const adminApiCall = async (action, payload = {}) => {
             const url = `/api/admin`;
@@ -841,6 +842,15 @@
                     });
 
                 if (insertError) throw insertError;
+                
+                // Send Persistent Notification to the Ally
+                await notify('تم تسليمك دفتر جديد', `تم تعيين دفتر جديد لك برقم تسلسلي (${serialNumber}) لشهر ${monthYear}. يمكنك البدء بتسجيل الوصولات الآن.`, { 
+                    native: false, 
+                    toast: false, 
+                    persist: true, 
+                    userId: allyId, 
+                    type: 'book_assigned' 
+                });
 
                 document.getElementById('distributeModal').classList.add('hidden');
                 document.getElementById('distributeSerial').value = '';
