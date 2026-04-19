@@ -1,9 +1,11 @@
 {
-  "appId": "com.albunyan.app",
+  "appId": "com.ihsan.albynam",
   "appName": "البنيان المرصوص",
   "webDir": "dist",
   "bundledWebRuntime": false,
   "server": {
+    "url": "https://adminihsanhussein.github.io/18/",
+    "cleartext": true,
     "androidScheme": "https"
   },
   "android": {

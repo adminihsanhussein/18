@@ -133,6 +133,19 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [supabaseAdminPlugin(env)],
+    build: {
+      rollupOptions: {
+        input: {
+          main: 'index.html',
+          dashboard: 'dashboard.html',
+          analytics: 'analytics.html',
+          settings: 'settings.html',
+          'new-receipt': 'new-receipt.html',
+          'book-details': 'book-details.html',
+          records: 'records.html'
+        }
+      }
+    },
     server: {
       port: 5173
     }

@@ -6,73 +6,102 @@
 :root {
     --safe-area-inset-top: env(safe-area-inset-top, 0px);
     --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+    
+    /* Modern MD3 Palette - Premium Blue & Gold */
+    --md-primary: #0056b3;
+    --md-on-primary: #ffffff;
+    --md-surface: #f8faff;
+    --md-on-surface: #1a1c1e;
+    --md-surface-container: #ffffff;
+    --md-outline: #74777f;
+    --md-error: #ba1a1a;
+    
+    --radius-xl: 28px;
+    --radius-lg: 16px;
 }
 
 * {
     -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
     box-sizing: border-box;
+    outline: none !important;
 }
 
 body {
     font-family: 'Tajawal', 'Cairo', sans-serif;
-    background-color: #f7f9fc;
-    color: #191c1e;
+    background-color: var(--md-surface);
+    color: var(--md-on-surface);
     margin: 0;
     padding: 0;
     min-height: 100vh;
-    /* Prevent web behaviors that feel "websitey" */
+    height: 100vh;
+    width: 100vw;
+    overflow-x: hidden;
+    
+    /* Prevent web behaviors */
     user-select: none;
     -webkit-user-select: none;
-    overscroll-behavior-y: none;
-    /* Respect hardware notches/safe areas */
+    overscroll-behavior-y: contain;
+    
+    /* Safe Area - Android specific */
     padding-top: var(--safe-area-inset-top);
     padding-bottom: var(--safe-area-inset-bottom);
 }
 
 h1, h2, h3, h4, h5, h6 {
     font-family: 'Cairo', sans-serif;
-    font-weight: 900;
 }
 
-/* Allow selection only in inputs and text areas */
-input, textarea, [contenteditable="true"] {
-    user-select: text;
-    -webkit-user-select: text;
+/* Input Optimization for Mobile */
+input, select, textarea {
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    font-size: 16px !important; /* Prevents auto-zoom on iOS if ever used, and good for Android */
 }
 
-/* Glass Effect Standard */
-.glass-effect {
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    background: rgba(255, 255, 255, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+/* Premium Native Effects */
+.glass-panel {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
-/* Smooth transitions between screens */
-.page-transition {
-    animation: fadeIn 0.3s ease-out;
+.shadow-premium {
+    shadow: 0 12px 40px -12px rgba(0, 86, 179, 0.15);
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+/* Animations */
+@keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 
-/* Mobile Friendly Buttons */
-button {
-    touch-action: manipulation;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+@keyframes bounceIn {
+    0% { transform: scale(0.9); opacity: 0; }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
 }
 
-button:active {
-    transform: scale(0.96);
+.animate-slide-up {
+    animation: slideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-/* Hide scrollbars for a cleaner app look but allow scrolling */
-.hide-scrollbar::-webkit-scrollbar {
+.animate-bounce-in {
+    animation: bounceIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Feedback Styles */
+.active-scale:active {
+    transform: scale(0.95);
+}
+
+.ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+/* Hide Android scrollbars */
+::-webkit-scrollbar {
     display: none;
-}
-.hide-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
 }
