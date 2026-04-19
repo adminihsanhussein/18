@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>تسجيل وصل جديد - نظام الجباية</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&amp;family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary-fixed-dim": "#a7c8ff",
+                        "primary-container": "#003366",
+                        "on-secondary-fixed": "#0f1c2f",
+                        "background": "#f7f9fc",
+                        "error": "#d32f2f",
+                        "success": "#2e7d32",
+                        "on-background": "#191c1e",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed": "#d6e3fe",
+                        "primary-fixed": "#d5e3ff",
+                        "surface-container-highest": "#e0e3e6",
+                        "on-tertiary-container": "#d8885c",
+                        "on-error": "#ffffff",
+                        "surface": "#f7f9fc",
+                        "on-secondary-fixed-variant": "#3b475d",
+                        "on-primary": "#ffffff",
+                        "secondary": "#525f75",
+                        "on-secondary-container": "#58657c",
+                        "inverse-on-surface": "#eff1f4",
+                        "on-error-container": "#93000a",
+                        "tertiary": "#381300",
+                        "tertiary-container": "#592300",
+                        "on-primary-fixed-variant": "#1f477b",
+                        "on-primary-container": "#799dd6",
+                        "surface-container": "#eceef1",
+                        "surface-variant": "#e0e3e6",
+                        "surface-tint": "#3a5f94",
+                        "secondary-container": "#d6e3fe",
+                        "tertiary-fixed-dim": "#ffb690",
+                        "inverse-surface": "#2d3133",
+                        "tertiary-fixed": "#ffdbca",
+                        "on-tertiary-fixed": "#341100",
+                        "inverse-primary": "#a7c8ff",
+                        "on-tertiary-fixed-variant": "#723610",
+                        "on-surface": "#191c1e",
+                        "on-primary-fixed": "#001b3c",
+                        "secondary-fixed-dim": "#bac7e1",
+                        "surface-dim": "#d8dadd",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#f2f4f7",
+                        "primary": "#001e40",
+                        "outline": "#737780",
+                        "surface-bright": "#f7f9fc",
+                        "on-surface-variant": "#43474f",
+                        "surface-container-high": "#e6e8eb",
+                        "error-container": "#ffdad6",
+                        "outline-variant": "#c3c6d1"
+                    },
+                    borderRadius: {
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "2xl": "2rem"
+                    },
+                    fontFamily: {
+                        "body": ["Tajawal", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Tajawal', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .field-focus-ring:focus-within {
+            box-shadow: 0 0 0 4px rgba(0, 30, 64, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body">
+
+    <!-- Top AppBar -->
+    <header class="flex items-center justify-between px-6 py-4 sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-surface-container-high/50">
+        <div class="flex items-center gap-4">
+            <a href="dashboard.html" class="p-2 hover:bg-surface-container-high rounded-xl transition-all active:scale-90">
+                <span class="material-symbols-outlined text-primary">arrow_forward</span>
+            </a>
+            <h1 class="text-xl font-black text-primary">تسجيل وصل جديد</h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <span id="headerBookBadge" class="text-[10px] font-black text-on-surface-variant bg-surface-container-high px-2 py-1 rounded-full uppercase tracking-tighter">أدخل رقم الوصل...</span>
+        </div>
+    </header>
+
+    <main class="flex-grow p-6 max-w-2xl mx-auto w-full space-y-8">
+        
+        <!-- Form Container -->
+        <section class="bg-surface-container-lowest p-8 rounded-3xl shadow-2xl shadow-primary/5 space-y-8 border border-white/40">
+            
+            <form id="receiptForm" class="space-y-6">
+                
+                <!-- Subscriber Name Lookup -->
+                <div class="space-y-2 relative group">
+                    <label class="text-sm font-black text-primary mr-2 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">person</span>
+                        اسم المساهم
+                    </label>
+                    <div class="relative field-focus-ring rounded-2xl transition-all">
+                        <input type="text" id="subscriberName" placeholder="ابدأ بكتابة اسم المساهم..." 
+                               class="w-full bg-surface-container-low text-on-surface border-transparent rounded-2xl py-4 pr-4 pl-12 focus:border-primary/20 focus:ring-0 font-bold transition-all placeholder:font-normal"
+                               required autocomplete="off">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center text-on-surface-variant/40">
+                            <span class="material-symbols-outlined" id="searchIcon">search</span>
+                        </div>
+                    </div>
+                    <!-- Auto-suggest Dropdown (Hidden) -->
+                    <div id="suggestBox" class="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-surface-container-high z-50 hidden overflow-hidden">
+                        <div class="p-3 border-b border-surface-container-high hover:bg-primary-fixed cursor-pointer transition-colors" onclick="selectName('محمد جعفر الصادق')">
+                            <p class="font-bold text-primary">محمد جعفر الصادق</p>
+                            <p class="text-xs text-on-surface-variant">آخر مساهمة: 5,000 د.ع منذ أسبوعين</p>
+                        </div>
+                        <div class="p-3 border-b border-surface-container-high hover:bg-primary-fixed cursor-pointer transition-colors" onclick="selectName('علي حيدر المدرس')">
+                            <p class="font-bold text-primary">علي حيدر المدرس</p>
+                            <p class="text-xs text-on-surface-variant">آخر مساهمة: 10,000 د.ع منذ شهرين</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Book Selection -->
+                <div class="space-y-2 group">
+                    <label class="text-sm font-black text-primary mr-2 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">library_books</span>
+                        اختر الدفتر الموزع لك
+                    </label>
+                    <div class="relative field-focus-ring rounded-2xl transition-all">
+                        <select id="bookSelect" class="w-full bg-surface-container-low text-on-surface border-transparent rounded-2xl py-4 pr-4 focus:border-primary/20 focus:ring-0 font-bold transition-all" required>
+                            <option value="">جاري تحميل الدفاتر...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Receipt Number (Read Only) -->
+                <div class="space-y-2 group">
+                    <label class="text-sm font-black text-primary mr-2 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">confirmation_number</span>
+                        رقم الوصل (تلقائي)
+                    </label>
+                    <div class="relative field-focus-ring rounded-2xl transition-all opacity-80">
+                        <input type="number" id="receiptNumber" placeholder="سيتم الترقيم تلقائياً..." 
+                               class="w-full bg-surface-container-high text-on-surface border-transparent rounded-2xl py-4 pr-4 focus:ring-0 font-bold transition-all font-mono pointer-events-none"
+                               readonly required>
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center text-primary/40">
+                            <span class="material-symbols-outlined text-sm">lock</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actual Receipt Date -->
+                <div class="space-y-2 group">
+                    <label class="text-sm font-black text-primary mr-2 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">event</span>
+                        تاريخ كتابة الوصل (الورقي)
+                    </label>
+                    <div class="relative field-focus-ring rounded-2xl transition-all">
+                        <input type="date" id="receiptDate" 
+                               class="w-full bg-surface-container-low text-on-surface border-transparent rounded-2xl py-4 pr-4 focus:border-primary/20 focus:ring-0 font-bold transition-all"
+                               required>
+                        <p class="text-xs text-on-surface-variant/70 mt-1 mr-2 px-1">الرجاء إدخال التاريخ المكتوب في الوصل الورقي ليتطابق مع السجلات.</p>
+                    </div>
+                </div>
+
+                <!-- Amount Section -->
+                <div class="space-y-4">
+                    <label class="text-sm font-black text-primary mr-2 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">payments</span>
+                        المبلغ (د.ع)
+                    </label>
+                    
+                    <!-- Presets -->
+                    <div class="grid grid-cols-3 gap-3">
+                        <button type="button" onclick="setAmount(5000)" class="preset-btn bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-primary-fixed hover:text-primary transition-all active:scale-95">5 آلاف</button>
+                        <button type="button" onclick="setAmount(10000)" class="preset-btn bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-primary-fixed hover:text-primary transition-all active:scale-95">10 آلاف</button>
+                        <button type="button" onclick="setAmount(25000)" class="preset-btn bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-primary-fixed hover:text-primary transition-all active:scale-95">25 ألف</button>
+                    </div>
+
+                    <!-- Custom Amount -->
+                    <div class="relative field-focus-ring rounded-2xl transition-all">
+                        <input type="number" id="amount" placeholder="أدخل مبلغاً آخر..." 
+                               class="w-full bg-primary/5 text-primary text-center border-2 border-primary/10 rounded-2xl py-5 focus:border-primary/40 focus:ring-0 text-3xl font-black transition-all"
+                               min="250" step="250" required>
+                        <span class="absolute left-6 top-1/2 -translate-y-1/2 text-primary/40 font-black">د.ع</span>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="w-full bg-primary hover:bg-primary-container text-on-primary font-black py-6 rounded-2xl shadow-xl shadow-primary/30 transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3 text-xl group">
+                    <span class="material-symbols-outlined text-2xl group-hover:scale-125 transition-transform">cloud_upload</span>
+                    <span>رفع الوصل للنظام</span>
+                </button>
+
+            </form>
+        </section>
+
+        <!-- Safety Note -->
+        <div class="bg-primary/5 rounded-2xl p-4 flex gap-3 border border-primary/10">
+            <span class="material-symbols-outlined text-primary self-center">info</span>
+            <p class="text-primary text-[10px] font-bold leading-relaxed">
+                تأكد من مطابقة المعلومات المدخلة مع الوصل الورقي بدقة. لا يمكن تعديل المبلغ بعد الضغط على "رفع" دون الرجوع لمسؤول الدائرة.
+            </p>
+        </div>
+
+    </main>
+
+    <!-- Toast Notification (Hidden) -->
+    <div id="toastNotification" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-primary text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-3 z-[200] opacity-0 translate-y-20 transition-all duration-500 pointer-events-none">
+        <span class="material-symbols-outlined text-green-400">check_circle</span>
+        <span id="toastMessage" class="font-bold">تم تسجيل الوصل بنجاح!</span>
+    </div>
+
+    <script type="module">
+        import { supabase } from './lib/supabase.js';
+
+        const form = document.getElementById('receiptForm');
+        const subscriberNameInput = document.getElementById('subscriberName');
+        const suggestBox = document.getElementById('suggestBox');
+        const amountInput = document.getElementById('amount');
+        const bookBadge = document.querySelector('header .flex.items-center.gap-2 span');
+        const toastNotification = document.getElementById('toastNotification');
+        const toastMessage = document.getElementById('toastMessage');
+
+        let currentUser = null;
+        let openBooks = [];
+
+        function showToast(message, isError = false) {
+            toastMessage.textContent = message;
+            toastNotification.classList.remove('opacity-0', 'translate-y-20');
+            toastNotification.classList.add('opacity-100', 'translate-y-0');
+            
+            if (isError) {
+                toastNotification.classList.replace('bg-primary', 'bg-error');
+            } else {
+                toastNotification.classList.replace('bg-error', 'bg-primary');
+            }
+
+            setTimeout(() => {
+                toastNotification.classList.add('opacity-0', 'translate-y-20');
+                toastNotification.classList.remove('opacity-100', 'translate-y-0');
+            }, 3000);
+        }
+
+        // Check Session and Fetch Open Books
+        document.addEventListener('DOMContentLoaded', async () => {
+            const today = new Date().toISOString().slice(0, 10);
+            document.getElementById('receiptDate').value = today;
+            
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+            currentUser = user;
+
+            // Fetch explicitly assigned open books that haven't been returned yet
+            const { data: books, error: booksErr } = await supabase
+                .from('books')
+                .select('id, serial_number, book_name, month_year, receipt_count')
+                .eq('ally_id', user.id)
+                .eq('status', 'open')
+                .is('received_date', null); // Hide books already confirmed/received by admin
+                
+            if (booksErr) {
+                console.error('Error fetching assigned books:', booksErr);
+                showToast('فشل في تحميل الدفاتر الموزعة', true);
+            }
+
+            openBooks = books || [];
+            
+            const bookSelect = document.getElementById('bookSelect');
+            if (openBooks.length === 0) {
+                bookSelect.innerHTML = '<option value="">لا توجد دفاتر موزعة لك حالياً</option>';
+            } else {
+                bookSelect.innerHTML = '<option value="">اختر الدفتر الموزع...</option>' + 
+                    openBooks.map(b => `<option value="${b.id}" data-serial="${b.serial_number}" data-count="${b.receipt_count}" data-month="${b.month_year || ''}">${b.book_name} (${b.month_year || 'غير محدد'})</option>`).join('');
+            }
+            
+            subscriberNameInput.focus();
+        });
+
+        // Toggle Suggest Box with Real Data
+        subscriberNameInput.addEventListener('input', async (e) => {
+            const query = e.target.value;
+            if (query.length > 2) {
+                document.getElementById('searchIcon').textContent = 'sync';
+                document.getElementById('searchIcon').classList.add('animate-spin');
+
+                const { data: names } = await supabase
+                    .from('receipts')
+                    .select('subscriber_name')
+                    .ilike('subscriber_name', `%${query}%`)
+                    .limit(5);
+
+                if (names && names.length > 0) {
+                    const uniqueNames = [...new Set(names.map(n => n.subscriber_name))];
+                    suggestBox.innerHTML = uniqueNames.map(name => `
+                        <div class="p-4 border-b border-surface-container-high hover:bg-primary-fixed cursor-pointer transition-colors" onclick="window.selectName('${name}')">
+                            <p class="font-bold text-primary">${name}</p>
+                        </div>
+                    `).join('');
+                    suggestBox.classList.remove('hidden');
+                } else {
+                    suggestBox.classList.add('hidden');
+                }
+                
+                document.getElementById('searchIcon').textContent = 'search';
+                document.getElementById('searchIcon').classList.remove('animate-spin');
+            } else {
+                suggestBox.classList.add('hidden');
+            }
+        });
+
+        window.selectName = (name) => {
+            subscriberNameInput.value = name;
+            suggestBox.classList.add('hidden');
+            document.getElementById('receiptNumber').focus();
+        };
+
+        window.setAmount = (val) => {
+            amountInput.value = val;
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.classList.add('bg-surface-container-high');
+                btn.classList.remove('bg-primary', 'text-white');
+            });
+            if (event) {
+                event.target.classList.remove('bg-surface-container-high');
+                event.target.classList.add('bg-primary', 'text-white');
+            }
+        };
+
+        const receiptNumberInput = document.getElementById('receiptNumber');
+        const headerBookBadge = document.getElementById('headerBookBadge');
+        const bookSelect = document.getElementById('bookSelect');
+
+        // Logic to calculate next receipt number when book is selected
+        bookSelect.addEventListener('change', async (e) => {
+            const bookId = e.target.value;
+            if (!bookId) {
+                receiptNumberInput.value = '';
+                headerBookBadge.textContent = 'أدخل رقم الوصل...';
+                return;
+            }
+
+            const selectedOption = e.target.selectedOptions[0];
+            const startSerial = parseInt(selectedOption.getAttribute('data-serial'));
+            const currentCount = parseInt(selectedOption.getAttribute('data-count'));
+
+            if (currentCount >= 50) {
+                alert('هذا الدفتر مكتمل (50 وصل). يرجى اختيار دفتر آخر أو مراجعة الإدارة.');
+                e.target.value = '';
+                receiptNumberInput.value = '';
+                return;
+            }
+
+            // Fetch the highest receipt number for this book
+            try {
+                const { data: lastReceipt, error } = await supabase
+                    .from('receipts')
+                    .select('receipt_number')
+                    .eq('book_id', bookId)
+                    .order('receipt_number', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+                
+                if (error) throw error;
+
+                const nextNum = lastReceipt ? (lastReceipt.receipt_number + 1) : startSerial;
+                receiptNumberInput.value = nextNum;
+                headerBookBadge.textContent = `التسلسل الحالي: #${nextNum}`;
+                headerBookBadge.classList.replace('bg-surface-container-high', 'bg-green-100');
+                headerBookBadge.classList.add('text-green-700');
+            } catch (err) {
+                console.error('Error calculating next number:', err);
+                showToast('خطأ في حساب تسلسل الوصل', true);
+            }
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            
+            const rNum = parseInt(receiptNumberInput.value);
+            if (isNaN(rNum) || rNum <= 0) {
+                alert('يرجى اختيار الدفتر أولاً ليتم تحديد الترقيم');
+                return;
+            }
+
+            const bookId = bookSelect.value;
+            const selectedOption = bookSelect.selectedOptions[0];
+            const bookMonthYear = selectedOption.getAttribute('data-month');
+
+            const receiptDateVal = document.getElementById('receiptDate').value;
+            const now = new Date();
+            const currentCreatedAt = now.toISOString();
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="animate-spin material-symbols-outlined">sync</span><span>جاري الحفظ...</span>';
+            
+            try {
+                if (!navigator.onLine) throw new Error('OFFLINE');
+
+                // Final Double Check for 50 limit (Server side would be better but we do it here too)
+                const { count } = await supabase
+                    .from('receipts')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('book_id', bookId);
+                
+                if (count >= 50) {
+                    throw new Error('هذا الدفتر ممتلئ بالفعل (50 وصل).');
+                }
+
+                // Insert Receipt
+                const { error: receiptError } = await supabase
+                    .from('receipts')
+                    .insert({
+                        book_id: bookId,
+                        ally_id: currentUser.id,
+                        subscriber_name: subscriberNameInput.value,
+                        receipt_number: rNum,
+                        amount: parseInt(amountInput.value),
+                        month_year: bookMonthYear || now.toISOString().substring(0, 7), // Use book's month or current
+                        receipt_date: receiptDateVal
+                    });
+
+                if (receiptError) throw receiptError;
+
+                // Update local selection data for immediate UI feedback if they stay on page
+                selectedOption.setAttribute('data-count', (count + 1).toString());
+
+                // Show Success Toast & Reset
+                showToast('تم تسجيل الوصل بنجاح!');
+                window.resetForm();
+
+            } catch (err) {
+                if (err.message === 'OFFLINE' || err.message === 'Failed to fetch') {
+                    // Offline handling remains similar but needs a book link
+                    const queue = JSON.parse(localStorage.getItem('offlineReceiptsQueue') || '[]');
+                    queue.push({
+                        subscriber_name: subscriberNameInput.value,
+                        receipt_number: rNum,
+                        amount: parseInt(amountInput.value),
+                        month_year: bookMonthYear || now.toISOString().substring(0, 7),
+                        book_id: bookId, // Crucial for offline
+                        receipt_date: receiptDateVal,
+                        timestamp: currentCreatedAt
+                    });
+                    localStorage.setItem('offlineReceiptsQueue', JSON.stringify(queue));
+
+                    showToast('تم الحفظ مؤقتاً (بدون انترنت)');
+                    window.resetForm();
+                } else {
+                    console.error(err);
+                    alert('حدث خطأ أثناء الحفظ: ' + err.message);
+                }
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+
+        window.resetForm = () => {
+            const oldDate = document.getElementById('receiptDate').value; 
+            form.reset();
+            document.getElementById('receiptDate').value = oldDate;
+            headerBookBadge.textContent = 'اختر الدفتر للبدء...';
+            headerBookBadge.classList.add('bg-surface-container-high');
+            headerBookBadge.classList.remove('bg-primary-fixed', 'text-primary', 'bg-green-100', 'text-green-700');
+            subscriberNameInput.focus();
+            
+            // Re-trigger load to refresh counts
+            location.reload(); // Simplest way to ensure everything is fresh
+        };
+    </script>
+    </script>
+</body>
+</html>

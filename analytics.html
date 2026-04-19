@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>إحصائيات النظام - نظام الجباية</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&amp;family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary-container": "#003366",
+                        "background": "#f7f9fc",
+                        "on-background": "#191c1e",
+                        "surface": "#f7f9fc",
+                        "on-primary": "#ffffff",
+                        "primary": "#001e40",
+                        "surface-container-low": "#f2f4f7",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#e6e8eb",
+                        "on-surface-variant": "#43474f",
+                        "success": "#2e7d32",
+                        "error": "#d32f2f"
+                    },
+                    borderRadius: {
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "2xl": "2.5rem"
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Tajawal', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .icon-filled { font-variation-settings: 'FILL' 1; }
+        .stat-card { transition: all 0.3s ease; }
+        .stat-card:hover { transform: translateY(-4px); }
+        .chart-container { position: relative; height: 300px; width: 100%; }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body pb-24 md:pb-0">
+
+    <!-- TopBar -->
+    <header class="flex items-center justify-between px-6 py-4 sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-primary/5">
+        <div class="flex items-center gap-4">
+            <a href="dashboard.html" class="p-2 hover:bg-surface-container-high rounded-xl transition-all">
+                <span class="material-symbols-outlined text-primary">arrow_forward</span>
+            </a>
+            <h1 class="text-xl font-black text-primary tracking-tight">إحصائيات النظام</h1>
+        </div>
+        <div class="flex gap-2">
+            <button class="bg-primary text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-xl shadow-primary/20 hover:scale-105 transition-all">
+                <span class="material-symbols-outlined text-lg">description</span>
+                تقرير متقدم
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto w-full p-6 space-y-8">
+
+        <!-- Time Selector -->
+        <section class="flex flex-col sm:flex-row justify-between sm:items-center bg-white p-4 rounded-2xl shadow-sm border border-surface-container-high relative gap-4">
+            <div>
+                <h2 class="text-primary font-black text-xl">إحصائيات شهر: <span id="analyticsMonthLabel" class="text-primary-container">جاري التحميل...</span></h2>
+            </div>
+            <div class="relative w-full sm:w-auto shrink-0">
+                <button id="openMonthPickerBtn" class="bg-primary text-white w-full sm:w-auto px-6 py-3 rounded-xl text-sm font-black shadow-lg flex items-center justify-center gap-2 hover:bg-primary-container transition-all active:scale-95">
+                    <span class="material-symbols-outlined pointer-events-none">calendar_month</span>
+                    <span class="pointer-events-none">تغيير الشهر</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- KPI Cards Grid -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Total Collection -->
+            <div class="stat-card bg-white p-6 rounded-3xl shadow-xl shadow-primary/5 relative overflow-hidden group">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-primary/5 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
+                <div class="relative z-10">
+                    <p class="text-[10px] font-black text-primary/60 uppercase mb-3 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm icon-filled">payments</span>
+                        إجمالي الجباية
+                    </p>
+                    <div class="flex items-baseline gap-2 mb-2">
+                        <span class="text-3xl font-black text-primary stat-total-amount">0</span>
+                        <span class="text-xs font-bold text-on-surface-variant">د.ع</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Receipts -->
+            <div class="stat-card bg-white p-6 rounded-3xl shadow-xl shadow-primary/5 relative overflow-hidden group">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-secondary-fixed/20 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
+                <div class="relative z-10">
+                    <p class="text-[10px] font-black text-primary/60 uppercase mb-3 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm icon-filled">receipt</span>
+                        إجمالي الوصولات
+                    </p>
+                    <div class="flex items-baseline gap-2 mb-2">
+                        <span class="text-3xl font-black text-primary stat-total-receipts">0</span>
+                        <span class="text-xs font-bold text-on-surface-variant">وصل</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Allies -->
+            <div class="stat-card bg-white p-6 rounded-3xl shadow-xl shadow-primary/5 relative overflow-hidden group">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-success/5 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
+                <div class="relative z-10">
+                    <p class="text-[10px] font-black text-primary/60 uppercase mb-3 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm icon-filled">group</span>
+                        الحلفاء المستلمين
+                    </p>
+                    <div class="flex items-baseline gap-2 mb-2">
+                        <span class="text-3xl font-black text-primary stat-active-allies">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Avg Donation -->
+            <div class="stat-card bg-white p-6 rounded-3xl shadow-xl shadow-primary/5 relative overflow-hidden group">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-error/5 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
+                <div class="relative z-10">
+                    <p class="text-[10px] font-black text-primary/60 uppercase mb-3 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm icon-filled">analytics</span>
+                        متوسط الوصل
+                    </p>
+                    <div class="flex items-baseline gap-2 mb-2">
+                        <span class="text-3xl font-black text-primary stat-avg-donation">0</span>
+                        <span class="text-xs font-bold text-on-surface-variant">د.ع</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Charts Section -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="bg-white p-8 rounded-3xl shadow-xl shadow-primary/5 border border-white/40">
+                <h3 class="text-lg font-black text-primary mb-6 flex items-center gap-2">
+                    <span class="w-1.5 h-6 bg-primary rounded-full"></span>
+                    مسار التبرعات الشهرية
+                </h3>
+                <div class="chart-container">
+                    <canvas id="growthChart"></canvas>
+                </div>
+            </div>
+            <!-- Insights -->
+            <div class="bg-white p-8 rounded-3xl shadow-xl shadow-primary/5 border border-white/40 leaderboard-container">
+                <h3 class="text-lg font-black text-primary mb-6">أفضل الحلفاء أداءً</h3>
+                <div class="space-y-4 leaderboard-list">
+                    <!-- Dynamic -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Leaderboards Section -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Leaderboard: Best Allies -->
+            <div class="bg-surface-container-low p-8 rounded-3xl border border-white/40">
+                <h3 class="text-lg font-black text-primary mb-6 flex items-center justify-between">
+                    <span>لوحة شرف رتب الحلفاء</span>
+                    <span class="text-xs text-on-surface-variant font-bold">بناءً على المبالغ</span>
+                </h3>
+                <div class="space-y-4">
+                    <!-- Top 1 -->
+                    <div class="bg-white p-4 rounded-2xl flex items-center justify-between shadow-md border border-primary/5 hover:scale-[1.02] transition-all cursor-pointer">
+                        <div class="flex items-center gap-4">
+                            <span class="w-8 h-8 rounded-full bg-yellow-400 text-white flex items-center justify-center font-black text-xs shadow-lg shadow-yellow-400/30">1</span>
+                            <div>
+                                <p class="font-black text-primary">علي إحسان</p>
+                                <p class="text-[10px] text-on-surface-variant">42 وصلاً منجزاً</p>
+                            </div>
+                        </div>
+                        <p class="text-lg font-black text-primary tracking-tight">450,000 <span class="text-[10px]">د.ع</span></p>
+                    </div>
+                    <!-- Top 2 -->
+                    <div class="bg-white/60 p-4 rounded-2xl flex items-center justify-between shadow-sm border border-transparent hover:bg-white transition-all cursor-pointer">
+                        <div class="flex items-center gap-4">
+                            <span class="w-8 h-8 rounded-full bg-gray-400 text-white flex items-center justify-center font-black text-xs shadow-lg shadow-gray-400/30">2</span>
+                            <div>
+                                <p class="font-black text-primary">حسين علي لفتة</p>
+                                <p class="text-[10px] text-on-surface-variant">38 وصلاً منجزاً</p>
+                            </div>
+                        </div>
+                        <p class="text-lg font-black text-primary tracking-tight">320,000 <span class="text-[10px]">د.ع</span></p>
+                    </div>
+                     <!-- Top 3 -->
+                     <div class="bg-white/60 p-4 rounded-2xl flex items-center justify-between shadow-sm border border-transparent hover:bg-white transition-all cursor-pointer">
+                        <div class="flex items-center gap-4">
+                            <span class="w-8 h-8 rounded-full bg-orange-400 text-white flex items-center justify-center font-black text-xs shadow-lg shadow-orange-400/30">3</span>
+                            <div>
+                                <p class="font-black text-primary">جعفر الصادق</p>
+                                <p class="text-[10px] text-on-surface-variant">35 وصلاً منجزاً</p>
+                            </div>
+                        </div>
+                        <p class="text-lg font-black text-primary tracking-tight">210,000 <span class="text-[10px]">د.ع</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Insights: Subscriber Insights -->
+            <div class="bg-white p-8 rounded-3xl shadow-xl shadow-primary/5 border border-white/40">
+                <h3 class="text-lg font-black text-primary mb-6">رؤية المساهمين</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-surface-container-low p-5 rounded-2xl text-center">
+                        <p class="text-3xl font-black text-primary">18</p>
+                        <p class="text-[10px] font-black text-on-surface-variant mt-1 uppercase">مساهم جديد</p>
+                        <div class="mt-2 text-[10px] text-success font-black flex justify-center items-center gap-1">
+                            <span class="material-symbols-outlined text-[10px]">add_circle</span>
+                            <span>هذا الشهر</span>
+                        </div>
+                    </div>
+                    <div class="bg-surface-container-low p-5 rounded-2xl text-center">
+                        <p class="text-3xl font-black text-primary">85%</p>
+                        <p class="text-[10px] font-black text-on-surface-variant mt-1 uppercase">نسبة الالتزام</p>
+                        <div class="mt-2 text-[10px] text-primary font-black flex justify-center items-center gap-1">
+                            <span class="material-symbols-outlined text-[10px]">verified</span>
+                            <span>مساهمون أوفياء</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Top Subscribers Mini-List -->
+                <div class="mt-6 space-y-3">
+                    <p class="text-xs font-black text-primary mb-3">المساهمون الأكثر التزاماً (6 أشهر+):</p>
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-success"></div>
+                        <p class="text-xs font-bold text-on-surface-variant">عبد الكاظم عبود (6 أشهر متتالية)</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-success"></div>
+                        <p class="text-xs font-bold text-on-surface-variant">عائلة الحاج فاضل (6 أشهر متتالية)</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-8 pt-4 bg-white/95 backdrop-blur-xl rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] border-t border-primary/5 md:hidden pointer-events-auto">
+        <a class="flex flex-col items-center justify-center text-on-surface-variant/40 px-5 py-2 hover:bg-surface-container-high rounded-2xl transition-all" href="dashboard.html">
+            <span class="material-symbols-outlined mb-1 text-2xl">home</span>
+            <span class="text-[10px] font-bold">الرئيسية</span>
+        </a>
+
+        <a class="flex flex-col items-center justify-center bg-primary-fixed text-primary rounded-2xl px-5 py-2 transition-all shadow-sm" href="#">
+            <span class="material-symbols-outlined icon-filled mb-1 text-2xl">leaderboard</span>
+            <span class="text-[10px] font-black">الإحصائيات</span>
+        </a>
+
+        <a class="flex flex-col items-center justify-center text-on-surface-variant/40 px-5 py-2 hover:bg-surface-container-high rounded-2xl transition-all" href="my-receipts.html">
+            <span class="material-symbols-outlined mb-1 text-2xl">menu_book</span>
+            <span class="text-[10px] font-bold">وصولاتي</span>
+        </a>
+
+        <a class="flex flex-col items-center justify-center text-on-surface-variant/40 px-5 py-2 hover:bg-surface-container-high rounded-2xl transition-all" href="settings.html">
+            <span class="material-symbols-outlined mb-1 text-2xl">settings</span>
+            <span class="text-[10px] font-bold">الإعدادات</span>
+        </a>
+    </nav>
+
+    <!-- Sidebar Navigation (Desktop) -->
+    <nav class="hidden md:flex fixed right-6 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-3xl rounded-3xl shadow-2xl border border-white/40 p-3 flex-col gap-4 z-40">
+        <a class="flex items-center justify-center text-on-surface-variant/50 hover:bg-primary-fixed hover:text-primary w-14 h-14 rounded-2xl group relative transition-all hover:scale-105" href="dashboard.html">
+            <span class="material-symbols-outlined">home</span>
+            <span class="absolute right-full mr-4 bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-all translate-x-4 group-hover:translate-x-0">الرئيسية</span>
+        </a>
+
+        <a class="flex items-center justify-center bg-primary-fixed text-primary w-14 h-14 rounded-2xl group relative hover:scale-110 transition-all shadow-sm" href="#">
+            <span class="material-symbols-outlined icon-filled">leaderboard</span>
+            <span class="absolute right-full mr-4 bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-all translate-x-4 group-hover:translate-x-0">الإحصائيات</span>
+        </a>
+
+        <a class="flex items-center justify-center text-on-surface-variant/50 hover:bg-primary-fixed hover:text-primary w-14 h-14 rounded-2xl group relative transition-all hover:scale-105" href="my-receipts.html">
+            <span class="material-symbols-outlined">menu_book</span>
+            <span class="absolute right-full mr-4 bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-all translate-x-4 group-hover:translate-x-0">وصولاتي</span>
+        </a>
+
+        <a class="flex items-center justify-center text-on-surface-variant/50 hover:bg-primary-fixed hover:text-primary w-14 h-14 rounded-2xl group relative transition-all hover:scale-105" href="settings.html">
+            <span class="material-symbols-outlined">settings</span>
+            <span class="absolute right-full mr-4 bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-all translate-x-4 group-hover:translate-x-0">الإعدادات</span>
+        </a>
+    </nav>
+
+    <script type="module">
+        import { supabase } from './lib/supabase.js';
+        import { getSelectedMonth, setSelectedMonth, formatMonthArabic, getMonthBounds, openGlobalMonthPicker } from './lib/date-utils.js';
+
+        let growthChartInstance = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Session Check
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const role = localStorage.getItem('userRole') || 'ally';
+            const isAdmin = role === 'admin';
+
+            // 2. Setup Month Picker UI
+            const openMonthPickerBtn = document.getElementById('openMonthPickerBtn');
+            const monthLabel = document.getElementById('analyticsMonthLabel');
+
+            function updateMonthUI(yyyyMm) {
+                monthLabel.textContent = formatMonthArabic(yyyyMm) || 'جميع الشهور';
+            }
+
+            let currentMonth = getSelectedMonth();
+            updateMonthUI(currentMonth);
+
+            openMonthPickerBtn.addEventListener('click', () => {
+                openGlobalMonthPicker(currentMonth, (selected) => {
+                    if (selected) {
+                        setSelectedMonth(selected);
+                        currentMonth = selected;
+                    } else {
+                        currentMonth = null;
+                        localStorage.removeItem('globalFilterMonth');
+                    }
+                    updateMonthUI(currentMonth);
+                    loadAnalytics();
+                });
+            });
+
+            window.addEventListener('monthFilterChanged', (e) => {
+                currentMonth = e.detail;
+                updateMonthUI(currentMonth);
+                loadAnalytics();
+            });
+
+            // 3. Fetch Data & Update Views
+            const loadAnalytics = async () => {
+                const bounds = getMonthBounds(currentMonth);
+
+                let receiptsQuery = supabase.from('receipts')
+                    .select('amount, created_at, ally_id, profiles(full_name)')
+                    .gte('created_at', bounds.start)
+                    .lt('created_at', bounds.end);
+                
+                if (!isAdmin) {
+                    receiptsQuery = receiptsQuery.eq('ally_id', user.id);
+                }
+
+                const { data, error } = await receiptsQuery;
+                if (error) console.error(error);
+                
+                const stats = data || [];
+
+                // Calculate KPIs
+                const totalAmount = stats.reduce((sum, r) => sum + r.amount, 0);
+                const totalReceipts = stats.length;
+                const uniqueAllies = new Set(stats.map(r => r.ally_id)).size;
+                const avgDonation = totalReceipts > 0 ? Math.round(totalAmount / totalReceipts) : 0;
+
+                // Update UI
+                document.querySelector('.stat-total-amount').textContent = totalAmount.toLocaleString();
+                document.querySelector('.stat-total-receipts').textContent = totalReceipts.toLocaleString();
+                document.querySelector('.stat-active-allies').textContent = isAdmin ? uniqueAllies : 'أنا';
+                document.querySelector('.stat-avg-donation').textContent = avgDonation.toLocaleString();
+
+                // 4. Daily Growth Chart Logic
+                const daysMap = {};
+                stats.forEach(r => {
+                    const day = new Date(r.created_at).getDate().toString();
+                    daysMap[day] = (daysMap[day] || 0) + r.amount;
+                });
+                
+                const days = Object.keys(daysMap).sort((a,b)=>a-b);
+                const dailyData = days.map(d => daysMap[d]);
+
+                const growthCtx = document.getElementById('growthChart').getContext('2d');
+                
+                if (growthChartInstance) {
+                    growthChartInstance.destroy();
+                }
+
+                growthChartInstance = new Chart(growthCtx, {
+                    type: 'line',
+                    data: {
+                        labels: days.length > 0 ? days.map(d => `يوم ${d}`) : ['لا بيانات'],
+                        datasets: [{
+                            label: 'إجمالي التبرعات اليومية (د.ع)',
+                            data: dailyData.length > 0 ? dailyData : [0],
+                            borderColor: '#001e40',
+                            backgroundColor: 'rgba(0, 30, 64, 0.05)',
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 4,
+                            pointRadius: 3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, display: true },
+                            x: { grid: { display: false }, ticks: { font: { weight: 'bold' } } }
+                        }
+                    }
+                });
+
+                // 5. Leaderboard (Admin Only)
+                if (isAdmin) {
+                    const allyLeaderboard = {};
+                    stats.forEach(r => {
+                        const name = r.profiles?.full_name || 'غير معروف';
+                        allyLeaderboard[name] = (allyLeaderboard[name] || 0) + r.amount;
+                    });
+
+                    const sortedAllies = Object.entries(allyLeaderboard)
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 3);
+
+                    const leaderboardContainer = document.querySelector('.leaderboard-list');
+                    
+                    if(sortedAllies.length === 0) {
+                        leaderboardContainer.innerHTML = '<p class="text-sm opacity-50">لا توجد بيانات لهذا الشهر</p>';
+                    } else {
+                        leaderboardContainer.innerHTML = sortedAllies.map(([name, sum], i) => `
+                            <div class="bg-white p-4 rounded-2xl flex items-center justify-between shadow-md border border-primary/5">
+                                <div class="flex items-center gap-4">
+                                    <span class="w-8 h-8 rounded-full ${i===0 ? 'bg-yellow-400' : 'bg-gray-400'} text-white flex items-center justify-center font-black text-xs">${i+1}</span>
+                                    <p class="font-black text-primary">${name}</p>
+                                </div>
+                                <p class="text-lg font-black text-primary tracking-tight">${sum.toLocaleString()} <span class="text-[10px]">د.ع</span></p>
+                            </div>
+                        `).join('');
+                    }
+                } else {
+                    document.querySelector('.leaderboard-container')?.classList.add('hidden');
+                }
+            };
+
+            // Load Initially
+            await loadAnalytics();
+        });
+    </script>
+
+</body>
+</html>

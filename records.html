@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>سجل الوصولات الكامل - نظام الجباية</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&amp;family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary-container": "#003366",
+                        "background": "#f7f9fc",
+                        "on-background": "#191c1e",
+                        "surface": "#f7f9fc",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#eceef1",
+                        "primary": "#001e40",
+                        "surface-container-low": "#f2f4f7",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#e6e8eb",
+                        "on-surface-variant": "#43474f",
+                        "error": "#d32f2f",
+                        "success": "#2e7d32"
+                    },
+                    borderRadius: {
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "2xl": "2rem"
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Tajawal', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .receipt-card:hover { transform: scale(1.01); }
+        .glass-header {
+            background: rgba(247, 249, 252, 0.8);
+            backdrop-filter: blur(12px);
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #001e4020; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+
+    <!-- Header Section -->
+    <header class="sticky top-0 z-50 glass-header border-b border-surface-container-high px-6 py-4">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="dashboard.html" class="p-2 hover:bg-surface-container-high rounded-xl transition-all active:scale-90">
+                    <span class="material-symbols-outlined text-primary">arrow_forward</span>
+                </a>
+                <h1 class="text-2xl font-black text-primary tracking-tight">السجل الكامل للوصولات</h1>
+            </div>
+            <div class="flex gap-2">
+                <button id="exportBtn" class="bg-primary text-on-primary px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:scale-105 transition-all">
+                    <span class="material-symbols-outlined text-lg">download</span>
+                    تصدير ملف Excel
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto w-full p-6 space-y-6">
+
+        <!-- Filters Bar -->
+        <section class="bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-surface-container-high flex flex-wrap gap-4 items-center">
+            <div class="flex-grow min-w-[300px] relative">
+                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/40">search</span>
+                <input type="text" id="searchInput" placeholder="ابحث باسم المساهم أو رقم الوصل..." class="w-full bg-surface-container-low border-transparent rounded-xl py-3 pr-12 pl-4 focus:ring-2 focus:ring-primary/10 focus:border-primary/20 font-medium">
+            </div>
+            <div class="flex gap-3">
+                <select id="allyFilter" class="bg-surface-container-low border-transparent rounded-xl py-3 px-6 font-bold text-sm focus:ring-0 cursor-pointer">
+                    <option value="">جميع الحلفاء</option>
+                </select>
+                <button id="openMonthPickerBtn" class="bg-surface-container-low border-transparent rounded-xl py-3 px-4 font-bold text-sm cursor-pointer flex items-center justify-between gap-3 min-w-[150px] hover:bg-surface-container-high transition-all">
+                    <span id="recordsMonthLabel" class="text-primary truncate">جميع الشهور</span>
+                    <span class="material-symbols-outlined text-primary/50 text-xl pointer-events-none">calendar_month</span>
+                </button>
+                <button class="bg-surface-container-high p-3 rounded-xl hover:bg-primary hover:text-white transition-all">
+                    <span class="material-symbols-outlined">filter_list</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Stats Overview for current view -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-primary-container/5 rounded-2xl p-5 border border-primary/5">
+                <p class="text-[10px] font-black text-primary/60 uppercase mb-1">إجمالي المبالغ المعروضة</p>
+                <p class="text-2xl font-black text-primary"><span id="totalAmountStat">0</span> <span class="text-xs">د.ع</span></p>
+            </div>
+            <div class="bg-primary-container/5 rounded-2xl p-5 border border-primary/5">
+                <p class="text-[10px] font-black text-primary/60 uppercase mb-1">عدد الوصولات</p>
+                <p class="text-2xl font-black text-primary"><span id="totalCountStat">0</span> <span class="text-xs">وصل</span></p>
+            </div>
+            <div class="bg-primary-container/5 rounded-2xl p-5 border border-primary/5">
+                <p class="text-[10px] font-black text-primary/60 uppercase mb-1">الحلفاء المشاركين</p>
+                <p class="text-2xl font-black text-primary"><span id="totalAlliesStat">0</span> <span class="text-xs">حليف</span></p>
+            </div>
+        </div>
+
+        <!-- Data Grid -->
+        <section class="space-y-4" id="recordsList">
+            <!-- Dynamic Content Cards will be injected here -->
+        </section>
+
+    <script type="module">
+        import { supabase } from './lib/supabase.js';
+        import { getSelectedMonth, setSelectedMonth, formatMonthArabic, getMonthBounds, openGlobalMonthPicker } from './lib/date-utils.js';
+
+        // State
+        let allReceipts = [];
+        let filteredReceipts = [];
+        let userRole = 'ally';
+        let currentMonth = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Session Check
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Load profile to get role
+            const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+            userRole = profile?.role || 'ally';
+            const isAdmin = userRole === 'admin';
+
+            // Show/Hide Ally Select Filter
+            const allySelect = document.getElementById('allyFilter');
+            if (isAdmin) {
+                const { data: profiles } = await supabase.from('profiles').select('id, full_name').eq('role', 'ally');
+                profiles?.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = p.full_name;
+                    allySelect.appendChild(opt);
+                });
+            } else {
+                allySelect.parentElement.classList.add('hidden');
+            }
+
+            // Month Picker Setup
+            const monthLabel = document.getElementById('recordsMonthLabel');
+            const openMonthPickerBtn = document.getElementById('openMonthPickerBtn');
+
+            function updateMonthUI(yyyyMm) {
+                if (yyyyMm) {
+                    monthLabel.textContent = formatMonthArabic(yyyyMm);
+                } else {
+                    monthLabel.textContent = 'جميع الشهور';
+                }
+            }
+
+            const globalStored = localStorage.getItem('globalFilterMonth');
+            if(globalStored) {
+                currentMonth = globalStored;
+                updateMonthUI(currentMonth);
+            }
+
+            openMonthPickerBtn.addEventListener('click', () => {
+                openGlobalMonthPicker(currentMonth, (selected) => {
+                    if (selected) {
+                        setSelectedMonth(selected);
+                        currentMonth = selected;
+                    } else {
+                        currentMonth = null;
+                        localStorage.removeItem('globalFilterMonth');
+                    }
+                    updateMonthUI(currentMonth);
+                    loadData();
+                });
+            });
+
+            window.addEventListener('monthFilterChanged', (e) => {
+                currentMonth = e.detail;
+                updateMonthUI(currentMonth);
+                loadData();
+            });
+
+            // 2. Initial Fetch
+            await loadData();
+
+            // 3. Event Listeners
+            document.getElementById('searchInput').addEventListener('input', applyFilters);
+            document.getElementById('allyFilter').addEventListener('change', applyFilters);
+            document.getElementById('exportBtn').addEventListener('click', exportToExcel);
+        });
+
+        async function loadData() {
+            let query = supabase.from('receipts').select(`
+                *,
+                profiles (full_name)
+            `).order('created_at', { ascending: false });
+
+            if (userRole === 'ally') {
+                const { data: { user } } = await supabase.auth.getUser();
+                query = query.eq('ally_id', user.id);
+            }
+
+            if (currentMonth) {
+                const bounds = getMonthBounds(currentMonth);
+                query = query.gte('created_at', bounds.start).lt('created_at', bounds.end);
+            }
+
+            const { data, error } = await query;
+            if (error) {
+                console.error(error);
+                return;
+            }
+
+            allReceipts = data || [];
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const selectedAlly = document.getElementById('allyFilter').value;
+
+            filteredReceipts = allReceipts.filter(r => {
+                const matchesSearch = r.subscriber_name.toLowerCase().includes(searchTerm) || 
+                                    r.receipt_number.toString().includes(searchTerm);
+                const matchesAlly = !selectedAlly || r.ally_id === selectedAlly;
+
+                return matchesSearch && matchesAlly;
+            });
+
+            renderTable();
+            updateStats();
+        }
+
+        function renderTable() {
+            const container = document.getElementById('recordsList');
+            container.innerHTML = '';
+
+            if (filteredReceipts.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-surface-container-lowest rounded-3xl p-12 text-center border border-dashed border-primary/20">
+                        <span class="material-symbols-outlined text-6xl text-primary/20 mb-4">search_off</span>
+                        <p class="text-on-surface-variant font-bold">لم يتم العثور على أي وصولات مطابقة</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filteredReceipts.forEach((r, index) => {
+                const systemDate = new Date(r.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' });
+                const paperDate = r.receipt_date ? new Date(r.receipt_date).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' }) : systemDate;
+                const initial = r.subscriber_name.substring(0, 2);
+                
+                const card = document.createElement('div');
+                card.className = 'bg-surface-container-lowest rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between hover:shadow-2xl hover:shadow-primary/5 transition-all cursor-pointer group border border-white/60 hover:border-primary/10 gap-6';
+                card.innerHTML = `
+                    <div class="flex items-center gap-6 w-full md:w-auto">
+                        <div class="w-16 h-16 rounded-2xl bg-primary-fixed flex items-center justify-center text-primary font-black text-xl group-hover:bg-primary group-hover:text-white transition-all shadow-inner shrink-0 leading-none">
+                            ${initial}
+                        </div>
+                        <div class="space-y-1">
+                            <h4 class="font-black text-primary text-xl tracking-tight">${r.subscriber_name}</h4>
+                            <div class="flex items-center gap-3">
+                                <span class="bg-primary/5 text-primary text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-wider">#${r.receipt_number}</span>
+                                <span class="text-[10px] text-on-surface-variant font-bold opacity-60">بواسطة: ${r.profiles?.full_name || 'غير معروف'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap md:flex-nowrap items-center gap-8 w-full md:w-auto justify-between md:justify-end">
+                        <div class="space-y-1 text-center md:text-right">
+                            <p class="text-[10px] font-black text-primary/40 uppercase tracking-widest leading-none">تاريخ الوصل (الورقي)</p>
+                            <p class="font-bold text-primary text-sm">${paperDate}</p>
+                        </div>
+
+                        <div class="space-y-1 text-center md:text-right hidden sm:block">
+                            <p class="text-[10px] font-black text-on-surface-variant/40 uppercase tracking-widest leading-none">سجل النظام</p>
+                            <p class="font-bold text-on-surface-variant/60 text-xs">${systemDate}</p>
+                        </div>
+
+                        <div class="text-center md:text-left min-w-[120px]">
+                            <p class="text-primary font-black text-3xl italic tracking-tighter">${r.amount.toLocaleString()}<span class="text-xs not-italic mr-1">د.ع</span></p>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                             ${userRole === 'admin' ? `
+                                <button onclick="openEditModal('${encodeURIComponent(JSON.stringify(r))}')" class="p-3 bg-surface-container-high rounded-2xl text-primary hover:bg-primary hover:text-white transition-all shadow-sm" title="تعديل">
+                                    <span class="material-symbols-outlined text-lg">edit</span>
+                                </button>
+                                <button onclick="deleteReceipt('${r.id}', '${r.subscriber_name}')" class="p-3 bg-error/5 text-error rounded-2xl hover:bg-error hover:text-white transition-all shadow-sm" title="حذف">
+                                    <span class="material-symbols-outlined text-lg">delete</span>
+                                </button>
+                             ` : `
+                                <span class="material-symbols-outlined text-primary/20">lock</span>
+                             `}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+
+        // Admin Actions
+        let receiptToDelete = null;
+
+        window.deleteReceipt = async (id, name) => {
+            if (userRole !== 'admin') return alert('عذراً، هذه الصلاحية للمسؤول فقط');
+            receiptToDelete = { id, name };
+            document.getElementById('deleteReceiptName').textContent = name;
+            document.getElementById('deleteReceiptModal').classList.remove('hidden');
+            document.getElementById('deleteReceiptModal').classList.add('flex');
+        };
+
+        window.closeDeleteReceiptModal = () => {
+            document.getElementById('deleteReceiptModal').classList.add('hidden');
+            document.getElementById('deleteReceiptModal').classList.remove('flex');
+            receiptToDelete = null;
+        };
+
+        window.executeDeleteReceipt = async () => {
+            if (!receiptToDelete) return;
+            
+            const btn = document.getElementById('confirmDeleteReceiptBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> جاري الحذف...';
+
+            try {
+                const { error } = await supabase.from('receipts').delete().eq('id', receiptToDelete.id);
+                if (error) throw error;
+                
+                closeDeleteReceiptModal();
+                loadData(); // Refresh
+            } catch (err) {
+                alert('خطأ في الحذف: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'نعم، احذف الوصل';
+            }
+        };
+
+        window.openEditModal = (rDataJson) => {
+            if (userRole !== 'admin') return alert('عذراً، هذه الصلاحية للمسؤول فقط');
+            const r = JSON.parse(decodeURIComponent(rDataJson));
+            document.getElementById('editId').value = r.id;
+            document.getElementById('editName').value = r.subscriber_name;
+            document.getElementById('editAmount').value = r.amount;
+            document.getElementById('editNumber').value = r.receipt_number;
+            document.getElementById('editModal').classList.remove('hidden');
+        };
+
+        window.closeEditModal = () => {
+            document.getElementById('editModal').classList.add('hidden');
+        };
+
+        window.submitEdit = async () => {
+            const id = document.getElementById('editId').value;
+            const name = document.getElementById('editName').value;
+            const amount = parseInt(document.getElementById('editAmount').value);
+            const number = parseInt(document.getElementById('editNumber').value);
+
+            try {
+                const { error } = await supabase
+                    .from('receipts')
+                    .update({
+                        subscriber_name: name,
+                        amount: amount,
+                        receipt_number: number
+                    })
+                    .eq('id', id);
+
+                if (error) throw error;
+                alert('تم تحديث البيانات بنجاح');
+                closeEditModal();
+                loadData();
+            } catch (err) {
+                alert('خطأ في التحديث: ' + err.message);
+            }
+        };
+
+        function updateStats() {
+            const total = filteredReceipts.reduce((sum, r) => sum + r.amount, 0);
+            const count = filteredReceipts.length;
+            const allies = new Set(filteredReceipts.map(r => r.ally_id)).size;
+
+            document.getElementById('totalAmountStat').textContent = total.toLocaleString();
+            document.getElementById('totalCountStat').textContent = count;
+            document.getElementById('totalAlliesStat').textContent = allies;
+        }
+
+        function exportToExcel() {
+            if (filteredReceipts.length === 0) return alert('لا توجد بيانات لتصديرها');
+            
+            const rows = [['الرقم', 'المساهم', 'رقم الوصل', 'المبلغ', 'تاريخ الوصل', 'تاريخ النظام', 'الحليف']];
+            filteredReceipts.forEach((r, i) => {
+                const sysDate = new Date(r.created_at).toLocaleDateString('ar-EG');
+                const pprDate = r.receipt_date ? new Date(r.receipt_date).toLocaleDateString('ar-EG') : sysDate;
+                rows.push([
+                    i + 1,
+                    r.subscriber_name,
+                    r.receipt_number,
+                    r.amount,
+                    pprDate,
+                    sysDate,
+                    r.profiles?.full_name || ''
+                ]);
+            });
+
+
+            const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + rows.map(e => e.join(",")).join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `records_${new Date().toLocaleDateString()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+        </section>
+
+    </main>
+
+    <!-- Footer Summary -->
+    <footer class="mt-auto bg-primary text-on-primary p-6 text-center">
+        <p class="text-xs font-bold opacity-60">جميع الحقوق محفوظة - نظام الجباية والتدقيق الرقمي 2026</p>
+    </footer>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="fixed inset-0 bg-primary/40 backdrop-blur-sm z-[100] flex items-center justify-center hidden p-6">
+        <div class="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+            <div class="p-6 border-b border-surface-container-high flex justify-between items-center bg-primary text-white">
+                <h3 class="font-black">تعديل بيانات الوصل</h3>
+                <button onclick="closeEditModal()" class="material-symbols-outlined">close</button>
+            </div>
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="editId">
+                <div>
+                    <label class="text-[10px] font-black text-primary/60 uppercase mb-1 block">اسم المساهم</label>
+                    <input type="text" id="editName" class="w-full bg-surface-container-low border-transparent rounded-xl py-3 px-4">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-black text-primary/60 uppercase mb-1 block">المبلغ (د.ع)</label>
+                        <input type="number" id="editAmount" class="w-full bg-surface-container-low border-transparent rounded-xl py-3 px-4">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-primary/60 uppercase mb-1 block">رقم الوصل</label>
+                        <input type="number" id="editNumber" class="w-full bg-surface-container-low border-transparent rounded-xl py-3 px-4">
+                    </div>
+                </div>
+                <button onclick="submitEdit()" class="w-full bg-primary text-white font-black py-4 rounded-xl shadow-lg active:scale-95 transition-all mt-4">حفظ التغييرات</button>
+            </div>
+        </div>
+    </div>
+    <!-- Delete Receipt Confirmation Modal -->
+    <div id="deleteReceiptModal" class="fixed inset-0 bg-primary/40 backdrop-blur-md z-[120] hidden items-center justify-center p-6 transition-all duration-300">
+        <div class="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-300">
+            <div class="p-8 text-center space-y-4">
+                <div class="w-20 h-20 bg-error/10 text-error rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <span class="material-symbols-outlined text-4xl icon-filled">delete_sweep</span>
+                </div>
+                <h3 class="text-xl font-black text-primary">حذف الوصل نهائياً؟</h3>
+                <p class="text-sm text-on-surface-variant leading-relaxed px-4">
+                    هل أنت متأكد من مسح الوصل الخاص بـ (<span id="deleteReceiptName" class="font-black text-error">---</span>) من النظام؟
+                </p>
+            </div>
+            <div class="px-8 pb-8 flex flex-col gap-3">
+                <button id="confirmDeleteReceiptBtn" onclick="window.executeDeleteReceipt()" class="w-full bg-[#d32f2f] text-white font-black py-4 rounded-2xl shadow-lg shadow-error/20 hover:bg-[#b71c1c] active:scale-95 transition-all">
+                    نعم، احذف الوصل
+                </button>
+                <button onclick="window.closeDeleteReceiptModal()" class="w-full bg-surface-container-high text-primary font-black py-4 rounded-2xl active:scale-95 transition-all">
+                    إلغاء التراجع
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

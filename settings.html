@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>الإعدادات - نظام الجباية</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&amp;family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary-container": "#003366",
+                        "background": "#f7f9fc",
+                        "on-background": "#191c1e",
+                        "surface": "#f7f9fc",
+                        "on-primary": "#ffffff",
+                        "primary": "#001e40",
+                        "surface-container-low": "#f2f4f7",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#e6e8eb",
+                        "on-surface-variant": "#43474f",
+                        "error": "#d32f2f",
+                        "success": "#2e7d32"
+                    },
+                    borderRadius: {
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "2xl": "2rem"
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Tajawal', sans-serif; transition: background-color 0.3s ease; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .icon-filled { font-variation-settings: 'FILL' 1; }
+        .setting-row { transition: all 0.2s ease; }
+        .setting-row:active { background-color: rgba(0, 30, 64, 0.05); }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #001e40;
+        }
+        .toggle-checkbox:checked + .toggle-label .toggle-dot {
+            transform: translateX(-100%);
+            background-color: #ffffff;
+        }
+        body.dark-mode {
+            background-color: #191c1e;
+            color: #eceef1;
+        }
+        .dark-mode .bg-white { background-color: #2d3133 !important; color: #eceef1; }
+        .dark-mode .text-primary { color: #a7c8ff !important; }
+        .dark-mode .bg-surface-container-low { background-color: #1c1f21 !important; }
+        .dark-mode .border-surface-container-high { border-color: #43474f !important; }
+
+        @keyframes modal-pop {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-modal-pop { animation: modal-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+        /* Fix for select options contrast in dark modals */
+        select option {
+            background-color: #ffffff;
+            color: #191c1e;
+        }
+        .bg-primary-container select option {
+            background-color: #003366;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body pb-24 md:pb-0">
+
+    <!-- Top AppBar -->
+    <header class="flex items-center justify-between px-6 py-4 sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-primary/5">
+        <div class="flex items-center gap-4">
+            <a href="dashboard.html" class="p-2 hover:bg-surface-container-high rounded-xl transition-all">
+                <span class="material-symbols-outlined text-primary">arrow_forward</span>
+            </a>
+            <h1 class="text-xl font-black text-primary">الإعدادات</h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+            <span class="text-[10px] font-black text-on-surface-variant uppercase">متصل بالخادم</span>
+        </div>
+    </header>
+
+    <main class="max-w-2xl mx-auto w-full p-6 space-y-8">
+
+        <!-- Account Section -->
+        <section class="space-y-4">
+            <h2 class="text-xs font-black text-primary/60 uppercase mr-2 flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">security</span>
+                الحساب والأمان
+            </h2>
+            <div class="bg-white rounded-3xl shadow-xl shadow-primary/5 overflow-hidden border border-white/40">
+                <!-- Profile Row -->
+                <div class="p-5 flex items-center justify-between border-b border-surface-container-high">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                            <span class="material-symbols-outlined text-2xl">person</span>
+                        </div>
+                        <div>
+                            <p id="profileName" class="font-black text-primary">علي إحسان</p>
+                            <p id="profileRole" class="text-[10px] text-on-surface-variant font-bold">حليف قاطع جنوب الرصافة</p>
+                        </div>
+                    </div>
+                    <button class="text-primary text-xs font-black hover:underline px-3 py-1">تعديل</button>
+                </div>
+
+                <div class="w-full p-5 flex items-center justify-between setting-row">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-on-surface-variant/60">fingerprint</span>
+                        <span class="text-sm font-bold">قفل التطبيق (بصمة/رمز)</span>
+                    </div>
+                    <div class="relative flex items-center cursor-pointer">
+                        <input type="checkbox" id="appLock" class="sr-only toggle-checkbox">
+                        <label for="appLock" class="w-11 h-6 bg-surface-container-high rounded-full p-1 transition-all duration-300 toggle-label">
+                            <div class="w-4 h-4 bg-white rounded-full shadow-md transition-all duration-300 toggle-dot"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sync Section -->
+        <section class="space-y-4">
+            <h2 class="text-xs font-black text-primary/60 uppercase mr-2 flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">sync</span>
+                المزامنة والبيانات
+            </h2>
+            <div class="bg-white rounded-3xl shadow-xl shadow-primary/5 p-5 flex items-center justify-between border border-white/40">
+                <div class="flex items-center gap-4">
+                    <div id="syncIconContainer" class="w-12 h-12 rounded-2xl bg-surface-container-high flex items-center justify-center text-on-surface-variant">
+                        <span id="syncIcon" class="material-symbols-outlined text-2xl">cloud_queue</span>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold">حالة المزامنة</p>
+                        <p id="syncStatusText" class="text-[10px] text-green-500 font-black">تمت مزامنة جميع الوصولات</p>
+                    </div>
+                </div>
+                <button id="syncNowBtn" onclick="syncOfflineReceipts()" class="bg-primary text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:pointer-events-none transition-all">مزامنة الآن</button>
+            </div>
+        </section>
+
+        <!-- UI & Notifications Section -->
+        <section class="space-y-4">
+            <h2 class="text-xs font-black text-primary/60 uppercase mr-2 flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">palette</span>
+                الواجهة والإشعارات
+            </h2>
+            <div class="bg-white rounded-3xl shadow-xl shadow-primary/5 overflow-hidden border border-white/40">
+                <div class="w-full p-5 flex items-center justify-between setting-row border-b border-surface-container-high">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-on-surface-variant/60">dark_mode</span>
+                        <span class="text-sm font-bold">الوضع الداكن (Dark Mode)</span>
+                    </div>
+                    <div class="relative flex items-center cursor-pointer">
+                        <input type="checkbox" id="darkModeToggle" class="sr-only toggle-checkbox">
+                        <label for="darkModeToggle" class="w-11 h-6 bg-surface-container-high rounded-full p-1 transition-all duration-300 toggle-label">
+                            <div class="w-4 h-4 bg-white rounded-full shadow-md transition-all duration-300 toggle-dot"></div>
+                        </label>
+                    </div>
+                </div>
+                <div class="w-full p-5 flex items-center justify-between setting-row">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-on-surface-variant/60">notifications</span>
+                        <span class="text-sm font-bold">تنبيهات النظام</span>
+                    </div>
+                    <div class="relative flex items-center cursor-pointer">
+                        <input type="checkbox" id="notifToggle" checked class="sr-only toggle-checkbox">
+                        <label for="notifToggle" class="w-11 h-6 bg-surface-container-high rounded-full p-1 transition-all duration-300 toggle-label">
+                            <div class="w-4 h-4 bg-white rounded-full shadow-md transition-all duration-300 toggle-dot"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin Only Section (Special Styling) -->
+        <section id="adminSection" class="space-y-4 p-6 bg-primary/5 rounded-[2.5rem] border border-primary/10">
+            <h2 class="text-xs font-black text-primary uppercase mr-2 flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">admin_panel_settings</span>
+                إعدادات خاصة بالمسؤول (أنت فقط)
+            </h2>
+            <div class="space-y-3">
+                <button id="manageAlliesBtn" class="w-full p-5 bg-white rounded-2xl flex items-center justify-between shadow-sm hover:shadow-md transition-all group">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">group_add</span>
+                        <span class="text-sm font-bold">إدارة الحلفاء (إضافة/إيقاف)</span>
+                    </div>
+                    <span class="material-symbols-outlined text-on-surface-variant/40">chevron_left</span>
+                </button>
+                <button id="distributeBookBtn" class="w-full p-5 bg-white rounded-2xl flex items-center justify-between shadow-sm hover:shadow-md transition-all group">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">library_add</span>
+                        <span class="text-sm font-bold">توزيع الدفاتر الشهري (جديد)</span>
+                    </div>
+                    <span class="material-symbols-outlined text-on-surface-variant/40">chevron_left</span>
+                </button>
+                <button class="w-full p-5 bg-white rounded-2xl flex items-center justify-between shadow-sm hover:shadow-md transition-all group">
+            </div>
+        </section>
+
+        <!-- Support Section -->
+        <section class="space-y-4">
+            <h2 class="text-xs font-black text-primary/60 uppercase mr-2 flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">help</span>
+                الدعم والمساعدة
+            </h2>
+            <div class="bg-white rounded-3xl shadow-xl shadow-primary/5 overflow-hidden border border-white/40">
+                <button class="w-full p-5 flex items-center justify-between setting-row border-b border-surface-container-high group">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-on-surface-variant/60 group-hover:text-primary">menu_book</span>
+                        <span class="text-sm font-bold">دليل استخدام التطبيق</span>
+                    </div>
+                    <span class="material-symbols-outlined text-on-surface-variant/40">open_in_new</span>
+                </button>
+                <button class="w-full p-5 flex items-center justify-between setting-row group">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-on-surface-variant/60 group-hover:text-primary">support_agent</span>
+                        <span class="text-sm font-bold">تواصل مع الإدارة مباشرة</span>
+                    </div>
+                    <span class="material-symbols-outlined text-on-surface-variant/40">send</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Logout -->
+        <a href="index.html" class="w-full p-6 bg-[#d32f2f]/5 text-[#d32f2f] rounded-3xl flex items-center justify-center gap-3 font-black border border-[#d32f2f]/10 hover:bg-[#d32f2f] hover:text-white transition-all active:scale-95 group">
+            <span class="material-symbols-outlined group-hover:rotate-180 transition-transform">logout</span>
+            تسجيل الخروج الآمن
+        </a>
+
+        <p class="text-center text-[10px] font-bold text-on-surface-variant opacity-40">نسخة التطبيق v1.0.0.26 - الدائرة الثامنة عشر</p>
+
+    </main>
+
+    <!-- Custom Confirm Modal -->
+    <div id="confirmModal" class="hidden fixed inset-0 z-[999] bg-primary/80 backdrop-blur-sm items-center justify-center p-4">
+        <div class="bg-white rounded-[2rem] p-6 w-full max-w-sm shadow-2xl border border-white/50 relative transform transition-all">
+            <div class="flex items-center gap-4 mb-4">
+                <div id="confirmIconContainer" class="w-12 h-12 rounded-full flex items-center justify-center font-black">
+                    <span id="confirmIcon" class="material-symbols-outlined text-2xl">question_mark</span>
+                </div>
+                <div>
+                    <h3 id="confirmTitle" class="text-lg font-black text-primary tracking-tight">تأكيد الإجراء</h3>
+                    <p id="confirmMessage" class="text-xs font-bold text-on-surface-variant mt-1">هل أنت متأكد؟</p>
+                </div>
+            </div>
+            
+            <div class="flex gap-3 mt-6">
+                <button id="confirmBtnYes" class="flex-1 py-3 px-4 rounded-xl font-black text-sm transition-all shadow-md">
+                    تأكيد
+                </button>
+                <button id="confirmBtnNo" onclick="closeConfirmModal()" class="flex-1 bg-surface-container-high text-on-surface-variant py-3 px-4 rounded-xl font-bold text-sm hover:bg-surface-container-highest transition-all shadow-sm">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-8 pt-4 bg-white/95 backdrop-blur-xl rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] border-t border-primary/5 md:hidden pointer-events-auto">
+        <a class="flex flex-col items-center justify-center text-on-surface-variant/40 px-5 py-2 hover:bg-surface-container-high rounded-2xl transition-all" href="dashboard.html">
+            <span class="material-symbols-outlined mb-1 text-2xl">home</span>
+            <span class="text-[10px] font-bold">الرئيسية</span>
+        </a>
+
+        <a class="flex flex-col items-center justify-center text-on-surface-variant/40 px-5 py-2 hover:bg-surface-container-high rounded-2xl transition-all" href="analytics.html">
+            <span class="material-symbols-outlined mb-1 text-2xl">leaderboard</span>
+            <span class="text-[10px] font-bold">الإحصائيات</span>
+        </a>
+
+        <a class="flex flex-col items-center justify-center text-on-surface-variant/40 px-5 py-2 hover:bg-surface-container-high rounded-2xl transition-all" href="my-receipts.html">
+            <span class="material-symbols-outlined mb-1 text-2xl">menu_book</span>
+            <span class="text-[10px] font-bold">وصولاتي</span>
+        </a>
+
+        <a class="flex flex-col items-center justify-center bg-primary-fixed text-primary rounded-2xl px-5 py-2 transition-all shadow-sm" href="#">
+            <span class="material-symbols-outlined icon-filled mb-1 text-2xl">settings</span>
+            <span class="text-[10px] font-black">الإعدادات</span>
+        </a>
+    </nav>
+
+    <!-- Sidebar Navigation (Desktop) -->
+    <nav class="hidden md:flex fixed right-6 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-3xl rounded-3xl shadow-2xl border border-white/40 p-3 flex-col gap-4 z-40">
+        <a class="flex items-center justify-center text-on-surface-variant/50 hover:bg-primary-fixed hover:text-primary w-14 h-14 rounded-2xl group relative transition-all hover:scale-105" href="dashboard.html">
+            <span class="material-symbols-outlined">home</span>
+            <span class="absolute right-full mr-4 bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-all translate-x-4 group-hover:translate-x-0">الرئيسية</span>
+        </a>
+
+        <a class="flex items-center justify-center text-on-surface-variant/50 hover:bg-primary-fixed hover:text-primary w-14 h-14 rounded-2xl group relative transition-all hover:scale-105" href="analytics.html">
+            <span class="material-symbols-outlined">leaderboard</span>
+            <span class="absolute right-full mr-4 bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-all translate-x-4 group-hover:translate-x-0">الإحصائيات</span>
+        </a>
+
+        <a class="flex items-center justify-center text-on-surface-variant/50 hover:bg-primary-fixed hover:text-primary w-14 h-14 rounded-2xl group relative transition-all hover:scale-105" href="my-receipts.html">
+            <span class="material-symbols-outlined">menu_book</span>
+            <span class="absolute right-full mr-4 bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-all translate-x-4 group-hover:translate-x-0">وصولاتي</span>
+        </a>
+
+        <a class="flex items-center justify-center bg-primary-fixed text-primary w-14 h-14 rounded-2xl group relative hover:scale-110 transition-all shadow-sm" href="#">
+            <span class="material-symbols-outlined icon-filled">settings</span>
+            <span class="absolute right-full mr-4 bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-all translate-x-4 group-hover:translate-x-0">الإعدادات</span>
+        </a>
+    </nav>
+
+    <script>
+        window.addEventListener('error', function(e) {
+            console.error('GLOBAL ERROR:', e.message, 'at', e.filename, ':', e.lineno);
+            // alert('خطأ في تحميل الصفحة: ' + e.message);
+        });
+    </script>
+
+    <script type="module">
+        console.log('--- Settings Module Trace: 1 ---');
+        import { supabase } from './lib/supabase.js';
+        
+        const adminApiCall = async (action, payload = {}) => {
+            const url = `/api/admin`;
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ action, ...payload })
+                });
+                
+                const data = await response.json().catch(() => ({}));
+                
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || `خطأ من الخادم ${response.status}`);
+                }
+                return data.data !== undefined ? data.data : data;
+            } catch (err) {
+                console.error(`Admin Server Call Failed:`, err);
+                throw err; // Propagate the actual error message
+            }
+        };
+
+        console.log('--- Settings Module Trace: 2 (Supabase Loaded) ---');
+
+        // Move these inside init or use safer selectors
+        let profileName, profileRole, adminSection, logoutBtn;
+
+        window.updateSyncUI = () => {
+            const queue = JSON.parse(localStorage.getItem('offlineReceiptsQueue') || '[]');
+            const icon = document.getElementById('syncIcon');
+            const iconContainer = document.getElementById('syncIconContainer');
+            const statusText = document.getElementById('syncStatusText');
+            const syncBtn = document.getElementById('syncNowBtn');
+            
+            if (queue.length > 0) {
+                icon.textContent = 'sync_problem';
+                iconContainer.className = 'w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-500';
+                statusText.textContent = `يوجد ${queue.length} وصولات غير مزامنة`;
+                statusText.className = 'text-[10px] text-orange-500 font-black';
+                syncBtn.disabled = false;
+            } else {
+                icon.textContent = 'cloud_done';
+                iconContainer.className = 'w-12 h-12 rounded-2xl bg-success/10 flex items-center justify-center text-success';
+                statusText.textContent = 'تمت مزامنة جميع الوصولات بنجاح';
+                statusText.className = 'text-[10px] text-success font-black';
+                syncBtn.disabled = true;
+            }
+        };
+
+        window.syncOfflineReceipts = async () => {
+            if (!navigator.onLine) {
+                alert('لا يوجد اتصال بالإنترنت. يرجى التأكد من الشبكة والمحاولة مجدداً.');
+                return;
+            }
+
+            const queue = JSON.parse(localStorage.getItem('offlineReceiptsQueue') || '[]');
+            if (queue.length === 0) return;
+
+            const syncBtn = document.getElementById('syncNowBtn');
+            const originalText = syncBtn.textContent;
+            syncBtn.disabled = true;
+            syncBtn.innerHTML = '<span class="animate-spin material-symbols-outlined text-[10px]">sync</span>';
+
+            let successfulSyncs = [];
+
+            try {
+                // First, fetch open books for the current user to handle range logic locally
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) throw new Error('يرجى تسجيل الدخول مجددا');
+                
+                const { data: books } = await supabase
+                    .from('books')
+                    .select('id, serial_number')
+                    .eq('ally_id', user.id);
+                
+                let openBooks = books || [];
+
+                for (let i = 0; i < queue.length; i++) {
+                    const item = queue[i];
+                    const rNum = item.receipt_number;
+                    
+                    // Same logic as new-receipt.html
+                    const foundBook = openBooks.find(b => {
+                        const start = parseInt(b.serial_number);
+                        return rNum >= start && rNum < start + 50;
+                    });
+
+                    let bookId = foundBook?.id;
+                    let bookSerial = foundBook?.serial_number || rNum.toString();
+                    
+                    if (!bookId) {
+                        const { data: newBook, error: bookError } = await supabase
+                            .from('books')
+                            .insert({ 
+                                serial_number: bookSerial, 
+                                book_name: `دفتر ${bookSerial}`,
+                                ally_id: user.id,
+                                status: 'open' 
+                            })
+                            .select()
+                            .single();
+                        if (bookError) throw bookError;
+                        bookId = newBook.id;
+                        openBooks.push({ id: bookId, serial_number: bookSerial }); // Update local cache
+                    }
+
+                    const { error: receiptError } = await supabase
+                        .from('receipts')
+                        .insert({
+                            book_id: bookId,
+                            ally_id: user.id,
+                            subscriber_name: item.subscriber_name,
+                            receipt_number: rNum,
+                            amount: parseInt(item.amount),
+                            month_year: item.month_year,
+                            receipt_date: item.receipt_date
+                        });
+
+                    if (receiptError) throw receiptError;
+                    successfulSyncs.push(i);
+                }
+
+                // If we get here without throwing, all were successfully synced
+                localStorage.setItem('offlineReceiptsQueue', JSON.stringify([]));
+                updateSyncUI();
+                alert(`تمت مزامنة ${successfulSyncs.length} وصولات بنجاح!`);
+
+            } catch (err) {
+                console.error('Sync error:', err);
+                // Remove successful syncs from queue so we don't duplicate on retry
+                const remainingQueue = queue.filter((_, index) => !successfulSyncs.includes(index));
+                localStorage.setItem('offlineReceiptsQueue', JSON.stringify(remainingQueue));
+                updateSyncUI();
+                alert('فشلت مزامنة بعض الوصولات. يرجى المحاولة لاحقاً. الخطأ: ' + err.message);
+            } finally {
+                syncBtn.innerHTML = originalText;
+                if (JSON.parse(localStorage.getItem('offlineReceiptsQueue') || '[]').length === 0) {
+                    syncBtn.disabled = true;
+                } else {
+                    syncBtn.disabled = false;
+                }
+            }
+        };
+
+        const init = async () => {
+            console.log('--- Settings Module Trace: 3 (Init Started) ---');
+            
+            try {
+                // Initialize elements via ID
+                profileName = document.getElementById('profileName');
+                profileRole = document.getElementById('profileRole');
+                adminSection = document.getElementById('adminSection');
+                logoutBtn = document.querySelector('a[href="index.html"]');
+
+                console.log('--- Settings Init: Elements Found ---');
+                
+                // 1. Session Check
+                console.log('Checking session...');
+                const { data: { user }, error: authErr } = await supabase.auth.getUser();
+                if (authErr || !user) {
+                    console.warn('No active session found, redirecting...', authErr);
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                console.log('User logged in:', user.id);
+                
+                updateSyncUI();
+
+                // 2. Load Profile
+                const { data: profile, error: profErr } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+
+                if (profErr) {
+                    console.error('Error fetching profile:', profErr);
+                } else if (profile) {
+                    console.log('Profile Role:', profile.role);
+                    if (profileName) profileName.textContent = profile.full_name;
+                    if (profileRole) profileRole.textContent = profile.role === 'admin' ? 'مدير النظام (الآدمن)' : 'حليف الدائرة الثامنة عشر';
+                    
+                    // Show/Hide Admin Section
+                    if (profile.role !== 'admin') {
+                        if (adminSection) adminSection.classList.add('hidden');
+                    } else {
+                        localStorage.setItem('userRole', 'admin');
+                        if (adminSection) adminSection.classList.remove('hidden');
+                    }
+                }
+
+                // 3. Logout
+                if (logoutBtn) {
+                    logoutBtn.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        await supabase.auth.signOut();
+                        localStorage.removeItem('userRole');
+                        window.location.href = 'index.html';
+                    });
+                }
+
+                // 4. Dark Mode
+                const darkModeToggle = document.getElementById('darkModeToggle');
+                if (darkModeToggle) {
+                    darkModeToggle.addEventListener('change', () => {
+                        document.body.classList.toggle('dark-mode');
+                    });
+                }
+
+                // 5. Attach Admin Listeners
+                const manageAlliesBtn = document.getElementById('manageAlliesBtn');
+                if (manageAlliesBtn) {
+                    console.log('Attaching manageAllies listener');
+                    manageAlliesBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        window.manageAllies();
+                    });
+                }
+
+                const distributeBookBtn = document.getElementById('distributeBookBtn');
+                if (distributeBookBtn) {
+                    distributeBookBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        window.openDistributeModal();
+                    });
+                }
+
+                // 6. Check for #distribute hash to auto-open modal
+                const handleHash = () => {
+                    if (window.location.hash === '#distribute') {
+                        // Small delay to ensure everything is ready
+                        setTimeout(() => {
+                            if (profile && profile.role === 'admin') {
+                                window.openDistributeModal();
+                                // Pre-fill current month for convenience
+                                const distMonth = document.getElementById('distributeMonth');
+                                if (distMonth && !distMonth.value) {
+                                    distMonth.value = new Date().toISOString().substring(0, 7);
+                                }
+                            }
+                        }, 500);
+                    }
+                };
+                
+                handleHash();
+                window.addEventListener('hashchange', handleHash);
+
+            } catch (err) {
+                console.error('Critical initialization error:', err);
+            }
+        };
+
+
+
+        // Run Init
+        init();
+
+        // Global function for toggle (still on window for dynamic HTML)
+        window.togglePass = (id) => {
+            const el = document.getElementById(`pass-${id}`);
+            const btn = event.target;
+            if (el.classList.contains('blur-[3px]')) {
+                el.classList.remove('blur-[3px]');
+                el.classList.remove('select-none');
+                btn.textContent = 'إخفاء';
+            } else {
+                el.classList.add('blur-[3px]');
+                el.classList.add('select-none');
+                btn.textContent = 'عرض';
+            }
+        };
+
+        // Ally Management Logic
+        window.manageAllies = async () => {
+            console.log('Opening Ally Management Modal');
+            const allyModal = document.getElementById('allyModal');
+            const allyList = document.getElementById('allyList');
+            
+            if (!allyModal || !allyList) {
+                console.error('Modal elements missing!', { allyModal, allyList });
+                return;
+            }
+
+            allyList.innerHTML = `
+                <div class="flex items-center justify-center p-8">
+                    <div class="w-8 h-8 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+                </div>
+            `;
+            allyModal.classList.remove('hidden');
+
+            try {
+                let { data: allies, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('role', 'ally')
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+
+                if (!allies || allies.length === 0) {
+                    allyList.innerHTML = '<div class="text-center py-12 opacity-40"><span class="material-symbols-outlined text-4xl mb-2 text-white">person_off</span><p class="text-xs text-white">لا يوجد حلفاء حالياً</p></div>';
+                    return;
+                }
+
+                allyList.innerHTML = allies.map(a => {
+                    const isDeactivated = (a.full_name || '').startsWith('[DEACTIVATED]');
+                    const displayName = (a.full_name || '').replace('[DEACTIVATED] ', '').replace('[DEACTIVATED]', '').trim();
+                    
+                    const escapedName = displayName.replace(/'/g, "\\'");
+                    
+                    return `
+                    <div class="p-4 bg-white/5 rounded-2xl border border-white/10 hover:border-white/20 transition-all group ${isDeactivated ? 'opacity-60 grayscale-[0.5]' : ''}">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl ${isDeactivated ? 'bg-gray-500/20 text-gray-400' : 'bg-orange-500/20 text-orange-400'} flex items-center justify-center font-black">
+                                    ${displayName.substring(0,1) || '?'}
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <p class="font-bold text-sm text-white">${displayName || 'بدون اسم'}</p>
+                                        ${isDeactivated ? '<span class="px-1.5 py-0.5 rounded-md bg-error/10 text-error text-[8px] font-black uppercase">موقوف</span>' : '<span class="px-1.5 py-0.5 rounded-md bg-green-500/10 text-green-500 text-[8px] font-black uppercase">نشط</span>'}
+                                    </div>
+                                    <p class="text-[10px] opacity-60 font-mono text-white/60">${a.email}</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-1">
+                                <button onclick="openResetModal('${a.id}', '${escapedName}')" class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all text-blue-400" title="تغيير كلمة المرور">
+                                    <span class="material-symbols-outlined text-sm">lock_reset</span>
+                                </button>
+                                <button onclick="toggleAllyStatus('${a.id}', '${escapedName}', ${isDeactivated})" class="w-8 h-8 rounded-lg ${isDeactivated ? 'bg-green-500/10 text-green-500 hover:bg-green-500/20' : 'bg-error/10 text-error hover:bg-error/20'} flex items-center justify-center transition-all" title="${isDeactivated ? 'تفعيل الحساب' : 'إيقاف الحساب'}">
+                                    <span class="material-symbols-outlined text-sm">${isDeactivated ? 'lock_open' : 'lock'}</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-black/20 rounded-xl border border-white/5">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-xs opacity-40 text-white">key</span>
+                                <span class="text-[10px] font-bold opacity-60 text-white">الرمز:</span>
+                                <span id="pass-${a.id}" class="text-[10px] font-mono blur-[3px] select-none transition-all duration-300 text-white">${a.raw_password || '******'}</span>
+                            </div>
+                            <button onclick="togglePass('${a.id}')" class="text-[9px] font-black text-orange-400 hover:underline">عرض</button>
+                        </div>
+                    </div>
+                `}).join('');
+            } catch (err) {
+                console.error('Error fetching allies:', err);
+                alert('حدث خطأ أثناء تحميل قائمة الحلفاء: ' + err.message);
+            }
+        };
+
+        window.closeAllyModal = () => {
+             document.getElementById('allyModal').classList.add('hidden');
+        };
+
+        window.openResetModal = (id, name) => {
+            document.getElementById('resetUserId').value = id;
+            document.getElementById('resetUserName').textContent = name;
+            document.getElementById('resetModal').classList.remove('hidden');
+        };
+
+        window.closeResetModal = () => {
+            document.getElementById('resetModal').classList.add('hidden');
+        };
+
+        window.showStatus = (title, message, isError = false) => {
+            const modal = document.getElementById('statusModal');
+            const icon = document.getElementById('statusIcon');
+            const titleEl = document.getElementById('statusTitle');
+            const msgEl = document.getElementById('statusMessage');
+            const container = document.getElementById('statusContainer');
+
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+
+            if (isError) {
+                icon.textContent = 'error';
+                container.classList.remove('bg-green-500/10', 'text-green-500');
+                container.classList.add('bg-error/10', 'text-error');
+                icon.classList.remove('text-green-500');
+                icon.classList.add('text-error');
+            } else {
+                icon.textContent = 'check_circle';
+                container.classList.remove('bg-error/10', 'text-error');
+                container.classList.add('bg-green-500/10', 'text-green-500');
+                icon.classList.remove('text-error');
+                icon.classList.add('text-green-500');
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        };
+
+        window.closeStatusModal = () => {
+            const modal = document.getElementById('statusModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        };
+
+        window.submitPasswordReset = async (e) => {
+            if (e) e.preventDefault();
+            const userId = document.getElementById('resetUserId').value;
+            const newPass = document.getElementById('newPassValue').value;
+            const btn = e ? e.target : event.target;
+            
+            if (!newPass || newPass.length < 6) return showStatus('خطأ في البيانات', 'كلمة المرور يجب أن تكون 6 رموز على الأقل', true);
+
+            try {
+                btn.disabled = true;
+                btn.textContent = 'جاري التغيير...';
+                
+                // 1. Update via Standalone Admin Server
+                await adminApiCall('reset-password', { userId, newPassword: newPass });
+                
+                closeResetModal();
+                showStatus('نجاح العملية', 'تم تغيير كلمة المرور بنجاح');
+                if (window.manageAllies) window.manageAllies(); 
+            } catch (err) {
+                console.error('Password reset error:', err);
+                showStatus('فشل تغيير كلمة المرور', err.message, true);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'حفظ التغيير';
+            }
+        };
+
+        window.closeConfirmModal = () => {
+            document.getElementById('confirmModal').classList.add('hidden');
+            document.getElementById('confirmModal').classList.remove('flex');
+        };
+
+        window.customConfirm = (title, message, isDestructive, onConfirm) => {
+            const modal = document.getElementById('confirmModal');
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmMessage').textContent = message;
+            
+            const btnYes = document.getElementById('confirmBtnYes');
+            const iconContainer = document.getElementById('confirmIconContainer');
+            const icon = document.getElementById('confirmIcon');
+
+            if (isDestructive) {
+                btnYes.className = 'flex-1 py-3 px-4 rounded-xl font-black text-sm transition-all shadow-md bg-[#d32f2f] text-white hover:bg-[#b71c1c]';
+                iconContainer.className = 'w-12 h-12 rounded-full flex items-center justify-center font-black bg-[#d32f2f]/10 text-[#d32f2f]';
+                icon.textContent = 'warning';
+            } else {
+                btnYes.className = 'flex-1 py-3 px-4 rounded-xl font-black text-sm transition-all shadow-md bg-[#2e7d32] text-white hover:bg-[#1b5e20]';
+                iconContainer.className = 'w-12 h-12 rounded-full flex items-center justify-center font-black bg-[#2e7d32]/10 text-[#2e7d32]';
+                icon.textContent = 'help';
+            }
+
+            btnYes.onclick = () => {
+                closeConfirmModal();
+                onConfirm();
+            };
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        };
+
+        window.toggleAllyStatus = (id, name, isCurrentlyDeactivated) => {
+            const actionText = isCurrentlyDeactivated ? 'تفعيل' : 'إيقاف';
+            const title = `${actionText} حساب الحليف`;
+            const message = `هل أنت متأكد من ${actionText} حساب (${name})؟`;
+            
+            customConfirm(title, message, !isCurrentlyDeactivated, async () => {
+                try {
+                    await adminApiCall('toggle-user-status', { userId: id });
+                    
+                    const statusText = isCurrentlyDeactivated ? 'تم تفعيل الحساب' : 'تم إيقاف الحساب';
+                    const statusDetail = isCurrentlyDeactivated 
+                        ? 'بإمكان الحليف الآن الدخول للتطبيق بشكل طبيعي.' 
+                        : 'لن يتمكن الحليف من الدخول للتطبيق حتى يتم إعادة تفعيل حسابه.';
+
+                    showStatus(statusText, statusDetail);
+                    if (window.manageAllies) window.manageAllies(); 
+                } catch (err) {
+                    console.error('Status toggle error:', err);
+                    showStatus('فشل تغيير الحالة', err.message, true);
+                }
+            });
+        };
+
+        window.submitAddAlly = async (e) => {
+            if (e) e.preventDefault();
+            const name = document.getElementById('newAllyName').value;
+            const email = document.getElementById('newAllyEmail').value;
+            const password = document.getElementById('newAllyPass').value;
+            const btn = e ? e.target : event.target;
+
+            if (!name || !email || !password) return showStatus('حقول ناقصة', 'يرجى ملء جميع الحقول المطلوبة', true);
+
+            btn.disabled = true;
+            const originalBtnContent = btn.innerHTML;
+            btn.innerHTML = '<div class="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto"></div>';
+
+            try {
+                // 1. Create via Standalone Admin Server
+                await adminApiCall('create-user', {
+                    name,
+                    email,
+                    password
+                });
+
+                showStatus('تمت الإضافة', 'تم إنشاء حساب الحليف الجديد بنجاح');
+                document.getElementById('newAllyName').value = '';
+                document.getElementById('newAllyEmail').value = '';
+                document.getElementById('newAllyPass').value = '';
+                if (window.manageAllies) window.manageAllies(); 
+            } catch (err) {
+                console.error('Add ally error:', err);
+                showStatus('فشل الإضافة', err.message, true);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalBtnContent;
+            }
+        };
+
+        // Book Distribution Logic
+        window.openDistributeModal = async () => {
+            const modal = document.getElementById('distributeModal');
+            const select = document.getElementById('distributeAllySelect');
+            
+            modal.classList.remove('hidden');
+            select.innerHTML = '<option value="">جاري تحميل القائمة...</option>';
+
+            try {
+                const { data: allies, error } = await supabase
+                    .from('profiles')
+                    .select('id, full_name')
+                    .eq('role', 'ally')
+                    .not('full_name', 'ilike', '[DEACTIVATED]%');
+                
+                if (error) throw error;
+                
+                select.innerHTML = '<option value="">اختر الحليف المسؤول...</option>' + 
+                    allies.map(a => `<option value="${a.id}">${a.full_name}</option>`).join('');
+            } catch (err) {
+                console.error('Error fetching allies for distribution:', err);
+                select.innerHTML = '<option value="">فشل تحميل الحلفاء</option>';
+            }
+        };
+
+        window.submitDistributeBook = async (e) => {
+            if (e) e.preventDefault();
+            const allyId = document.getElementById('distributeAllySelect').value;
+            const serialNumber = document.getElementById('distributeSerial').value;
+            const monthYear = document.getElementById('distributeMonth').value;
+            const btn = e.target;
+
+            if (!allyId || !serialNumber || !monthYear) {
+                return showStatus('حقول ناقصة', 'يرجى اختيار الحليف، رقم الدفتر، والشهر', true);
+            }
+
+            btn.disabled = true;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<div class="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto"></div>';
+
+            try {
+                // Check if book already exists (Duplicate Serial Check)
+                const { data: existing, error: checkError } = await supabase
+                    .from('books')
+                    .select('id')
+                    .eq('serial_number', serialNumber)
+                    .single();
+                
+                if (existing) {
+                    throw new Error('رقم هذا الدفتر مسجل مسبقاً في النظام!');
+                }
+
+                // Insert book
+                const { error: insertError } = await supabase
+                    .from('books')
+                    .insert({
+                        serial_number: serialNumber,
+                        book_name: `دفتر ${serialNumber}`,
+                        ally_id: allyId,
+                        month_year: monthYear,
+                        status: 'open',
+                        receipt_count: 0
+                    });
+
+                if (insertError) throw insertError;
+
+                document.getElementById('distributeModal').classList.add('hidden');
+                document.getElementById('distributeSerial').value = '';
+                showStatus('تم التوزيع', `تم توزيع الدفتر رقم (${serialNumber}) بنجاح.`);
+            } catch (err) {
+                console.error('Distribute error:', err);
+                showStatus('فشل عملية التوزيع', err.message, true);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        };
+
+        window.closeDistributeModal = () => {
+            document.getElementById('distributeModal').classList.add('hidden');
+        };
+    </script>
+
+    <!-- Ally Management Modal -->
+    <div id="allyModal" class="fixed inset-0 bg-primary/60 backdrop-blur-md z-[110] flex items-center justify-center hidden p-4">
+        <div class="bg-primary-container w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh] border border-white/10">
+            <div class="p-8 border-b border-white/10 flex justify-between items-center bg-white/5">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-orange-400">group_add</span>
+                    <h3 class="font-black text-white text-xl">إدارة حسابات الحلفاء</h3>
+                </div>
+                <button onclick="closeAllyModal()" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-error transition-all hover:rotate-90">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            
+            <div class="p-8 space-y-8 overflow-y-auto custom-scrollbar">
+                <!-- Add New Ally Form -->
+                <div class="bg-white/5 rounded-3xl p-6 border border-white/10 space-y-4">
+                    <p class="text-[10px] font-black text-orange-400 uppercase tracking-widest flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-orange-400"></span>
+                        إنشاء حساب حليف جديد
+                    </p>
+                    <div class="grid gap-3">
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">person</span>
+                            <input type="text" id="newAllyName" placeholder="الاسم الكامل للحليف" class="w-full bg-white/5 border-white/10 text-white rounded-2xl py-4 pr-12 pl-4 focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all text-sm font-bold placeholder:text-white/20">
+                        </div>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">alternate_email</span>
+                            <input type="email" id="newAllyEmail" placeholder="البريد الإلكتروني" class="w-full bg-white/5 border-white/10 text-white rounded-2xl py-4 pr-12 pl-4 focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all text-sm font-bold placeholder:text-white/20">
+                        </div>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">lock</span>
+                            <input type="text" id="newAllyPass" placeholder="كلمة المرور الافتراضية" class="w-full bg-white/5 border-white/10 text-white rounded-2xl py-4 pr-12 pl-4 focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all text-sm font-bold placeholder:text-white/20">
+                        </div>
+                    </div>
+                    <button onclick="submitAddAlly(event)" class="w-full bg-orange-500 text-white font-black py-4 rounded-2xl shadow-lg shadow-orange-500/20 hover:scale-[1.02] active:scale-95 transition-all text-sm flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-sm">person_add</span>
+                        إضافة الآن كحليف
+                    </button>
+                </div>
+
+                <!-- Allies List Section -->
+                <div class="space-y-4">
+                    <p class="text-[10px] font-black text-white/40 uppercase tracking-widest mr-2">قائمة الحلفاء الحاليين</p>
+                    <div class="space-y-3" id="allyList">
+                        <!-- Dynamic List -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Password Reset Modal -->
+    <div id="resetModal" class="fixed inset-0 bg-primary/40 backdrop-blur-sm z-[120] flex items-center justify-center hidden p-6">
+        <div class="bg-white w-full max-w-sm rounded-[2rem] overflow-hidden shadow-2xl p-6 space-y-4">
+            <h4 class="font-black text-primary flex items-center gap-2">
+                <span class="material-symbols-outlined">lock_reset</span>
+                كلمة مرور جديدة لـ: <span id="resetUserName" class="text-on-surface-variant">---</span>
+            </h4>
+            <input type="hidden" id="resetUserId">
+            <input type="password" id="newPassValue" placeholder="أدخل كلمة المرور الجديدة" class="w-full bg-surface-container-low border-transparent rounded-xl py-3 px-4 focus:ring-2 focus:ring-primary/20">
+            <div class="flex gap-2">
+                <button onclick="submitPasswordReset(event)" class="flex-grow bg-primary text-white font-black py-3 rounded-xl transition-all active:scale-95">حفظ التغيير</button>
+                <button onclick="closeResetModal()" class="px-6 bg-surface-container-high font-bold py-3 rounded-xl">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Book Distribution Modal -->
+    <div id="distributeModal" class="fixed inset-0 bg-primary/60 backdrop-blur-md z-[110] flex items-center justify-center hidden p-4">
+        <div class="bg-primary-container w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col border border-white/10">
+            <div class="p-8 border-b border-white/10 flex justify-between items-center bg-white/5">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-orange-400">library_add</span>
+                    <h3 class="font-black text-white text-xl">توزيع الدفاتر الشهري</h3>
+                </div>
+                <button onclick="closeDistributeModal()" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-error transition-all hover:rotate-90">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            
+            <div class="p-8 space-y-6">
+                <div class="space-y-4">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-white/40 uppercase tracking-widest mr-2">الحليف المسؤول</label>
+                        <select id="distributeAllySelect" class="w-full bg-white/5 border-white/10 text-white rounded-2xl py-4 px-4 focus:ring-2 focus:ring-orange-500/50 transition-all text-sm font-bold">
+                            <!-- Dynamic List -->
+                        </select>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-white/40 uppercase tracking-widest mr-2">رقم الدفتر (أول وصل)</label>
+                        <input type="number" id="distributeSerial" placeholder="مثلاً: 1251" class="w-full bg-white/5 border-white/10 text-white rounded-2xl py-4 px-4 focus:ring-2 focus:ring-orange-500/50 transition-all text-sm font-bold placeholder:text-white/20">
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-white/40 uppercase tracking-widest mr-2">الشهر المخصص</label>
+                        <input type="month" id="distributeMonth" class="w-full bg-white/5 border-white/10 text-white rounded-2xl py-4 px-4 focus:ring-2 focus:ring-orange-500/50 transition-all text-sm font-bold">
+                    </div>
+                </div>
+
+                <div class="bg-orange-500/10 border border-orange-500/20 p-4 rounded-2xl">
+                    <p class="text-[10px] text-orange-400 font-bold leading-relaxed">
+                        <span class="material-symbols-outlined text-xs align-middle ml-1">info</span>
+                        ملاحظة: سيتم قفل الدفتر تلقائياً بعد بلوغ 50 وصلاً. الترقيم سيبدأ من الرقم المدخل أعلاه.
+                    </p>
+                </div>
+
+                <button onclick="submitDistributeBook(event)" class="w-full bg-orange-500 text-white font-black py-4 rounded-2xl shadow-lg shadow-orange-500/20 hover:scale-[1.02] active:scale-95 transition-all text-sm flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-sm">send</span>
+                    تثبيت التوزيع الآن
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Notification Modal (Universal) -->
+    <div id="statusModal" class="fixed inset-0 bg-primary/60 backdrop-blur-md z-[200] flex items-center justify-center hidden p-6">
+        <div class="bg-white dark:bg-[#2d3133] w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl p-8 space-y-6 animate-modal-pop border border-white/10 text-center">
+            <div id="statusContainer" class="w-20 h-20 rounded-3xl mx-auto flex items-center justify-center">
+                <span id="statusIcon" class="material-symbols-outlined text-4xl"></span>
+            </div>
+            
+            <div class="space-y-2">
+                <h3 id="statusTitle" class="text-xl font-black text-primary dark:text-white"></h3>
+                <p id="statusMessage" class="text-sm font-medium text-on-surface-variant dark:text-white/60 leading-relaxed"></p>
+            </div>
+
+            <button onclick="closeStatusModal()" class="w-full bg-primary text-white font-black py-4 rounded-2xl shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all text-sm">
+                حسناً، فهمت
+            </button>
+        </div>
+    </div>
+</body>
+</html>
