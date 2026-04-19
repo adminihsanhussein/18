@@ -100,6 +100,31 @@ input, select, textarea {
     overflow: hidden;
 }
 
+/* Premium Logo Animations */
+@keyframes logoEntry {
+    0% { transform: scale(0.5) rotate(-10deg); opacity: 0; filter: blur(10px); }
+    100% { transform: scale(1) rotate(0); opacity: 1; filter: blur(0); }
+}
+
+@keyframes logoFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+.app-logo {
+    animation: logoEntry 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.app-logo:hover {
+    transform: scale(1.1) rotate(3deg);
+    filter: drop-shadow(0 15px 30px rgba(0, 86, 179, 0.2));
+}
+
+.logo-floating {
+    animation: logoFloat 4s ease-in-out infinite;
+}
+
 /* Hide Android scrollbars */
 ::-webkit-scrollbar {
     display: none;
