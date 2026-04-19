@@ -154,15 +154,6 @@
             }, 4000);
         }
 
-        // Init Session & Books
-        document.addEventListener('DOMContentLoaded', async () => {
-            const today = new Date().toISOString().slice(0, 10);
-            document.getElementById('receiptDate').value = today;
-            
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) { window.location.href = 'index.html'; return; }
-            currentUser = user;
-
         async function loadBooks() {
             const { data: books, error } = await supabase
                 .from('books')
@@ -182,6 +173,7 @@
             }
         }
 
+        // Init Session & Books
         document.addEventListener('DOMContentLoaded', async () => {
             const today = new Date().toISOString().slice(0, 10);
             document.getElementById('receiptDate').value = today;
