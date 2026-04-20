@@ -320,86 +320,52 @@
             const syncBtn = document.getElementById('syncNowBtn');
             const originalText = syncBtn.textContent;
             syncBtn.disabled = true;
-            syncBtn.innerHTML = '<span class="animate-spin material-symbols-outlined text-[10px]">sync</span>';
 
             let successfulSyncs = [];
 
             try {
-                // First, fetch open books for the current user to handle range logic locally
                 const { data: { user } } = await supabase.auth.getUser();
-                if (!user) throw new Error('يرجى تسجيل الدخول مجددا');
-                
-                const { data: books } = await supabase
-                    .from('books')
-                    .select('id, serial_number')
-                    .eq('ally_id', user.id);
-                
-                let openBooks = books || [];
+                if (!user) throw new Error('يرجى تسجيل الدخول مجدداً');
 
                 for (let i = 0; i < queue.length; i++) {
                     const item = queue[i];
-                    const rNum = item.receipt_number;
+                    syncBtn.innerHTML = `<span class="animate-spin material-symbols-outlined text-[10px] ml-1">sync</span> جاري الرفع (${i+1}/${queue.length})`;
                     
-                    // Same logic as new-receipt.html
-                    const foundBook = openBooks.find(b => {
-                        const start = parseInt(b.serial_number);
-                        return rNum >= start && rNum < start + 50;
-                    });
-
-                    let bookId = foundBook?.id;
-                    let bookSerial = foundBook?.serial_number || rNum.toString();
-                    
-                    if (!bookId) {
-                        const { data: newBook, error: bookError } = await supabase
-                            .from('books')
-                            .insert({ 
-                                serial_number: bookSerial, 
-                                book_name: `دفتر ${bookSerial}`,
-                                ally_id: user.id,
-                                status: 'open' 
-                            })
-                            .select()
-                            .single();
-                        if (bookError) throw bookError;
-                        bookId = newBook.id;
-                        openBooks.push({ id: bookId, serial_number: bookSerial }); // Update local cache
-                    }
-
                     const { error: receiptError } = await supabase
                         .from('receipts')
                         .insert({
-                            book_id: bookId,
+                            book_id: item.book_id,
                             ally_id: user.id,
                             subscriber_name: item.subscriber_name,
-                            receipt_number: rNum,
+                            receipt_number: item.receipt_number,
                             amount: parseInt(item.amount),
                             month_year: item.month_year,
                             receipt_date: item.receipt_date
                         });
 
-                    if (receiptError) throw receiptError;
+                    if (receiptError) {
+                        console.error('Receipt Sync Error:', receiptError);
+                        // If it's a duplicate or something specific, we might decide to skip or alert
+                        // For now we stop on first real error to avoid data mess
+                        throw new Error(`خطأ في الوصل #${item.receipt_number}: ${receiptError.message}`);
+                    }
                     successfulSyncs.push(i);
                 }
 
-                // If we get here without throwing, all were successfully synced
                 localStorage.setItem('offlineReceiptsQueue', JSON.stringify([]));
                 updateSyncUI();
                 alert(`تمت مزامنة ${successfulSyncs.length} وصولات بنجاح!`);
 
             } catch (err) {
-                console.error('Sync error:', err);
-                // Remove successful syncs from queue so we don't duplicate on retry
+                console.error('Sync process stopped:', err);
+                // Remove successful syncs from queue
                 const remainingQueue = queue.filter((_, index) => !successfulSyncs.includes(index));
                 localStorage.setItem('offlineReceiptsQueue', JSON.stringify(remainingQueue));
                 updateSyncUI();
-                alert('فشلت مزامنة بعض الوصولات. يرجى المحاولة لاحقاً. الخطأ: ' + err.message);
+                alert('توقفت المزامنة بسبب خطأ: ' + err.message);
             } finally {
                 syncBtn.innerHTML = originalText;
-                if (JSON.parse(localStorage.getItem('offlineReceiptsQueue') || '[]').length === 0) {
-                    syncBtn.disabled = true;
-                } else {
-                    syncBtn.disabled = false;
-                }
+                updateSyncUI();
             }
         };
 

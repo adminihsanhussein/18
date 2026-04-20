@@ -89,6 +89,12 @@
     <script type="module">
         import { supabase } from './lib/supabase.js';
 
+        // Auto-login check
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            window.location.href = 'dashboard.html';
+        }
+
         const form = document.querySelector('#loginForm');
         const togglePassword = document.querySelector('#togglePassword');
         const password = document.querySelector('#password');

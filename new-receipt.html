@@ -239,6 +239,7 @@
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = e.target.querySelector('button[type="submit"]');
+            const originalBtnContent = btn.innerHTML;
             
             const rNum = parseInt(receiptNumberInput.value);
             if (!bookSelect.value) { alert('اختر الدفتر أولاً'); return; }
@@ -246,40 +247,71 @@
             btn.disabled = true;
             btn.innerHTML = '<span class="animate-spin material-symbols-outlined">sync</span>';
             
+            const receiptData = {
+                book_id: bookSelect.value,
+                ally_id: currentUser.id,
+                subscriber_name: subscriberNameInput.value,
+                receipt_number: rNum,
+                amount: parseInt(amountInput.value),
+                month_year: bookSelect.selectedOptions[0].getAttribute('data-month') || new Date().toISOString().substring(0, 7),
+                receipt_date: document.getElementById('receiptDate').value
+            };
+
             try {
+                if (!navigator.onLine) {
+                    throw new Error('Offline');
+                }
+
                 const { error } = await supabase
                     .from('receipts')
-                    .insert({
-                        book_id: bookSelect.value,
-                        ally_id: currentUser.id,
-                        subscriber_name: subscriberNameInput.value,
-                        receipt_number: rNum,
-                        amount: parseInt(amountInput.value),
-                        month_year: bookSelect.selectedOptions[0].getAttribute('data-month') || new Date().toISOString().substring(0, 7),
-                        receipt_date: document.getElementById('receiptDate').value
-                    });
+                    .insert(receiptData);
 
                 if (error) throw error;
                 
                 await notify('تم تسجيل الوصل', `تم حفظ وصل بقيمة ${parseInt(amountInput.value).toLocaleString()} د.ع للمساهم ${subscriberNameInput.value}`, { native: true, toast: true, type: 'success' });
                 
-                // Optimized Reset instead of Refresh
-                form.reset();
-                document.getElementById('receiptDate').value = new Date().toISOString().slice(0, 10);
-                document.querySelectorAll('.preset-btn').forEach(b => b.classList.replace('bg-[#0056b3]', 'bg-[#f8faff]'));
-                document.querySelectorAll('.preset-btn').forEach(b => b.classList.replace('text-white', 'text-[#0056b3]'));
-                
-                // Trigger serial number update
-                bookSelect.dispatchEvent(new Event('change'));
-
+                resetForm();
             } catch (err) {
                 console.error(err);
-                const msg = err.message === 'Failed to fetch' ? 'لا يوجد اتصال بالانترنت' : 'حدث خطأ في الرفع';
-                await notify('خطأ في العملية', msg, { native: false, toast: true, type: 'error' });
+                if (err.message === 'Offline' || err.message === 'Failed to fetch') {
+                    // Save to offline queue
+                    const queue = JSON.parse(localStorage.getItem('offlineReceiptsQueue') || '[]');
+                    queue.push(receiptData);
+                    localStorage.setItem('offlineReceiptsQueue', JSON.stringify(queue));
+                    
+                    await notify('حفظ محلي (بدون إنترنت)', `تم حفظ الوصل محلياً وسيرفع تلقائياً عند توفر الإنترنت.`, { native: true, toast: true, type: 'warning' });
+                    
+                    // Increment number locally for next entry
+                    const nextNum = rNum + 1;
+                    receiptNumberInput.value = nextNum;
+                    headerBookBadge.textContent = `الوصل القادم: #${nextNum}`;
+                    
+                    resetForm(true); // reset but keep the incremented number
+                } else {
+                    await notify('خطأ في العملية', err.message, { native: false, toast: true, type: 'error' });
+                }
             } finally {
                 btn.disabled = false;
+                btn.innerHTML = originalBtnContent;
             }
         });
+
+        function resetForm(keepNextNumber = false) {
+            const currentNum = receiptNumberInput.value;
+            form.reset();
+            document.getElementById('receiptDate').value = new Date().toISOString().slice(0, 10);
+            document.querySelectorAll('.preset-btn').forEach(b => {
+                b.classList.remove('bg-[#0056b3]', 'text-white');
+                b.classList.add('bg-[#f8faff]', 'text-[#0056b3]');
+            });
+            
+            if (keepNextNumber) {
+                receiptNumberInput.value = currentNum;
+            } else {
+                // Trigger serial number update from DB if online
+                bookSelect.dispatchEvent(new Event('change'));
+            }
+        }
     </script>
 </body>
 </html>

@@ -269,14 +269,26 @@
         // simple fade-in and role check
         document.addEventListener('DOMContentLoaded', async () => {
             // 0. Check offline queue
-            const queue = JSON.parse(localStorage.getItem('offlineReceiptsQueue') || '[]');
-            if (queue.length > 0) {
+            function checkOfflineQueue() {
+                const queue = JSON.parse(localStorage.getItem('offlineReceiptsQueue') || '[]');
                 const banner = document.getElementById('offlineWarningBanner');
-                if (banner) {
-                    banner.classList.remove('hidden');
-                    document.getElementById('offlineWarningText').textContent = `لديك (${queue.length}) وصولات محفوظة في جهازك تنتظر المزامنة.`;
+                if (queue.length > 0) {
+                    if (banner) {
+                        banner.classList.remove('hidden');
+                        document.getElementById('offlineWarningText').textContent = `لديك (${queue.length}) وصولات محفوظة في جهازك تنتظر المزامنة.`;
+                    }
+                } else {
+                    if (banner) banner.classList.add('hidden');
                 }
             }
+            
+            checkOfflineQueue();
+
+            // Auto-refresh when coming back online
+            window.addEventListener('online', () => {
+                checkOfflineQueue();
+                showToast('متصل الآن', 'تم استعادة الاتصال بالإنترنت. يمكنك مزامنة البيانات الآن.', 'success');
+            });
 
             // 1. Session Check
             const { data: { user } } = await supabase.auth.getUser();
