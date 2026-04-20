@@ -168,3 +168,34 @@ CREATE POLICY "Users can insert notifications for themselves" ON notifications F
 -- Enable Realtime for notifications
 -- Note: This requires running as a superuser/on the dashboard, but adding here for completeness.
 ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
+
+-- Function to notify Admins when a new receipt is inserted
+CREATE OR REPLACE FUNCTION public.notify_admins_on_new_receipt()
+RETURNS TRIGGER AS $$
+DECLARE
+    admin_id UUID;
+    ally_name TEXT;
+BEGIN
+    -- Get the name of the ally who added the receipt
+    SELECT full_name INTO ally_name FROM public.profiles WHERE id = NEW.ally_id;
+    
+    -- Loop through all admins and insert a notification for each
+    FOR admin_id IN (SELECT id FROM public.profiles WHERE role = 'admin') LOOP
+        INSERT INTO public.notifications (user_id, title, message, type)
+        VALUES (
+            admin_id, 
+            'وصل جديد مضاف', 
+            'قام ' || COALESCE(ally_name, 'حليف') || ' بإضافة وصل جديد بقيمة ' || NEW.amount || ' د.ع لمساهم: ' || NEW.subscriber_name,
+            'receipt_added'
+        );
+    END LOOP;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger for receipts table
+DROP TRIGGER IF EXISTS trg_notify_admin_on_receipt ON receipts;
+CREATE TRIGGER trg_notify_admin_on_receipt
+AFTER INSERT ON receipts
+FOR EACH ROW EXECUTE FUNCTION public.notify_admins_on_new_receipt();
