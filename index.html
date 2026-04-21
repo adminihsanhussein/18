@@ -11,6 +11,17 @@
 </head>
 <body class="bg-[#f8faff] text-[#1a1c1e] flex flex-col items-center justify-center p-6 antialiased overflow-hidden">
     
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center transition-opacity duration-700">
+        <div class="animate-bounce-in flex flex-col items-center">
+            <img src="assets/logo.png" class="w-64 h-64 object-contain" alt="Logo">
+            <div class="mt-4 text-center">
+                <h2 class="text-3xl font-black text-[#0056b3] tracking-tighter">نظام المساهمات الرقمي</h2>
+                <p class="text-sm font-bold text-gray-400 mt-2">البنيان المرصوص - الدائرة الثامنة عشر</p>
+            </div>
+        </div>
+    </div>
+    
     <!-- Premium Backdrop -->
     <div class="fixed inset-0 -z-10 bg-gradient-to-br from-[#f8faff] via-[#eef2f8] to-[#e4e9f2]">
         <div class="absolute top-0 right-0 w-full h-full opacity-20 pointer-events-none" style="background-image: radial-gradient(circle at 80% 20%, #0056b3 0%, transparent 40%);"></div>
@@ -89,7 +100,17 @@
     <script type="module">
         import { supabase } from './lib/supabase.js';
 
-        // Auto-login check
+        // Splash screen and Auto-login check
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const splash = document.getElementById('splash-screen');
+                if (splash) {
+                    splash.style.opacity = '0';
+                    setTimeout(() => splash.remove(), 700);
+                }
+            }, 2500);
+        });
+
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
             window.location.href = 'dashboard.html';

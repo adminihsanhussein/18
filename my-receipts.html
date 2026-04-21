@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&amp;family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -50,6 +52,80 @@
             background-color: #d5e3ff;
             color: #001e40;
         }
+        /* Report Styling for PDF and Print */
+        #printableReport { 
+            direction: rtl;
+            font-family: 'Tajawal', sans-serif;
+            color: black;
+            background: white !important;
+            width: 210mm;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+        .pdf-page {
+            width: 210mm;
+            height: 296.5mm; 
+            padding: 12mm 15mm; 
+            box-sizing: border-box;
+            background: white;
+            page-break-after: always;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .pdf-page:last-child { page-break-after: auto; }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+        }
+        .report-table th, .report-table td {
+            border: 1.2px solid #000 !important;
+            padding: 0 4px;
+            height: 8.4mm;
+            text-align: center;
+            font-weight: 700;
+            font-size: 11px;
+        }
+        .report-table th {
+            background-color: #f2f2f2 !important;
+            -webkit-print-color-adjust: exact;
+        }
+        .report-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .report-logo {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            margin-bottom: 5px;
+        }
+        .report-meta {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .report-meta-side {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            font-weight: 900;
+            font-size: 13px;
+        }
+
+        @media print {
+            @page { size: A4; margin: 0; }
+            body { background: white !important; font-size: 11px; margin: 0; padding: 0; }
+            .print\:hidden { display: none !important; }
+            .print\:block { display: block !important; }
+            #printableReport { display: block !important; }
+        }
     </style>
 </head>
 <body class="bg-background text-on-background min-h-screen flex flex-col font-body pb-32 md:pb-0">
@@ -70,6 +146,8 @@
     </header>
 
     <main class="max-w-7xl mx-auto w-full p-6 space-y-6">
+        <!-- Printable Report Container (Hidden on screen) -->
+        <div id="printableReport" class="hidden"></div>
 
         <!-- Search & Filters -->
         <section class="bg-surface-container-lowest rounded-3xl p-6 shadow-xl shadow-primary/5 border border-white/40">
@@ -99,6 +177,18 @@
                                 <span class="material-symbols-outlined text-primary text-sm">calendar_month</span>
                                 <span id="receiptsMonthLabel">جميع الأشهر</span>
                             </div>
+                        </button>
+                    </div>
+
+                    <!-- Export Actions -->
+                    <div class="flex gap-2">
+                        <button onclick="window.generateHighFidelityExcel()" class="bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20 active:scale-95">
+                            <span class="material-symbols-outlined icon-filled">table_view</span>
+                            <span class="hidden sm:inline">تصدير Excel</span>
+                        </button>
+                        <button onclick="window.generateHighFidelityPDF()" class="bg-primary hover:bg-primary-container text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-95">
+                            <span class="material-symbols-outlined icon-filled">picture_as_pdf</span>
+                            <span class="hidden sm:inline">تحميل PDF</span>
                         </button>
                     </div>
 
@@ -405,6 +495,7 @@
             };
 
             const populateTable = (books) => {
+                window.allBooksData = books; // Store for export
                 const tbody = document.querySelector('tbody');
                 tbody.innerHTML = books.map(b => `
                     <tr class="hover:bg-primary/5 transition-all group">
@@ -548,6 +639,211 @@
                     el.style.transform = 'translateY(0)';
                 }, i * 40);
             });
+
+            // --- Export Functions ---
+            window.generateHighFidelityPDF = () => {
+                const books = window.allBooksData;
+                if (!books || books.length === 0) return alert('لا توجد بيانات لطباعتها');
+
+                const element = document.getElementById('printableReport');
+                element.innerHTML = ''; // Start Fresh
+                
+                const totalAmount = books.reduce((sum, b) => sum + b.total_amount, 0);
+                const totalReceipts = books.reduce((sum, b) => sum + b.receipt_count, 0);
+                const now = new Date();
+                const yearStr = now.toLocaleDateString('ar-EG', { year: 'numeric' });
+                const dateStr = now.toLocaleDateString('ar-EG');
+
+                // Standardizing to high-fidelity 50-field format (25 rows per page, minimum 2 pages)
+                const rowsPerPage = 25;
+                const totalPages = Math.max(2, Math.ceil(books.length / rowsPerPage));
+
+                for (let p = 0; p < totalPages; p++) {
+                    const page = document.createElement('div');
+                    page.className = 'pdf-page';
+                    
+                    page.innerHTML = `
+                        <div class="report-header">
+                            <img src="assets/logo.jpg" class="report-logo" alt="Logo">
+                            <div class="report-meta">
+                                <div class="report-meta-side" style="text-align: right;">
+                                    <div>مجموع المبالغ : ${p === 0 ? totalAmount.toLocaleString() : '-'}</div>
+                                    <div>مجموع الوصولات : ${p === 0 ? totalReceipts.toLocaleString() : '-'}</div>
+                                </div>
+                                <div class="report-meta-side" style="text-align: left;">
+                                    <div>السنة : ${yearStr}</div>
+                                    <div>التاريخ : ${dateStr}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">ت</th>
+                                    <th>رقم الدفتر</th>
+                                    <th style="width: 120px;">عدد الوصولات</th>
+                                    <th style="width: 150px;">المبلغ</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    `;
+
+                    const tbody = page.querySelector('tbody');
+                    
+                    for (let i = 0; i < rowsPerPage; i++) {
+                        const globalIdx = (p * rowsPerPage) + i;
+                        const b = books[globalIdx];
+                        
+                        if (b) {
+                            tbody.innerHTML += `
+                                <tr>
+                                    <td>${globalIdx + 1}</td>
+                                    <td>#${b.serial_number}</td>
+                                    <td>${b.receipt_count}</td>
+                                    <td>${b.total_amount.toLocaleString()}</td>
+                                </tr>
+                            `;
+                        } else {
+                            tbody.innerHTML += `
+                                <tr>
+                                    <td>${globalIdx + 1}</td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                            `;
+                        }
+                    }
+
+                    element.appendChild(page);
+                }
+
+                // Generate
+                element.classList.remove('hidden');
+                
+                const opt = {
+                    margin: 0,
+                    filename: `تقرير_الدفاتر_${dateStr}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 3, useCORS: true, letterRendering: true },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak: { mode: 'css', after: '.pdf-page' }
+                };
+
+                html2pdf().set(opt).from(element).save().then(() => {
+                    element.classList.add('hidden');
+                });
+            };
+
+            window.generateHighFidelityExcel = async () => {
+                const books = window.allBooksData;
+                if (!books || books.length === 0) return alert('لا توجد بيانات لتصديرها');
+
+                const workbook = new ExcelJS.Workbook();
+                const worksheet = workbook.addWorksheet('تقرير الدفاتر', {
+                    views: [{ rightToLeft: true }],
+                    pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1 }
+                });
+
+                worksheet.getColumn(1).width = 10;
+                worksheet.getColumn(2).width = 30;
+                worksheet.getColumn(3).width = 25;
+                worksheet.getColumn(4).width = 25;
+
+                let imageId = null;
+                try {
+                    const response = await fetch('assets/logo.jpg');
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        const base64 = await new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                            reader.readAsDataURL(blob);
+                        });
+                        imageId = workbook.addImage({ base64: base64, extension: 'png' });
+                    }
+                } catch (e) { console.warn('Logo load fail:', e); }
+
+                const totalAmount = books.reduce((sum, b) => sum + b.total_amount, 0);
+                const totalReceipts = books.reduce((sum, b) => sum + b.receipt_count, 0);
+                const dateStr = new Date().toLocaleDateString('ar-EG');
+                const yearStr = new Date().getFullYear();
+
+                // Standardizing to high-fidelity 50-field format (25 rows per page, minimum 2 pages)
+                const rowsPerPage = 25;
+                const totalPages = Math.max(2, Math.ceil(books.length / rowsPerPage));
+
+                for (let p = 0; p < totalPages; p++) {
+                    const startRowNo = worksheet.lastRow ? worksheet.lastRow.number + 1 : 1;
+                    
+                    worksheet.addRow([]); worksheet.addRow([]); worksheet.addRow([]);
+                    if (imageId !== null) {
+                        worksheet.addImage(imageId, {
+                            tl: { col: 1.5, row: startRowNo - 1 },
+                            ext: { width: 85, height: 85 }
+                        });
+                    }
+
+                    if (p === 0) {
+                        const meta1 = worksheet.addRow([`مجموع المبالغ : ${totalAmount.toLocaleString()}`, '', '', `التاريخ : ${dateStr}`]);
+                        meta1.height = 30;
+                        const meta2 = worksheet.addRow([`مجموع الوصولات : ${totalReceipts.toLocaleString()}`, '', '', `السنة : ${yearStr}`]);
+                        meta2.height = 30;
+
+                        [meta1, meta2].forEach(row => {
+                            row.eachCell(cell => {
+                                cell.font = { bold: true, size: 12 };
+                                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                            });
+                        });
+                        worksheet.mergeCells(`A${meta1.number}:B${meta1.number}`);
+                        worksheet.mergeCells(`D${meta1.number}:E${meta1.number}`);
+                        worksheet.mergeCells(`A${meta2.number}:B${meta2.number}`);
+                        worksheet.mergeCells(`D${meta2.number}:E${meta2.number}`);
+                        worksheet.addRow([]);
+                    } else {
+                        worksheet.addRow([]); worksheet.addRow([]); worksheet.addRow([]);
+                    }
+
+                    const header = worksheet.addRow(['ت', 'رقم الدفتر', 'عدد الوصولات', 'المبلغ']);
+                    header.height = 30;
+                    header.eachCell(cell => {
+                        cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+                        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                        cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF001E40' } };
+                    });
+
+                    for (let i = 0; i < rowsPerPage; i++) {
+                        const idx = (p * rowsPerPage) + i;
+                        const b = books[idx];
+                        let rowData = [ idx + 1, '', '', '' ];
+                        if (b) {
+                            rowData = [ idx + 1, `#${b.serial_number}`, b.receipt_count, b.total_amount ];
+                        }
+                        const row = worksheet.addRow(rowData);
+                        row.height = 23;
+                        row.eachCell(cell => {
+                            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                            cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+                        });
+                    }
+
+                    if (p < totalPages - 1) {
+                        worksheet.getRow(worksheet.lastRow.number).addPageBreak();
+                    }
+                }
+
+                const buffer = await workbook.xlsx.writeBuffer();
+                const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `تقرير_الدفاتر_${new Date().toLocaleDateString()}.xlsx`;
+                a.click();
+            };
         });
     </script>
     <!-- Delete Confirmation Modal -->
