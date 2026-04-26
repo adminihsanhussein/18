@@ -142,7 +142,8 @@ export default defineConfig(({ mode }) => {
           settings: 'settings.html',
           'new-receipt': 'new-receipt.html',
           'book-details': 'book-details.html',
-          records: 'records.html'
+          records: 'records.html',
+          'my-receipts': 'my-receipts.html'
         }
       }
     },
