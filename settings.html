@@ -138,7 +138,19 @@
                     </div>
                     <span class="material-symbols-outlined text-on-surface-variant/40">chevron_left</span>
                 </button>
-                <button class="w-full p-5 bg-white rounded-2xl flex items-center justify-between shadow-sm hover:shadow-md transition-all group">
+                <div class="w-full p-5 bg-white rounded-2xl shadow-sm border border-orange-500/20">
+                    <div class="flex items-center gap-4 mb-3">
+                        <span class="material-symbols-outlined text-orange-500">key</span>
+                        <div class="flex-1">
+                            <span class="text-sm font-bold text-primary block">مفتاح الإدارة (Service Role)</span>
+                            <span class="text-[10px] text-on-surface-variant font-bold">مطلوب لعمل الصلاحيات في الرابط العام</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="password" id="serviceRoleInput" placeholder="الصق المفتاح السري هنا..." class="flex-1 bg-surface-container-highest border-none rounded-xl text-xs px-3 py-2 focus:ring-2 focus:ring-primary/20 transition-all font-mono">
+                        <button id="saveServiceKeyBtn" class="bg-primary text-white px-4 py-2 rounded-xl text-xs font-black hover:scale-105 transition-all">حفظ</button>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -258,26 +270,86 @@
         import { supabase } from './lib/supabase.js';
         import { notify } from './lib/notifications.js';
         
+        const SUPABASE_URL = 'https://raiwctnevoqjjhgngays.supabase.co';
+
         const adminApiCall = async (action, payload = {}) => {
-            const url = `/api/admin`;
+            const serviceKey = localStorage.getItem('supabaseServiceRoleKey');
+            if (!serviceKey) {
+                throw new Error('يرجى إدخال وحفظ "مفتاح الإدارة" (Service Role) أولاً في الإعدادات للقيام بهذه العملية.');
+            }
+
             try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ action, ...payload })
-                });
-                
-                const data = await response.json().catch(() => ({}));
-                
-                if (!response.ok || !data.success) {
-                    throw new Error(data.error || `خطأ من الخادم ${response.status}`);
+                const headers = {
+                    'apikey': serviceKey,
+                    'Authorization': `Bearer ${serviceKey}`,
+                    'Content-Type': 'application/json'
+                };
+
+                console.log(`[Admin API] Executing action: ${action}`);
+
+                if (action === 'create-user') {
+                    // 1. Create Auth User
+                    const authRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+                        method: 'POST',
+                        headers,
+                        body: JSON.stringify({
+                            email: payload.email,
+                            password: payload.password,
+                            email_confirm: true,
+                            user_metadata: { full_name: payload.name, raw_password: payload.password }
+                        })
+                    });
+                    const authData = await authRes.json();
+                    if (!authRes.ok) throw new Error(authData.msg || authData.message || 'فشل في إنشاء المستخدم');
+                    return { success: true, data: authData };
+
+                } else if (action === 'reset-password') {
+                    // 1. Update Auth User Password
+                    const authRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${payload.userId}`, {
+                        method: 'PUT',
+                        headers,
+                        body: JSON.stringify({ password: payload.newPassword })
+                    });
+                    const authData = await authRes.json();
+                    if (!authRes.ok) throw new Error(authData.msg || authData.message || 'فشل في تغيير كلمة المرور');
+
+                    // 2. Update Profile raw_password
+                    await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${payload.userId}`, {
+                        method: 'PATCH',
+                        headers: { ...headers, 'Prefer': 'return=minimal' },
+                        body: JSON.stringify({ raw_password: payload.newPassword, updated_at: new Date().toISOString() })
+                    });
+                    return { success: true };
+
+                } else if (action === 'toggle-user-status') {
+                    // 1. Get current profile name
+                    const profRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${payload.userId}&select=full_name`, { headers });
+                    const profData = await profRes.json();
+                    if (!profRes.ok || !profData.length) throw new Error('فشل في جلب الحساب');
+                    
+                    const currentName = profData[0].full_name || '';
+                    let newName = currentName;
+                    if (currentName.startsWith('[DEACTIVATED]')) {
+                        newName = currentName.replace('[DEACTIVATED] ', '').replace('[DEACTIVATED]', '').trim();
+                    } else {
+                        newName = `[DEACTIVATED] ${currentName}`;
+                    }
+
+                    // 2. Update profile name
+                    const updRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${payload.userId}`, {
+                        method: 'PATCH',
+                        headers: { ...headers, 'Prefer': 'return=minimal' },
+                        body: JSON.stringify({ full_name: newName })
+                    });
+                    if (!updRes.ok) throw new Error('فشل في تحديث حالة الحساب');
+                    return { success: true, isAvailable: !newName.startsWith('[DEACTIVATED]') };
+
+                } else {
+                    throw new Error('Invalid action');
                 }
-                return data.data !== undefined ? data.data : data;
             } catch (err) {
                 console.error(`Admin Server Call Failed:`, err);
-                throw err; // Propagate the actual error message
+                throw err;
             }
         };
 
@@ -450,6 +522,34 @@
                     distributeBookBtn.addEventListener('click', (e) => {
                         e.preventDefault();
                         window.openDistributeModal();
+                    });
+                }
+
+                // Service Role Key initialization
+                const serviceRoleInput = document.getElementById('serviceRoleInput');
+                const saveServiceKeyBtn = document.getElementById('saveServiceKeyBtn');
+                
+                if (serviceRoleInput && saveServiceKeyBtn) {
+                    const existingKey = localStorage.getItem('supabaseServiceRoleKey');
+                    if (existingKey) {
+                        serviceRoleInput.value = existingKey;
+                        saveServiceKeyBtn.textContent = 'تم الحفظ';
+                    }
+
+                    saveServiceKeyBtn.addEventListener('click', () => {
+                        const key = serviceRoleInput.value.trim();
+                        if (!key) {
+                            localStorage.removeItem('supabaseServiceRoleKey');
+                            saveServiceKeyBtn.textContent = 'حفظ';
+                            alert('تم مسح المفتاح.');
+                            return;
+                        }
+                        localStorage.setItem('supabaseServiceRoleKey', key);
+                        saveServiceKeyBtn.textContent = 'تم الحفظ ✓';
+                        saveServiceKeyBtn.classList.replace('bg-primary', 'bg-green-500');
+                        setTimeout(() => {
+                            saveServiceKeyBtn.classList.replace('bg-green-500', 'bg-primary');
+                        }, 2000);
                     });
                 }
 
