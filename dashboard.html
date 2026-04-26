@@ -434,12 +434,18 @@
             async function loadData() {
                 let totalCollected = 0;
                 let receiptCount = 0;
-                const bounds = getMonthBounds(currentMonth);
+                let baseQuery = supabase.from('receipts').select('amount');
+                let recentQuery = supabase
+                    .from('receipts')
+                    .select('*, books(serial_number)')
+                    .order('created_at', { ascending: false })
+                    .limit(5);
 
-                let baseQuery = supabase.from('receipts').select('amount')
-                    .gte('created_at', bounds.start)
-                    .lt('created_at', bounds.end);
-
+                if (currentMonth) {
+                    baseQuery = baseQuery.eq('month_year', currentMonth);
+                    recentQuery = recentQuery.eq('month_year', currentMonth);
+                }
+                
                 if (isAdmin) {
                     const { data: allReceipts } = await baseQuery;
                     totalCollected = allReceipts?.reduce((acc, curr) => acc + curr.amount, 0) || 0;
@@ -454,15 +460,6 @@
                 document.querySelector('[data-target="250000"]').textContent = totalCollected.toLocaleString();
                 document.querySelector('[data-target="45"]').textContent = receiptCount.toLocaleString();
 
-                // Fetch Latest Activity (Also Filtered by month)
-                let recentQuery = supabase
-                    .from('receipts')
-                    .select('*, books(serial_number)')
-                    .gte('created_at', bounds.start)
-                    .lt('created_at', bounds.end)
-                    .order('created_at', { ascending: false })
-                    .limit(5);
-                
                 if (!isAdmin) {
                     recentQuery = recentQuery.eq('ally_id', user.id);
                 }

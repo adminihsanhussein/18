@@ -180,15 +180,32 @@
                 
                 const { data } = await supabase
                     .from('receipts')
-                    .select('subscriber_name')
+                    .select('subscriber_name, receipt_date, created_at')
                     .ilike('subscriber_name', `%${query}%`)
-                    .limit(5);
+                    .order('created_at', { ascending: false })
+                    .limit(20);
 
                 if (data && data.length > 0) {
-                    const unique = [...new Set(data.map(n => n.subscriber_name))];
-                    suggestBox.innerHTML = unique.map(name => `
-                        <div class="px-5 py-4 hover:bg-blue-50 cursor-pointer transition-colors flex items-center justify-between" onclick="window.selectName('${name}')">
-                            <span class="font-bold text-[#0056b3]">${name}</span>
+                    const uniqueSubscribers = [];
+                    const seenNames = new Set();
+                    
+                    for (const row of data) {
+                        if (!seenNames.has(row.subscriber_name)) {
+                            seenNames.add(row.subscriber_name);
+                            uniqueSubscribers.push({
+                                name: row.subscriber_name,
+                                date: row.receipt_date || row.created_at
+                            });
+                            if (uniqueSubscribers.length >= 5) break;
+                        }
+                    }
+
+                    suggestBox.innerHTML = uniqueSubscribers.map(sub => `
+                        <div class="px-5 py-3 hover:bg-blue-50 cursor-pointer transition-colors flex items-center justify-between" onclick="window.selectName('${sub.name}')">
+                            <div class="flex flex-col">
+                                <span class="font-bold text-[#0056b3]">${sub.name}</span>
+                                <span class="text-[10px] font-bold text-blue-900/40">آخر مساهمة: ${new Date(sub.date).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                            </div>
                             <span class="material-symbols-outlined text-blue-900/10 text-sm">history</span>
                         </div>
                     `).join('');

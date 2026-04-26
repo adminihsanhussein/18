@@ -743,105 +743,82 @@
 
                 const workbook = new ExcelJS.Workbook();
                 const worksheet = workbook.addWorksheet('تقرير الدفاتر', {
-                    views: [{ rightToLeft: true }],
-                    pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1 }
+                    views: [{ rightToLeft: true }]
                 });
 
                 worksheet.getColumn(1).width = 10;
-                worksheet.getColumn(2).width = 30;
+                worksheet.getColumn(2).width = 25;
                 worksheet.getColumn(3).width = 25;
                 worksheet.getColumn(4).width = 25;
 
-                let imageId = null;
-                try {
-                    const response = await fetch('assets/logo.jpg');
-                    if (response.ok) {
-                        const blob = await response.blob();
-                        const base64 = await new Promise((resolve) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => resolve(reader.result.split(',')[1]);
-                            reader.readAsDataURL(blob);
-                        });
-                        imageId = workbook.addImage({ base64: base64, extension: 'png' });
-                    }
-                } catch (e) { console.warn('Logo load fail:', e); }
+                let titleString = "قاعدة بيانات الدفاتر";
+                if (currentMonth) {
+                    const [y, m] = currentMonth.split('-');
+                    titleString = `قاعدة بيانات الدفاتر لشهر ( ${y}/${parseInt(m)} )`;
+                }
 
+                // Row 1: Title
+                const titleRow = worksheet.addRow([titleString]);
+                worksheet.mergeCells('A1:D1');
+                titleRow.height = 30;
+                titleRow.getCell(1).font = { bold: true, size: 14 };
+                titleRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+                titleRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEAEAEA' } };
+                titleRow.getCell(1).border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+
+                // Row 2: Headers
+                const headerRow = worksheet.addRow(['ت', 'رقم الدفتر', 'عدد الوصولات', 'المبلغ']);
+                headerRow.height = 30;
+                headerRow.eachCell(cell => {
+                    cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 12 };
+                    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF001E40' } };
+                    cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+                });
+
+                // Data Rows
+                books.forEach((b, idx) => {
+                    const row = worksheet.addRow([
+                        idx + 1,
+                        `#${b.serial_number}`,
+                        b.receipt_count,
+                        b.total_amount
+                    ]);
+                    row.height = 25;
+                    row.eachCell(cell => {
+                        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEAEAEA' } };
+                        cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+                        cell.font = { size: 11 };
+                    });
+                });
+
+                // Last Row: Totals
                 const totalAmount = books.reduce((sum, b) => sum + b.total_amount, 0);
                 const totalReceipts = books.reduce((sum, b) => sum + b.receipt_count, 0);
                 const dateStr = new Date().toLocaleDateString('ar-EG');
-                const yearStr = new Date().getFullYear();
+                
+                const lastRow = worksheet.addRow([
+                    'المجموع الكلي',
+                    totalAmount,
+                    `عدد الوصولات : ${totalReceipts}`,
+                    `التاريخ : ${dateStr}`
+                ]);
 
-                // Standardizing to high-fidelity 50-field format (25 rows per page, minimum 2 pages)
-                const rowsPerPage = 25;
-                const totalPages = Math.max(2, Math.ceil(books.length / rowsPerPage));
-
-                for (let p = 0; p < totalPages; p++) {
-                    const startRowNo = worksheet.lastRow ? worksheet.lastRow.number + 1 : 1;
-                    
-                    worksheet.addRow([]); worksheet.addRow([]); worksheet.addRow([]);
-                    if (imageId !== null) {
-                        worksheet.addImage(imageId, {
-                            tl: { col: 1.5, row: startRowNo - 1 },
-                            ext: { width: 85, height: 85 }
-                        });
-                    }
-
-                    if (p === 0) {
-                        const meta1 = worksheet.addRow([`مجموع المبالغ : ${totalAmount.toLocaleString()}`, '', '', `التاريخ : ${dateStr}`]);
-                        meta1.height = 30;
-                        const meta2 = worksheet.addRow([`مجموع الوصولات : ${totalReceipts.toLocaleString()}`, '', '', `السنة : ${yearStr}`]);
-                        meta2.height = 30;
-
-                        [meta1, meta2].forEach(row => {
-                            row.eachCell(cell => {
-                                cell.font = { bold: true, size: 12 };
-                                cell.alignment = { vertical: 'middle', horizontal: 'center' };
-                            });
-                        });
-                        worksheet.mergeCells(`A${meta1.number}:B${meta1.number}`);
-                        worksheet.mergeCells(`D${meta1.number}:E${meta1.number}`);
-                        worksheet.mergeCells(`A${meta2.number}:B${meta2.number}`);
-                        worksheet.mergeCells(`D${meta2.number}:E${meta2.number}`);
-                        worksheet.addRow([]);
-                    } else {
-                        worksheet.addRow([]); worksheet.addRow([]); worksheet.addRow([]);
-                    }
-
-                    const header = worksheet.addRow(['ت', 'رقم الدفتر', 'عدد الوصولات', 'المبلغ']);
-                    header.height = 30;
-                    header.eachCell(cell => {
-                        cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
-                        cell.alignment = { horizontal: 'center', vertical: 'middle' };
-                        cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
-                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF001E40' } };
-                    });
-
-                    for (let i = 0; i < rowsPerPage; i++) {
-                        const idx = (p * rowsPerPage) + i;
-                        const b = books[idx];
-                        let rowData = [ idx + 1, '', '', '' ];
-                        if (b) {
-                            rowData = [ idx + 1, `#${b.serial_number}`, b.receipt_count, b.total_amount ];
-                        }
-                        const row = worksheet.addRow(rowData);
-                        row.height = 23;
-                        row.eachCell(cell => {
-                            cell.alignment = { horizontal: 'center', vertical: 'middle' };
-                            cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
-                        });
-                    }
-
-                    if (p < totalPages - 1) {
-                        worksheet.getRow(worksheet.lastRow.number).addPageBreak();
-                    }
-                }
+                lastRow.height = 30;
+                lastRow.eachCell(cell => {
+                    cell.font = { bold: true, size: 12 };
+                    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEAEAEA' } };
+                    cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+                });
 
                 const buffer = await workbook.xlsx.writeBuffer();
                 const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `تقرير_الدفاتر_${new Date().toLocaleDateString()}.xlsx`;
+                a.download = `تقرير_الدفاتر_${new Date().toLocaleDateString('ar-EG')}.xlsx`;
                 a.click();
             };
         });

@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
     <script src="./lib/theme-config.js" type="module"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
 </head>
 <body class="bg-background text-on-background min-h-screen flex flex-col font-body pb-24 md:pb-0">
 
@@ -21,6 +22,10 @@
             <h1 class="text-lg font-black text-primary tracking-tight">إحصائيات النظام</h1>
         </div>
         <div class="flex gap-2">
+            <button onclick="window.exportAnalyticsExcel()" class="bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-xl shadow-green-600/20 hover:scale-105 transition-all">
+                <span class="material-symbols-outlined text-lg">table_view</span>
+                تصدير Excel
+            </button>
             <button class="bg-primary text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-xl shadow-primary/20 hover:scale-105 transition-all">
                 <span class="material-symbols-outlined text-lg">description</span>
                 تقرير متقدم
@@ -304,12 +309,12 @@
 
             // 3. Fetch Data & Update Views
             const loadAnalytics = async () => {
-                const bounds = getMonthBounds(currentMonth);
-
                 let receiptsQuery = supabase.from('receipts')
-                    .select('amount, created_at, ally_id, profiles(full_name)')
-                    .gte('created_at', bounds.start)
-                    .lt('created_at', bounds.end);
+                    .select('amount, created_at, receipt_date, ally_id, receipt_number, subscriber_name, profiles(full_name)');
+                
+                if (currentMonth) {
+                    receiptsQuery = receiptsQuery.eq('month_year', currentMonth);
+                }
                 
                 if (!isAdmin) {
                     receiptsQuery = receiptsQuery.eq('ally_id', user.id);
@@ -319,6 +324,15 @@
                 if (error) console.error(error);
                 
                 const stats = data || [];
+                
+                // Sort receipts by receipt number to group them by book
+                stats.sort((a, b) => {
+                    const numA = parseInt(a.receipt_number) || 0;
+                    const numB = parseInt(b.receipt_number) || 0;
+                    return numA - numB;
+                });
+
+                window.currentStatsData = stats;
 
                 // Calculate KPIs
                 const totalAmount = stats.reduce((sum, r) => sum + r.amount, 0);
@@ -404,6 +418,105 @@
                 } else {
                     document.querySelector('.leaderboard-container')?.classList.add('hidden');
                 }
+            };
+
+            window.exportAnalyticsExcel = async () => {
+                const stats = window.currentStatsData;
+                if (!stats || stats.length === 0) return alert('لا توجد بيانات لتصديرها');
+
+                const workbook = new ExcelJS.Workbook();
+                const worksheet = workbook.addWorksheet('احصائيات الشهر', {
+                    views: [{ rightToLeft: true }]
+                });
+
+                const totalAmount = stats.reduce((sum, r) => sum + r.amount, 0);
+                const totalReceipts = stats.length;
+                const dateStr = new Date().toLocaleDateString('ar-EG');
+                
+                worksheet.getColumn(1).width = 8;
+                worksheet.getColumn(2).width = 30;
+                worksheet.getColumn(3).width = 15;
+                worksheet.getColumn(4).width = 20;
+                worksheet.getColumn(5).width = 15;
+
+                // Add title row
+                const titleRow = worksheet.addRow(['قاعدة بيانات المساهمين - دائرة حي النصر (18)', '', '', '', '']);
+                worksheet.mergeCells('A1:E1');
+                titleRow.height = 25;
+                titleRow.font = { bold: true, size: 14 };
+                titleRow.alignment = { horizontal: 'center', vertical: 'middle' };
+                titleRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF8EA9DB' } };
+                titleRow.getCell(1).border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+
+                // Add Headers
+                const headerRow = worksheet.addRow(['ت', 'اسم المعاهد', 'المبلغ', 'التاريخ', 'رقم الوصل']);
+                headerRow.height = 25;
+                headerRow.font = { bold: true, size: 12 };
+                headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
+                
+                // Style Headers
+                ['A', 'B', 'C', 'D', 'E'].forEach(col => {
+                    const cell = worksheet.getCell(`${col}2`);
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF8EA9DB' } };
+                    cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+                });
+
+                // Add Data
+                stats.forEach((r, index) => {
+                    const row = worksheet.addRow([
+                        index + 1,
+                        r.subscriber_name || 'غير محدد',
+                        r.amount,
+                        r.receipt_date ? new Date(r.receipt_date).toLocaleDateString('ar-EG') : new Date(r.created_at).toLocaleDateString('ar-EG'),
+                        r.receipt_number || ''
+                    ]);
+                    
+                    row.height = 20;
+                    row.alignment = { horizontal: 'center', vertical: 'middle' };
+                    row.eachCell((cell, colNumber) => {
+                        cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+                        if (colNumber === 1) {
+                            // Column A (ت) gets a lighter blue background as seen in the image
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFB4C6E7' } };
+                        } else {
+                            // Other columns get a very light gray or white (FFEAEAEA)
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+                        }
+                    });
+                });
+
+                // Add totals row at bottom
+                const lastRowNum = worksheet.lastRow.number + 1;
+                const summaryRow = worksheet.addRow([
+                    `المجموع الكلي: ${totalAmount.toLocaleString()} د.ع`, 
+                    '', 
+                    `عدد الوصولات: ${totalReceipts}`, 
+                    '', 
+                    `التاريخ: ${dateStr}`
+                ]);
+                summaryRow.height = 25;
+                summaryRow.font = { bold: true, size: 12 };
+                summaryRow.alignment = { horizontal: 'center', vertical: 'middle' };
+                
+                worksheet.mergeCells(`A${lastRowNum}:B${lastRowNum}`);
+                worksheet.mergeCells(`C${lastRowNum}:D${lastRowNum}`);
+
+                // Style totals row
+                ['A', 'B', 'C', 'D', 'E'].forEach(col => {
+                    const cell = worksheet.getCell(`${col}${lastRowNum}`);
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+                    cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+                });
+
+                // Save
+                const buffer = await workbook.xlsx.writeBuffer();
+                const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `احصائيات_الشهر_${dateStr}.xlsx`;
+                a.click();
+                window.URL.revokeObjectURL(url);
             };
 
             // Load Initially

@@ -168,8 +168,7 @@
             }
 
             if (currentMonth) {
-                const bounds = getMonthBounds(currentMonth);
-                query = query.gte('created_at', bounds.start).lt('created_at', bounds.end);
+                query = query.eq('month_year', currentMonth);
             }
 
             const { data, error } = await query;

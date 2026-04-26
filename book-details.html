@@ -326,7 +326,14 @@
                 return;
             }
 
-            receipts = recs;
+            receipts = recs || [];
+            // Sort receipts by receipt_number
+            receipts.sort((a, b) => {
+                const numA = parseInt(a.receipt_number) || 0;
+                const numB = parseInt(b.receipt_number) || 0;
+                return numA - numB;
+            });
+            
             updateUI();
         }
 
@@ -474,124 +481,81 @@
         };
 
         window.generateHighFidelityExcel = async () => {
-            if (!receipts) receipts = []; // Support empty book export if needed
+            if (!receipts) receipts = []; 
 
             const workbook = new ExcelJS.Workbook();
             workbook.creator = 'نظام البنيان المرصوص';
             const worksheet = workbook.addWorksheet('تقرير الوصولات', {
-                views: [{ rightToLeft: true }],
-                pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1 }
+                views: [{ rightToLeft: true }]
             });
 
-            // Expanded Column Widths to fill A4 Width completely
-            worksheet.getColumn(1).width = 10;  // ت
-            worksheet.getColumn(2).width = 65;  // اسم المساهم
-            worksheet.getColumn(3).width = 20;  // المبلغ
-            worksheet.getColumn(4).width = 25;  // التاريخ
-            worksheet.getColumn(5).width = 25;  // رقم الوصل
+            worksheet.getColumn(1).width = 10;
+            worksheet.getColumn(2).width = 40;
+            worksheet.getColumn(3).width = 20;
+            worksheet.getColumn(4).width = 25;
+            worksheet.getColumn(5).width = 25;
 
-            // Load Logo once
-            let imageId = null;
-            try {
-                const response = await fetch('assets/logo.jpg');
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const base64 = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result.split(',')[1]);
-                        reader.readAsDataURL(blob);
-                    });
-                    imageId = workbook.addImage({ base64: base64, extension: 'png' });
-                }
-            } catch (e) { console.warn('Logo load fail:', e); }
-
-            // General Info for First Page
             const total = receipts.reduce((sum, r) => sum + r.amount, 0);
             const subscriberCount = receipts.length;
-            const currentYear = new Date().getFullYear();
-            const currentDate = `${new Date().getDate()} / ${new Date().getMonth() + 1} / ${currentYear}`;
+            const dateStr = new Date().toLocaleDateString('ar-EG');
+            const serial = bookData?.serial_number || 'مجهول';
 
-            // We will loop twice to get exactly 2 pages (50 rows)
-            for (let pageIdx = 0; pageIdx < 2; pageIdx++) {
-                const startRowNumber = worksheet.lastRow ? worksheet.lastRow.number + 1 : 1;
-                
-                // 1. Logo Row (Always repeat)
-                worksheet.addRow([]); worksheet.addRow([]); worksheet.addRow([]);
-                if (imageId !== null) {
-                    // Center logo across columns A to E
-                    worksheet.addImage(imageId, {
-                        tl: { col: 2, row: startRowNumber - 1 },
-                        ext: { width: 85, height: 85 }
-                    });
-                }
+            // 1. Title Row
+            const titleRow = worksheet.addRow([`قاعدة بيانات الدفتر ${serial}`, '', '', '', '']);
+            worksheet.mergeCells('A1:E1');
+            titleRow.height = 30;
+            titleRow.font = { bold: true, size: 14 };
+            titleRow.alignment = { horizontal: 'center', vertical: 'middle' };
+            titleRow.getCell(1).border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
 
-                // 2. Metadata (Page 1 has full info)
-                if (pageIdx === 0) {
-                    // Row 4: Total & Year
-                    const meta1 = worksheet.addRow([]);
-                    meta1.height = 30;
-                    worksheet.getCell(`A${meta1.number}`).value = `المبلغ الكلي : ${total.toLocaleString()}`;
-                    worksheet.getCell(`D${meta1.number}`).value = `السنة : ${currentYear}`;
-                    worksheet.mergeCells(`A${meta1.number}:B${meta1.number}`);
-                    worksheet.mergeCells(`D${meta1.number}:E${meta1.number}`);
+            // 2. Table Headers
+            const headerRow = worksheet.addRow(['ت', 'اسم المساهم', 'المبلغ', 'التاريخ', 'رقم الوصل']);
+            headerRow.height = 30;
+            headerRow.eachCell(cell => {
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 12 };
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF001E40' } };
+                cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+            });
 
-                    // Row 5: Count & Date
-                    const meta2 = worksheet.addRow([]);
-                    meta2.height = 30;
-                    worksheet.getCell(`A${meta2.number}`).value = `عدد المساهمين : ${subscriberCount}`;
-                    worksheet.getCell(`D${meta2.number}`).value = `التاريخ : ${currentDate}`;
-                    worksheet.mergeCells(`A${meta2.number}:B${meta2.number}`);
-                    worksheet.mergeCells(`D${meta2.number}:E${meta2.number}`);
-
-                    [meta1, meta2].forEach(row => {
-                        row.eachCell(cell => {
-                            cell.font = { bold: true, size: 12 };
-                            cell.alignment = { vertical: 'middle', horizontal: 'center' };
-                        });
-                    });
-                    worksheet.addRow([]); // Small gap before header
-                } else {
-                    // Page 2 gaps for consistency
-                    worksheet.addRow([]);
-                    worksheet.addRow([]);
-                    worksheet.addRow([]);
-                }
-
-                // 3. Table Header
-                const headerRow = worksheet.addRow(['ت', 'اسم المساهم', 'المبلغ', 'التاريخ', 'رقم الوصل']);
-                headerRow.height = 30;
-                headerRow.eachCell(cell => {
-                    cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+            // 3. Data Rows
+            receipts.forEach((r, idx) => {
+                const recDate = r.receipt_date ? new Date(r.receipt_date).toLocaleDateString('ar-EG') : new Date(r.created_at).toLocaleDateString('ar-EG');
+                const row = worksheet.addRow([
+                    idx + 1,
+                    r.subscriber_name || 'بدون اسم',
+                    r.amount,
+                    recDate,
+                    r.receipt_number
+                ]);
+                row.height = 25;
+                row.eachCell((cell) => {
                     cell.alignment = { horizontal: 'center', vertical: 'middle' };
                     cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
-                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF001E40' } };
                 });
+            });
 
-                // 4. Data Rows (25 rows per page)
-                for (let rIdx = 0; rIdx < 25; rIdx++) {
-                    const globalIdx = (pageIdx * 25) + rIdx;
-                    let rowData = [ globalIdx + 1, '', '', '', '' ];
-                    
-                    if (globalIdx < receipts.length) {
-                        const r = receipts[globalIdx];
-                        const dateStr = r.receipt_date ? new Date(r.receipt_date).toLocaleDateString('ar-EG') : new Date(r.created_at).toLocaleDateString('ar-EG');
-                        rowData = [ globalIdx + 1, r.subscriber_name, r.amount, dateStr, r.receipt_number ];
-                    }
-                    
-                    const row = worksheet.addRow(rowData);
-                    row.height = 23; // Reduced height to fit 25 rows on A4
-                    row.eachCell(cell => {
-                        cell.alignment = { horizontal: 'center', vertical: 'middle' };
-                        cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
-                        if (cell.col === 2) cell.alignment.horizontal = 'right'; // Name alignment
-                    });
-                }
+            // 4. Totals Row
+            const lastRowNum = worksheet.lastRow.number + 1;
+            const summaryRow = worksheet.addRow([
+                `عدد المساهمين : ${subscriberCount}`,
+                '',
+                `المبلغ الكلي : ${total.toLocaleString()}`,
+                '',
+                `التاريخ : ${dateStr}`
+            ]);
+            summaryRow.height = 30;
+            summaryRow.font = { bold: true, size: 12 };
+            summaryRow.alignment = { horizontal: 'center', vertical: 'middle' };
+            
+            worksheet.mergeCells(`A${lastRowNum}:B${lastRowNum}`);
+            worksheet.mergeCells(`C${lastRowNum}:D${lastRowNum}`);
 
-                // 5. Page Break
-                if (pageIdx === 0) {
-                    worksheet.getRow(worksheet.lastRow.number).addPageBreak();
-                }
-            }
+            // Style totals row
+            ['A', 'B', 'C', 'D', 'E'].forEach(col => {
+                const cell = worksheet.getCell(`${col}${lastRowNum}`);
+                cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+            });
 
             // Generate and Download
             const buffer = await workbook.xlsx.writeBuffer();
@@ -599,7 +563,7 @@
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `تقرير_وصولات_الدفتر_${bookData?.serial_number || 'مجهول'}.xlsx`;
+            a.download = `تقرير_وصولات_الدفتر_${serial}.xlsx`;
             a.click();
             window.URL.revokeObjectURL(url);
         };
