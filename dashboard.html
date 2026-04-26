@@ -28,7 +28,7 @@
             <span class="material-symbols-outlined">notifications</span>
             <span id="notifBadge" class="hidden absolute top-2 right-2 w-2.5 h-2.5 bg-error rounded-full border-2 border-white badge-pulse"></span>
         </button>
-        <a href="#" id="dashboardLogoutBtn" class="text-error hover:bg-error-container/20 p-2.5 rounded-xl transition-all active:scale-95 group" title="تسجيل الخروج">
+        <a href="index.html" onclick="handleGlobalLogout(event)" class="text-error hover:bg-error-container/20 p-2.5 rounded-xl transition-all active:scale-95 group" title="تسجيل الخروج">
             <span class="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500">logout</span>
         </a>
     </div>
@@ -297,23 +297,6 @@
                 return;
             }
 
-            // 1.5 Logout Logic
-            const dashboardLogoutBtn = document.getElementById('dashboardLogoutBtn');
-            if (dashboardLogoutBtn) {
-                dashboardLogoutBtn.addEventListener('click', async (e) => {
-                    e.preventDefault();
-                    if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
-                        try {
-                            await supabase.auth.signOut();
-                            localStorage.removeItem('userRole');
-                            window.location.replace('index.html');
-                        } catch (error) {
-                            console.error('Logout error:', error);
-                            alert('حدث خطأ أثناء تسجيل الخروج');
-                        }
-                    }
-                });
-            }
 
             // 2. Load Profile/Role
             const { data: profile, error: pError } = await supabase

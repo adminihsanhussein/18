@@ -179,7 +179,7 @@
         </section>
 
         <!-- Logout -->
-        <a href="index.html" class="w-full p-6 bg-[#d32f2f]/5 text-[#d32f2f] rounded-3xl flex items-center justify-center gap-3 font-black border border-[#d32f2f]/10 hover:bg-[#d32f2f] hover:text-white transition-all active:scale-95 group">
+        <a href="index.html" onclick="handleGlobalLogout(event)" class="w-full p-6 bg-[#d32f2f]/5 text-[#d32f2f] rounded-3xl flex items-center justify-center gap-3 font-black border border-[#d32f2f]/10 hover:bg-[#d32f2f] hover:text-white transition-all active:scale-95 group">
             <span class="material-symbols-outlined group-hover:rotate-180 transition-transform">logout</span>
             تسجيل الخروج الآمن
         </a>
@@ -356,7 +356,7 @@
         console.log('--- Settings Module Trace: 2 (Supabase Loaded) ---');
 
         // Move these inside init or use safer selectors
-        let profileName, profileRole, adminSection, logoutBtn;
+        let profileName, profileRole, adminSection;
 
         window.updateSyncUI = () => {
             const queue = JSON.parse(localStorage.getItem('offlineReceiptsQueue') || '[]');
@@ -449,7 +449,6 @@
                 profileName = document.getElementById('profileName');
                 profileRole = document.getElementById('profileRole');
                 adminSection = document.getElementById('adminSection');
-                logoutBtn = document.querySelector('a[href="index.html"]');
 
                 console.log('--- Settings Init: Elements Found ---');
                 
@@ -489,15 +488,6 @@
                     }
                 }
 
-                // 3. Logout
-                if (logoutBtn) {
-                    logoutBtn.addEventListener('click', async (e) => {
-                        e.preventDefault();
-                        await supabase.auth.signOut();
-                        localStorage.removeItem('userRole');
-                        window.location.href = 'index.html';
-                    });
-                }
 
                 // 4. Dark Mode
                 const darkModeToggle = document.getElementById('darkModeToggle');
