@@ -4,7 +4,7 @@
   "webDir": "dist",
   "bundledWebRuntime": false,
   "server": {
-    "url": "https://adminihsanhussein.github.io/18/",
+    "url": "https://dirah18.netlify.app/",
     "cleartext": true,
     "androidScheme": "https"
   },
