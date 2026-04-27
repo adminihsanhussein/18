@@ -138,40 +138,8 @@
                     <span>لوحة شرف رتب الحلفاء</span>
                     <span class="text-xs text-on-surface-variant font-bold">بناءً على المبالغ</span>
                 </h3>
-                <div class="space-y-4">
-                    <!-- Top 1 -->
-                    <div class="bg-white p-4 rounded-2xl flex items-center justify-between shadow-md border border-primary/5 hover:scale-[1.02] transition-all cursor-pointer">
-                        <div class="flex items-center gap-4">
-                            <span class="w-8 h-8 rounded-full bg-yellow-400 text-white flex items-center justify-center font-black text-xs shadow-lg shadow-yellow-400/30">1</span>
-                            <div>
-                                <p class="font-black text-primary">علي إحسان</p>
-                                <p class="text-[10px] text-on-surface-variant">42 وصلاً منجزاً</p>
-                            </div>
-                        </div>
-                        <p class="text-lg font-black text-primary tracking-tight">450,000 <span class="text-[10px]">د.ع</span></p>
-                    </div>
-                    <!-- Top 2 -->
-                    <div class="bg-white/60 p-4 rounded-2xl flex items-center justify-between shadow-sm border border-transparent hover:bg-white transition-all cursor-pointer">
-                        <div class="flex items-center gap-4">
-                            <span class="w-8 h-8 rounded-full bg-gray-400 text-white flex items-center justify-center font-black text-xs shadow-lg shadow-gray-400/30">2</span>
-                            <div>
-                                <p class="font-black text-primary">حسين علي لفتة</p>
-                                <p class="text-[10px] text-on-surface-variant">38 وصلاً منجزاً</p>
-                            </div>
-                        </div>
-                        <p class="text-lg font-black text-primary tracking-tight">320,000 <span class="text-[10px]">د.ع</span></p>
-                    </div>
-                     <!-- Top 3 -->
-                     <div class="bg-white/60 p-4 rounded-2xl flex items-center justify-between shadow-sm border border-transparent hover:bg-white transition-all cursor-pointer">
-                        <div class="flex items-center gap-4">
-                            <span class="w-8 h-8 rounded-full bg-orange-400 text-white flex items-center justify-center font-black text-xs shadow-lg shadow-orange-400/30">3</span>
-                            <div>
-                                <p class="font-black text-primary">جعفر الصادق</p>
-                                <p class="text-[10px] text-on-surface-variant">35 وصلاً منجزاً</p>
-                            </div>
-                        </div>
-                        <p class="text-lg font-black text-primary tracking-tight">210,000 <span class="text-[10px]">د.ع</span></p>
-                    </div>
+                <div id="honorBoardContainer" class="space-y-4">
+                    <!-- Dynamic Honor Board will be injected here -->
                 </div>
             </div>
 
@@ -180,7 +148,7 @@
                 <h3 class="text-lg font-black text-primary mb-6">رؤية المساهمين</h3>
                 <div class="grid grid-cols-2 gap-4">
                     <div class="bg-surface-container-low p-5 rounded-2xl text-center">
-                        <p class="text-3xl font-black text-primary">18</p>
+                        <p id="newSubscribersStat" class="text-3xl font-black text-primary">0</p>
                         <p class="text-[10px] font-black text-on-surface-variant mt-1 uppercase">مساهم جديد</p>
                         <div class="mt-2 text-[10px] text-success font-black flex justify-center items-center gap-1">
                             <span class="material-symbols-outlined text-[10px]">add_circle</span>
@@ -188,7 +156,7 @@
                         </div>
                     </div>
                     <div class="bg-surface-container-low p-5 rounded-2xl text-center">
-                        <p class="text-3xl font-black text-primary">85%</p>
+                        <p id="commitmentRateStat" class="text-3xl font-black text-primary">0%</p>
                         <p class="text-[10px] font-black text-on-surface-variant mt-1 uppercase">نسبة الالتزام</p>
                         <div class="mt-2 text-[10px] text-primary font-black flex justify-center items-center gap-1">
                             <span class="material-symbols-outlined text-[10px]">verified</span>
@@ -197,16 +165,9 @@
                     </div>
                 </div>
                 <!-- Top Subscribers Mini-List -->
-                <div class="mt-6 space-y-3">
+                <div id="topCommittedSubscribers" class="mt-6 space-y-3">
                     <p class="text-xs font-black text-primary mb-3">المساهمون الأكثر التزاماً (6 أشهر+):</p>
-                    <div class="flex items-center gap-2">
-                        <div class="w-2 h-2 rounded-full bg-success"></div>
-                        <p class="text-xs font-bold text-on-surface-variant">عبد الكاظم عبود (6 أشهر متتالية)</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="w-2 h-2 rounded-full bg-success"></div>
-                        <p class="text-xs font-bold text-on-surface-variant">عائلة الحاج فاضل (6 أشهر متتالية)</p>
-                    </div>
+                    <!-- Dynamic -->
                 </div>
             </div>
         </section>
@@ -310,21 +271,20 @@
             // 3. Fetch Data & Update Views
             const loadAnalytics = async () => {
                 let receiptsQuery = supabase.from('receipts')
-                    .select('amount, created_at, receipt_date, ally_id, receipt_number, subscriber_name, profiles(full_name)');
-                
-                if (currentMonth) {
-                    receiptsQuery = receiptsQuery.eq('month_year', currentMonth);
-                }
+                    .select('amount, created_at, receipt_date, ally_id, receipt_number, subscriber_name, month_year, profiles(full_name)');
                 
                 if (!isAdmin) {
                     receiptsQuery = receiptsQuery.eq('ally_id', user.id);
                 }
 
-                const { data, error } = await receiptsQuery;
+                const { data: allData, error } = await receiptsQuery;
                 if (error) console.error(error);
                 
-                const stats = data || [];
+                const allStats = allData || [];
                 
+                // Filter for current month view
+                const stats = currentMonth ? allStats.filter(r => r.month_year === currentMonth) : allStats;
+
                 // Sort receipts by receipt number to group them by book
                 stats.sort((a, b) => {
                     const numA = parseInt(a.receipt_number) || 0;
@@ -388,7 +348,7 @@
                     }
                 });
 
-                // 5. Leaderboard (Admin Only)
+                // 5. Leaderboard (Admin Only) - Old minimal list
                 if (isAdmin) {
                     const allyLeaderboard = {};
                     stats.forEach(r => {
@@ -417,6 +377,87 @@
                     }
                 } else {
                     document.querySelector('.leaderboard-container')?.classList.add('hidden');
+                }
+
+                // 6. Allies Honor Board (Dynamic)
+                const honorBoardLeaderboard = {};
+                stats.forEach(r => {
+                    const name = r.profiles?.full_name || 'غير معروف';
+                    if (!honorBoardLeaderboard[name]) honorBoardLeaderboard[name] = { amount: 0, count: 0 };
+                    honorBoardLeaderboard[name].amount += r.amount;
+                    honorBoardLeaderboard[name].count += 1;
+                });
+
+                const sortedHonorBoard = Object.entries(honorBoardLeaderboard)
+                    .sort((a, b) => b[1].amount - a[1].amount)
+                    .slice(0, 3);
+
+                const honorBoardContainer = document.getElementById('honorBoardContainer');
+                if (honorBoardContainer) {
+                    if (sortedHonorBoard.length === 0) {
+                        honorBoardContainer.innerHTML = '<p class="text-sm opacity-50 text-center py-4">لا توجد بيانات لهذا الشهر</p>';
+                    } else {
+                        const colors = ['bg-yellow-400', 'bg-gray-400', 'bg-orange-400'];
+                        honorBoardContainer.innerHTML = sortedHonorBoard.map(([name, data], i) => `
+                            <div class="bg-white ${i!==0 ? 'bg-opacity-60 border-transparent hover:bg-white' : 'border-primary/5 hover:scale-[1.02]'} p-4 rounded-2xl flex items-center justify-between shadow-md border transition-all cursor-pointer">
+                                <div class="flex items-center gap-4">
+                                    <span class="w-8 h-8 rounded-full ${colors[i] || 'bg-gray-200'} text-white flex items-center justify-center font-black text-xs shadow-lg shadow-${colors[i] ? colors[i].split('-')[1] : 'gray'}-400/30">${i+1}</span>
+                                    <div>
+                                        <p class="font-black text-primary">${name}</p>
+                                        <p class="text-[10px] text-on-surface-variant">${data.count} وصلاً منجزاً</p>
+                                    </div>
+                                </div>
+                                <p class="text-lg font-black text-primary tracking-tight">${data.amount.toLocaleString()} <span class="text-[10px]">د.ع</span></p>
+                            </div>
+                        `).join('');
+                    }
+                }
+
+                // 7. Subscriber Insights (Dynamic)
+                const prevMonthsSubscribers = new Set(allStats.filter(r => r.month_year !== currentMonth).map(r => r.subscriber_name));
+                const currentMonthSubscribers = new Set(stats.map(r => r.subscriber_name));
+                let newSubscribersCount = 0;
+                currentMonthSubscribers.forEach(name => {
+                    if (name && !prevMonthsSubscribers.has(name)) newSubscribersCount++;
+                });
+
+                const totalUniqueSubscribers = new Set(allStats.map(r => r.subscriber_name)).size;
+                const activeSubscribersThisMonth = currentMonthSubscribers.size;
+                const commitmentRate = totalUniqueSubscribers > 0 ? Math.round((activeSubscribersThisMonth / totalUniqueSubscribers) * 100) : 0;
+
+                const subscriberMonths = {};
+                allStats.forEach(r => {
+                    const name = r.subscriber_name;
+                    if (!name) return;
+                    if (!subscriberMonths[name]) subscriberMonths[name] = new Set();
+                    if (r.month_year) subscriberMonths[name].add(r.month_year);
+                });
+
+                const committedSubscribers = Object.entries(subscriberMonths)
+                    .map(([name, monthsSet]) => ({ name, monthsCount: monthsSet.size }))
+                    .filter(sub => sub.monthsCount >= 6)
+                    .sort((a, b) => b.monthsCount - a.monthsCount)
+                    .slice(0, 5); // top 5
+
+                const newSubscribersEl = document.getElementById('newSubscribersStat');
+                if (newSubscribersEl) newSubscribersEl.textContent = newSubscribersCount;
+                
+                const commitmentRateEl = document.getElementById('commitmentRateStat');
+                if (commitmentRateEl) commitmentRateEl.textContent = commitmentRate + '%';
+
+                const topCommittedContainer = document.getElementById('topCommittedSubscribers');
+                if (topCommittedContainer) {
+                    topCommittedContainer.innerHTML = '<p class="text-xs font-black text-primary mb-3">المساهمون الأكثر التزاماً (6 أشهر+):</p>';
+                    if (committedSubscribers.length > 0) {
+                        topCommittedContainer.innerHTML += committedSubscribers.map(sub => `
+                            <div class="flex items-center gap-2">
+                                <div class="w-2 h-2 rounded-full bg-success"></div>
+                                <p class="text-xs font-bold text-on-surface-variant">${sub.name} (${sub.monthsCount} أشهر)</p>
+                            </div>
+                        `).join('');
+                    } else {
+                        topCommittedContainer.innerHTML += '<p class="text-[10px] text-on-surface-variant">لا يوجد مساهمين بـ 6 أشهر حتى الآن.</p>';
+                    }
                 }
             };
 
