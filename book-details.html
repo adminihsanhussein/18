@@ -665,6 +665,8 @@
             document.getElementById('editName').value = r.subscriber_name;
             document.getElementById('editAmount').value = r.amount;
             document.getElementById('editNumber').value = r.receipt_number;
+            const rDate = r.receipt_date ? r.receipt_date.split('T')[0] : r.created_at.split('T')[0];
+            document.getElementById('editDate').value = rDate;
             document.getElementById('editModal').classList.remove('hidden');
         };
 
@@ -677,6 +679,7 @@
             const name = document.getElementById('editName').value;
             const amount = parseInt(document.getElementById('editAmount').value);
             const number = parseInt(document.getElementById('editNumber').value);
+            const date = document.getElementById('editDate').value;
 
             try {
                 const { error } = await supabase
@@ -684,7 +687,8 @@
                     .update({
                         subscriber_name: name,
                         amount: amount,
-                        receipt_number: number
+                        receipt_number: number,
+                        receipt_date: date
                     })
                     .eq('id', id);
 
@@ -753,6 +757,10 @@
                         <label class="text-[10px] font-black text-primary/60 uppercase mb-1 block">رقم الوصل</label>
                         <input type="number" id="editNumber" class="w-full bg-surface-container-low border-transparent rounded-xl py-3 px-4 focus:ring-2 focus:ring-primary/20">
                     </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-primary/60 uppercase mb-1 block">تاريخ الوصل</label>
+                    <input type="date" id="editDate" class="w-full bg-surface-container-low border-transparent rounded-xl py-3 px-4 focus:ring-2 focus:ring-primary/20">
                 </div>
                 <button onclick="submitEdit()" class="w-full bg-primary text-white font-black py-4 rounded-xl shadow-lg active:scale-95 transition-all mt-4">حفظ التعديلات</button>
             </div>
