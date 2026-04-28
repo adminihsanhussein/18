@@ -138,6 +138,13 @@
                     </div>
                     <span class="material-symbols-outlined text-on-surface-variant/40">chevron_left</span>
                 </button>
+                <button id="backupDataBtn" class="w-full p-5 bg-white rounded-2xl flex items-center justify-between shadow-sm hover:shadow-md transition-all group">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">cloud_download</span>
+                        <span class="text-sm font-bold text-primary">سحب نسخة احتياطية (Backup)</span>
+                    </div>
+                    <span class="material-symbols-outlined text-on-surface-variant/40">chevron_left</span>
+                </button>
                 <div class="w-full p-5 bg-white rounded-2xl shadow-sm border border-orange-500/20">
                     <div class="flex items-center gap-4 mb-3">
                         <span class="material-symbols-outlined text-orange-500">key</span>
@@ -515,6 +522,14 @@
                     });
                 }
 
+                const backupDataBtn = document.getElementById('backupDataBtn');
+                if (backupDataBtn) {
+                    backupDataBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        if (window.downloadBackup) window.downloadBackup();
+                    });
+                }
+
                 // Service Role Key initialization
                 const serviceRoleInput = document.getElementById('serviceRoleInput');
                 const saveServiceKeyBtn = document.getElementById('saveServiceKeyBtn');
@@ -830,6 +845,62 @@
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = originalBtnContent;
+            }
+        };
+
+        window.downloadBackup = async () => {
+            const btn = document.getElementById('backupDataBtn');
+            const originalContent = btn.innerHTML;
+            
+            // Show loading state
+            btn.innerHTML = `
+                <div class="flex items-center gap-4">
+                    <div class="w-5 h-5 border-2 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                    <span class="text-sm font-bold text-primary">جاري سحب وتجهيز البيانات...</span>
+                </div>
+            `;
+            btn.disabled = true;
+
+            try {
+                // Fetch all data
+                const { data: profiles, error: profErr } = await supabase.from('profiles').select('*');
+                if (profErr) throw profErr;
+
+                const { data: books, error: bookErr } = await supabase.from('books').select('*');
+                if (bookErr) throw bookErr;
+
+                const { data: receipts, error: recErr } = await supabase.from('receipts').select('*');
+                if (recErr) throw recErr;
+
+                const backupData = {
+                    backupDate: new Date().toISOString(),
+                    version: "1.0",
+                    data: {
+                        profiles: profiles || [],
+                        books: books || [],
+                        receipts: receipts || []
+                    }
+                };
+
+                // Create and download file
+                const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const dateStr = new Date().toISOString().split('T')[0];
+                a.download = `AlBunyan_Backup_${dateStr}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                showStatus('اكتملت العملية', 'تم تحميل النسخة الاحتياطية الشاملة إلى جهازك بنجاح.');
+            } catch (err) {
+                console.error('Backup error:', err);
+                showStatus('فشل النسخ الاحتياطي', err.message, true);
+            } finally {
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
             }
         };
 
