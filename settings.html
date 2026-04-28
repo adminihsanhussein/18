@@ -141,10 +141,28 @@
                 <button id="backupDataBtn" class="w-full p-5 bg-white rounded-2xl flex items-center justify-between shadow-sm hover:shadow-md transition-all group">
                     <div class="flex items-center gap-4">
                         <span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">cloud_download</span>
-                        <span class="text-sm font-bold text-primary">سحب نسخة احتياطية (Backup)</span>
+                        <div class="text-right">
+                            <span class="text-sm font-bold block text-primary">سحب نسخة احتياطية (Backup)</span>
+                            <span class="text-[10px] text-on-surface-variant font-bold">تنزيل جميع البيانات كملف JSON</span>
+                        </div>
                     </div>
                     <span class="material-symbols-outlined text-on-surface-variant/40">chevron_left</span>
                 </button>
+                <div class="relative w-full">
+                    <button id="restoreDataBtn" class="w-full p-0 bg-white rounded-2xl flex items-center justify-between shadow-sm hover:shadow-md transition-all group overflow-hidden border border-dashed border-primary/40">
+                        <div class="w-full p-5 flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">upload_file</span>
+                                <div class="text-right">
+                                    <span class="text-sm font-bold block text-primary">استرجاع نسخة (Restore)</span>
+                                    <span class="text-[10px] text-on-surface-variant font-bold">رفع ملف JSON لاستعادة النظام بالكامل</span>
+                                </div>
+                            </div>
+                            <span class="material-symbols-outlined text-on-surface-variant/40">chevron_left</span>
+                        </div>
+                    </button>
+                    <input type="file" id="restoreFileInput" accept=".json" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" title="اختر ملف النسخة الاحتياطية" />
+                </div>
                 <div class="w-full p-5 bg-white rounded-2xl shadow-sm border border-orange-500/20">
                     <div class="flex items-center gap-4 mb-3">
                         <span class="material-symbols-outlined text-orange-500">key</span>
@@ -530,6 +548,25 @@
                     });
                 }
 
+                const restoreFileInput = document.getElementById('restoreFileInput');
+                if (restoreFileInput) {
+                    restoreFileInput.addEventListener('change', (e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        
+                        customConfirm(
+                            'تحذير خطير: استرجاع البيانات!',
+                            'عملية الاسترجاع ستقوم بإنشاء وتحديث البيانات بشكل جذري في قاعدة البيانات الحالية. هل أنت متأكد 100% أنك تريد استعادة البيانات من هذا الملف؟',
+                            true,
+                            () => {
+                                if (window.processRestore) window.processRestore(file);
+                            }
+                        );
+                        // Reset input so it can trigger change again if same file selected
+                        e.target.value = '';
+                    });
+                }
+
                 // Service Role Key initialization
                 const serviceRoleInput = document.getElementById('serviceRoleInput');
                 const saveServiceKeyBtn = document.getElementById('saveServiceKeyBtn');
@@ -901,6 +938,125 @@
             } finally {
                 btn.innerHTML = originalContent;
                 btn.disabled = false;
+            }
+        };
+
+        window.processRestore = async (file) => {
+            const btn = document.getElementById('restoreDataBtn');
+            const originalContent = btn.innerHTML;
+            
+            btn.innerHTML = `
+                <div class="flex items-center gap-4 p-5">
+                    <div class="w-5 h-5 border-2 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                    <span id="restoreProgressText" class="text-sm font-bold text-primary">جاري قراءة الملف...</span>
+                </div>
+            `;
+            btn.classList.add('pointer-events-none');
+            document.getElementById('restoreFileInput').classList.add('hidden'); // Disable input during restore
+
+            try {
+                const updateText = (t) => {
+                    const el = document.getElementById('restoreProgressText');
+                    if (el) el.textContent = t;
+                };
+
+                const text = await file.text();
+                const parsed = JSON.parse(text);
+                
+                if (!parsed.data || !parsed.backupDate) {
+                    throw new Error('ملف النسخة الاحتياطية غير صالح أو تالف.');
+                }
+
+                const { profiles, books, receipts } = parsed.data;
+                const idMapping = {};
+
+                // 1. Restore Profiles
+                updateText('جاري استرجاع الحسابات (1/3)...');
+                for (let i = 0; i < profiles.length; i++) {
+                    const p = profiles[i];
+                    updateText(`استرجاع الحسابات (${i+1}/${profiles.length})...`);
+                    
+                    const { data: existingProf } = await supabase.from('profiles').select('id').eq('email', p.email).single();
+                    if (existingProf) {
+                        idMapping[p.id] = existingProf.id;
+                        // Optional: update their roles/passwords if you want to fully sync
+                    } else {
+                        try {
+                            const res = await adminApiCall('create-user', { 
+                                name: p.full_name, 
+                                email: p.email, 
+                                password: p.raw_password || '12345678' 
+                            });
+                            
+                            // Wait for the trigger `handle_new_user` to finish creating the profile record
+                            await new Promise(resolve => setTimeout(resolve, 800));
+                            
+                            const newId = res.data.id || res.data.user?.id;
+                            if (newId) {
+                                idMapping[p.id] = newId;
+                                // Update profile with correct role and status
+                                await supabase.from('profiles').update({
+                                    role: p.role,
+                                    is_active: p.is_active,
+                                    created_at: p.created_at
+                                }).eq('id', newId);
+                            }
+                        } catch (err) {
+                            console.warn("تخطي مستخدم (قد يكون موجوداً):", p.email, err);
+                        }
+                    }
+                }
+
+                // 2. Restore Books
+                updateText('جاري استرجاع الدفاتر (2/3)...');
+                for (let i = 0; i < books.length; i++) {
+                    const b = books[i];
+                    updateText(`استرجاع الدفاتر (${i+1}/${books.length})...`);
+                    
+                    const newAllyId = idMapping[b.ally_id];
+                    await supabase.from('books').upsert({
+                        id: b.id,
+                        serial_number: b.serial_number,
+                        book_name: b.book_name,
+                        ally_id: newAllyId || null,
+                        total_amount: b.total_amount,
+                        receipt_count: b.receipt_count,
+                        start_date: b.start_date,
+                        received_date: b.received_date,
+                        status: b.status,
+                        created_at: b.created_at
+                    });
+                }
+
+                // 3. Restore Receipts
+                updateText('جاري استرجاع الوصولات (3/3)...');
+                const batchSize = 50;
+                for (let i = 0; i < receipts.length; i += batchSize) {
+                    const batch = receipts.slice(i, i + batchSize).map(r => ({
+                        id: r.id,
+                        book_id: r.book_id,
+                        ally_id: idMapping[r.ally_id] || null,
+                        subscriber_name: r.subscriber_name,
+                        receipt_number: r.receipt_number,
+                        amount: r.amount,
+                        month_year: r.month_year,
+                        receipt_date: r.receipt_date,
+                        status: r.status,
+                        created_at: r.created_at
+                    }));
+                    await supabase.from('receipts').upsert(batch);
+                    updateText(`استرجاع الوصولات (${Math.min(i+batchSize, receipts.length)}/${receipts.length})...`);
+                }
+
+                showStatus('اكتملت العملية', 'تم استرجاع جميع البيانات (الحسابات، الدفاتر، الوصولات) بنجاح!');
+                if (window.manageAllies) window.manageAllies(); 
+            } catch (err) {
+                console.error('Restore error:', err);
+                showStatus('خطأ أثناء الاسترجاع', err.message, true);
+            } finally {
+                btn.innerHTML = originalContent;
+                btn.classList.remove('pointer-events-none');
+                document.getElementById('restoreFileInput').classList.remove('hidden');
             }
         };
 
