@@ -1,5 +1,4 @@
 -- Clean up existing objects for a fresh start
-DROP TRIGGER IF EXISTS trg_update_book_totals ON receipts;
 DROP FUNCTION IF EXISTS update_book_totals();
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 DROP FUNCTION IF EXISTS public.handle_new_user();
@@ -195,7 +194,6 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Trigger for receipts table
-DROP TRIGGER IF EXISTS trg_notify_admin_on_receipt ON receipts;
 CREATE TRIGGER trg_notify_admin_on_receipt
 AFTER INSERT ON receipts
 FOR EACH ROW EXECUTE FUNCTION public.notify_admins_on_new_receipt();

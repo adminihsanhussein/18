@@ -517,12 +517,19 @@
                         <td class="py-5 px-6 text-center">
                             <div class="flex flex-col items-center gap-2">
                                 <span class="px-3 py-1 ${getStatusClass(b)} rounded-full text-[10px] font-black">${getStatusLabel(b)}</span>
-                                ${isAdmin && !b.received_date ? `
-                                <button onclick="window.markAsReceived('${b.id}', '${b.serial_number}')" class="text-[9px] font-bold text-success hover:underline flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-[12px]">check_circle</span>
-                                    تأكيد الاستلام
-                                </button>
-                                ` : ''}
+                                ${isAdmin ? (
+                                    !b.received_date ? `
+                                    <button onclick="window.markAsReceived('${b.id}', '${b.serial_number}')" class="text-[9px] font-bold text-success hover:underline flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[12px]">check_circle</span>
+                                        تأكيد الاستلام
+                                    </button>
+                                    ` : `
+                                    <button onclick="window.returnBook('${b.id}', '${b.serial_number}')" class="text-[9px] font-bold text-error hover:underline flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[12px]">undo</span>
+                                        ارجاع الدفتر
+                                    </button>
+                                    `
+                                ) : ''}
                             </div>
                         </td>
                         <td class="py-5 px-6">
@@ -562,22 +569,82 @@
                 return 'تم الاستلام';
             };
 
-            // Mark as Received Logic
-            window.markAsReceived = async (id, serial) => {
+            // Modal Management Logic
+            let bookToProcess = null;
+
+            window.markAsReceived = (id, serial) => {
+                bookToProcess = { id, serial };
+                document.getElementById('receiveBookSerial').textContent = serial;
+                document.getElementById('receiveBookModal').classList.remove('hidden');
+                document.getElementById('receiveBookModal').classList.add('flex');
+            };
+
+            window.closeReceiveModal = () => {
+                document.getElementById('receiveBookModal').classList.add('hidden');
+                document.getElementById('receiveBookModal').classList.remove('flex');
+                bookToProcess = null;
+            };
+
+            window.executeMarkAsReceived = async () => {
+                if (!bookToProcess) return;
+                const btn = document.getElementById('confirmReceiveBtn');
+                btn.disabled = true;
+                btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> جاري الحفظ...';
+
                 try {
                     const { error } = await supabase
                         .from('books')
                         .update({ received_date: new Date().toISOString() })
-                        .eq('id', id);
+                        .eq('id', bookToProcess.id);
 
                     if (error) throw error;
                     
-                    // Refresh data
-                    const updated = await fetchBooks(document.querySelector('select').value);
+                    window.closeReceiveModal();
+                    const updated = await fetchBooks(document.querySelector('select')?.value || 'جميع الحلفاء المستلمين');
                     populateTable(updated);
                 } catch (err) {
                     console.error('Error marking as received:', err);
                     alert('خطأ في تحديث الحالة: ' + err.message);
+                    btn.disabled = false;
+                    btn.innerHTML = 'نعم، تم الاستلام';
+                }
+            };
+
+            window.returnBook = (id, serial) => {
+                bookToProcess = { id, serial };
+                document.getElementById('returnBookSerial').textContent = serial;
+                document.getElementById('returnBookModal').classList.remove('hidden');
+                document.getElementById('returnBookModal').classList.add('flex');
+            };
+
+            window.closeReturnModal = () => {
+                document.getElementById('returnBookModal').classList.add('hidden');
+                document.getElementById('returnBookModal').classList.remove('flex');
+                bookToProcess = null;
+            };
+
+            window.executeReturnBook = async () => {
+                if (!bookToProcess) return;
+                const btn = document.getElementById('confirmReturnBtn');
+                btn.disabled = true;
+                btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> جاري الحفظ...';
+
+                try {
+                    const { error } = await supabase
+                        .from('books')
+                        .update({ received_date: null })
+                        .eq('id', bookToProcess.id);
+
+                    if (error) throw error;
+                    
+                    window.closeReturnModal();
+                    const updated = await fetchBooks(document.querySelector('select')?.value || 'جميع الحلفاء المستلمين');
+                    populateTable(updated);
+                } catch (err) {
+                    console.error('Error in returnBook:', err);
+                    alert('حدث خطأ: ' + err.message);
+                    btn.disabled = false;
+                    btn.innerHTML = 'تأكيد الإرجاع';
                 }
             };
  
@@ -842,6 +909,54 @@
                     نعم، احذف الدفتر
                 </button>
                 <button onclick="window.closeDeleteModal()" class="w-full bg-surface-container-high text-primary font-black py-4 rounded-2xl active:scale-95 transition-all">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receive Confirmation Modal -->
+    <div id="receiveBookModal" class="fixed inset-0 bg-primary/40 backdrop-blur-md z-[100] hidden items-center justify-center p-6 transition-all duration-300">
+        <div class="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-300">
+            <div class="p-8 text-center space-y-4">
+                <div class="w-20 h-20 bg-success/10 text-success rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <span class="material-symbols-outlined text-4xl icon-filled">check_circle</span>
+                </div>
+                <h3 class="text-xl font-black text-primary">تأكيد استلام الدفتر؟</h3>
+                <p class="text-sm text-on-surface-variant leading-relaxed">
+                    هل أنت متأكد من تأكيد استلام الدفتر رقم (<span id="receiveBookSerial" class="font-black text-success">---</span>)؟
+                </p>
+            </div>
+            <div class="px-8 pb-8 flex flex-col gap-3">
+                <button id="confirmReceiveBtn" onclick="window.executeMarkAsReceived()" class="w-full bg-success text-white font-black py-4 rounded-2xl shadow-lg shadow-success/20 hover:opacity-90 active:scale-95 transition-all">
+                    تأكيد الاستلام
+                </button>
+                <button onclick="window.closeReceiveModal()" class="w-full bg-surface-container-high text-primary font-black py-4 rounded-2xl active:scale-95 transition-all">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Return Confirmation Modal -->
+    <div id="returnBookModal" class="fixed inset-0 bg-primary/40 backdrop-blur-md z-[100] hidden items-center justify-center p-6 transition-all duration-300">
+        <div class="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-300">
+            <div class="p-8 text-center space-y-4">
+                <div class="w-20 h-20 bg-warning/10 text-warning rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <span class="material-symbols-outlined text-4xl icon-filled">undo</span>
+                </div>
+                <h3 class="text-xl font-black text-primary">إرجاع الدفتر للحليف؟</h3>
+                <p class="text-sm text-on-surface-variant leading-relaxed">
+                    هل أنت متأكد من إرجاع الدفتر رقم (<span id="returnBookSerial" class="font-black text-warning">---</span>)؟
+                    <br>
+                    <span class="text-[10px] opacity-60 font-bold">سيتم إلغاء حالة الاستلام وإعادة الدفتر للحليف.</span>
+                </p>
+            </div>
+            <div class="px-8 pb-8 flex flex-col gap-3">
+                <button id="confirmReturnBtn" onclick="window.executeReturnBook()" class="w-full bg-warning text-white font-black py-4 rounded-2xl shadow-lg shadow-warning/20 hover:opacity-90 active:scale-95 transition-all">
+                    تأكيد الإرجاع
+                </button>
+                <button onclick="window.closeReturnModal()" class="w-full bg-surface-container-high text-primary font-black py-4 rounded-2xl active:scale-95 transition-all">
                     إلغاء
                 </button>
             </div>
