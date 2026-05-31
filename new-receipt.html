@@ -51,9 +51,9 @@
 
                 <!-- Book Selection -->
                 <div class="space-y-1.5">
-                    <label class="text-xs font-black text-[#0056b3] mr-3 uppercase tracking-widest">اختيار الدفتر العهدة</label>
+                    <label class="text-xs font-black text-[#0056b3] mr-3 uppercase tracking-widest">اختيار الدفتر</label>
                     <select id="bookSelect" class="w-full bg-[#f8faff] text-[#1a1c1e] border-2 border-transparent rounded-[20px] py-4 px-4 focus:border-blue-200 focus:bg-white focus:ring-0 font-bold transition-all appearance-none" required>
-                        <option value="">جاري تحميل العهدة...</option>
+                        <option value="">جاري تحميل الدفاتر...</option>
                     </select>
                 </div>
 
@@ -149,13 +149,13 @@
                 .eq('status', 'open')
                 .is('received_date', null);
                 
-            if (error) { console.error(error); showToast('فشل تحميل البيانات', true); }
+            if (error) { console.error(error); notify('خطأ', 'فشل تحميل البيانات', { toast: true, native: false, type: 'error' }); }
 
             openBooks = books || [];
             if (openBooks.length === 0) {
                 bookSelect.innerHTML = '<option value="">لا يوجد لديك دفتر حاليا</option>';
             } else {
-                bookSelect.innerHTML = '<option value="">اختر الدفتر العهدة...</option>' + 
+                bookSelect.innerHTML = '<option value="">اختر الدفتر...</option>' + 
                     openBooks.map(b => `<option value="${b.id}" data-serial="${b.serial_number}" data-count="${b.receipt_count}" data-month="${b.month_year || ''}">${b.book_name} (${b.month_year || 'بلا تاريخ'})</option>`).join('');
             }
         }
@@ -238,19 +238,58 @@
             const start = parseInt(opt.getAttribute('data-serial'));
             
             try {
-                const { data } = await supabase
-                    .from('receipts')
-                    .select('receipt_number')
-                    .eq('book_id', id)
-                    .order('receipt_number', { ascending: false })
-                    .limit(1)
-                    .maybeSingle();
+                let count = 0;
+                let next = start;
                 
-                const next = data ? (data.receipt_number + 1) : start;
+                if (navigator.onLine) {
+                    const { count: dbCount, error: countError } = await supabase
+                        .from('receipts')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('book_id', id);
+                        
+                    if (countError) throw countError;
+                    count = dbCount;
+                    
+                    const { data } = await supabase
+                        .from('receipts')
+                        .select('receipt_number')
+                        .eq('book_id', id)
+                        .order('receipt_number', { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+                    
+                    next = data ? (data.receipt_number + 1) : start;
+                } else {
+                    const baseCount = parseInt(opt.getAttribute('data-count')) || 0;
+                    const queue = JSON.parse(localStorage.getItem('offlineReceiptsQueue') || '[]');
+                    const queuedReceipts = queue.filter(r => r.book_id === id);
+                    
+                    count = baseCount + queuedReceipts.length;
+                    
+                    if (queuedReceipts.length > 0) {
+                        const maxQueuedNum = Math.max(...queuedReceipts.map(r => r.receipt_number));
+                        next = maxQueuedNum + 1;
+                    } else {
+                        next = start + baseCount;
+                    }
+                }
+                
+                if (count >= 50) {
+                    await notify('تم اكتمال الدفتر', 'لا يمكن تسجيل وصولات جديدة في هذا الدفتر لأنه مكتمل ويحتوي على 50 وصلاً بالفعل.', { native: true, toast: true, type: 'error' });
+                    bookSelect.value = '';
+                    receiptNumberInput.value = '';
+                    headerBookBadge.textContent = 'الدفتر مكتمل بالفعل!';
+                    headerBookBadge.className = "bg-red-50 text-red-700 text-[10px] font-black px-3 py-1.5 rounded-full border border-red-100";
+                    return;
+                }
+                
                 receiptNumberInput.value = next;
                 headerBookBadge.textContent = `الوصل القادم: #${next}`;
                 headerBookBadge.className = "bg-green-50 text-green-700 text-[10px] font-black px-3 py-1.5 rounded-full border border-green-100";
-            } catch (err) { showToast('خطأ في التسلسل', true); }
+            } catch (err) { 
+                console.error(err);
+                notify('خطأ', 'فشل في جلب تسلسل الوصل القادم', { toast: true, native: false, type: 'error' });
+            }
         });
 
         form.addEventListener('submit', async (e) => {
@@ -264,17 +303,42 @@
             btn.disabled = true;
             btn.innerHTML = '<span class="animate-spin material-symbols-outlined">sync</span>';
             
-            const receiptData = {
-                book_id: bookSelect.value,
-                ally_id: currentUser.id,
-                subscriber_name: subscriberNameInput.value,
-                receipt_number: rNum,
-                amount: parseInt(amountInput.value),
-                month_year: bookSelect.selectedOptions[0].getAttribute('data-month') || new Date().toISOString().substring(0, 7),
-                receipt_date: document.getElementById('receiptDate').value
-            };
-
             try {
+                let count = 0;
+                if (navigator.onLine) {
+                    const { count: dbCount, error: countError } = await supabase
+                        .from('receipts')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('book_id', bookSelect.value);
+                    
+                    if (countError) throw countError;
+                    count = dbCount;
+                } else {
+                    const opt = bookSelect.selectedOptions[0];
+                    const baseCount = parseInt(opt.getAttribute('data-count')) || 0;
+                    const queue = JSON.parse(localStorage.getItem('offlineReceiptsQueue') || '[]');
+                    const queuedCount = queue.filter(r => r.book_id === bookSelect.value).length;
+                    
+                    count = baseCount + queuedCount;
+                }
+
+                if (count >= 50) {
+                    await notify('تم اكتمال الدفتر', 'لا يمكن تسجيل وصولات جديدة في هذا الدفتر لأنه مكتمل ويحتوي على 50 وصلاً بالفعل.', { native: true, toast: true, type: 'error' });
+                    btn.disabled = false;
+                    btn.innerHTML = originalBtnContent;
+                    return;
+                }
+
+                const receiptData = {
+                    book_id: bookSelect.value,
+                    ally_id: currentUser.id,
+                    subscriber_name: subscriberNameInput.value,
+                    receipt_number: rNum,
+                    amount: parseInt(amountInput.value),
+                    month_year: bookSelect.selectedOptions[0].getAttribute('data-month') || new Date().toISOString().substring(0, 7),
+                    receipt_date: document.getElementById('receiptDate').value
+                };
+
                 if (!navigator.onLine) {
                     throw new Error('Offline');
                 }
@@ -291,6 +355,16 @@
             } catch (err) {
                 console.error(err);
                 if (err.message === 'Offline' || err.message === 'Failed to fetch') {
+                    const receiptData = {
+                        book_id: bookSelect.value,
+                        ally_id: currentUser.id,
+                        subscriber_name: subscriberNameInput.value,
+                        receipt_number: rNum,
+                        amount: parseInt(amountInput.value),
+                        month_year: bookSelect.selectedOptions[0].getAttribute('data-month') || new Date().toISOString().substring(0, 7),
+                        receipt_date: document.getElementById('receiptDate').value
+                    };
+
                     // Save to offline queue
                     const queue = JSON.parse(localStorage.getItem('offlineReceiptsQueue') || '[]');
                     queue.push(receiptData);

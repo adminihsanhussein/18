@@ -709,8 +709,15 @@
 
             // --- Export Functions ---
             window.generateHighFidelityPDF = () => {
-                const books = window.allBooksData;
-                if (!books || books.length === 0) return alert('لا توجد بيانات لطباعتها');
+                const rawBooks = window.allBooksData || [];
+                if (rawBooks.length === 0) return alert('لا توجد بيانات لطباعتها');
+
+                // Sort books numerically by serial number in ascending order
+                const books = [...rawBooks].sort((a, b) => {
+                    const numA = Number(a.serial_number) || 0;
+                    const numB = Number(b.serial_number) || 0;
+                    return numA - numB;
+                });
 
                 const element = document.getElementById('printableReport');
                 element.innerHTML = ''; // Start Fresh
@@ -805,8 +812,15 @@
             };
 
             window.generateHighFidelityExcel = async () => {
-                const books = window.allBooksData;
-                if (!books || books.length === 0) return alert('لا توجد بيانات لتصديرها');
+                const rawBooks = window.allBooksData || [];
+                if (rawBooks.length === 0) return alert('لا توجد بيانات لتصديرها');
+
+                // Sort books numerically by serial number in ascending order
+                const books = [...rawBooks].sort((a, b) => {
+                    const numA = Number(a.serial_number) || 0;
+                    const numB = Number(b.serial_number) || 0;
+                    return numA - numB;
+                });
 
                 const workbook = new ExcelJS.Workbook();
                 const worksheet = workbook.addWorksheet('تقرير الدفاتر', {
