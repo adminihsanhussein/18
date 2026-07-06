@@ -772,33 +772,12 @@
                 window.pendingShareInfo = null;
             };
 
-            window.executeShareBook = async () => {
+            window.executeShareBook = () => {
                 if (!window.pendingShareFile || !window.pendingShareInfo) return;
                 const file = window.pendingShareFile;
                 const info = window.pendingShareInfo;
 
-                try {
-                    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({
-                            files: [file],
-                            title: info.title,
-                            text: info.text
-                        });
-                        window.closeShareModal();
-                    } else {
-                        throw new Error("الشير غير مدعوم أو هذا الملف غير قابل للمشاركة");
-                    }
-                } catch (err) {
-                    console.error("WhatsApp Share Execute Error:", err);
-                    
-                    // If the user cancelled the share menu, do not show error or trigger download.
-                    if (err.name === 'AbortError') {
-                        return;
-                    }
-                    
-                    alert("حدث خطأ أثناء المشاركة: " + err.message + " (" + err.name + ")\nسيتم تحميل الملف تلقائياً بدلاً من ذلك.");
-                    
-                    // Fallback to standard download
+                const fallbackDownload = () => {
                     const url = window.URL.createObjectURL(file);
                     const a = document.createElement('a');
                     a.href = url;
@@ -806,6 +785,29 @@
                     a.click();
                     window.URL.revokeObjectURL(url);
                     window.closeShareModal();
+                };
+
+                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    navigator.share({
+                        files: [file],
+                        title: info.title,
+                        text: info.text
+                    }).then(() => {
+                        window.closeShareModal();
+                    }).catch((err) => {
+                        console.error("WhatsApp Share Execute Error:", err);
+                        
+                        // If the user cancelled the share menu, do not show error or trigger download.
+                        if (err.name === 'AbortError') {
+                            return;
+                        }
+                        
+                        alert("حدث خطأ أثناء المشاركة: " + err.message + " (" + err.name + ")\nسيتم تحميل الملف تلقائياً بدلاً من ذلك.");
+                        fallbackDownload();
+                    });
+                } else {
+                    alert("الشير غير مدعوم أو هذا الملف غير قابل للمشاركة في متصفحك. سيتم تحميل الملف بدلاً من ذلك.");
+                    fallbackDownload();
                 }
             };
  
@@ -1454,15 +1456,15 @@
                     buildOfficialExcelWorksheet(workbook, book, receipts);
                     
                     const buffer = await workbook.xlsx.writeBuffer();
-                    const dateStr = new Date().toLocaleDateString('ar-EG').replace(/\//g, '-');
-                    const fileName = `كشف_الدفتر_الرسمي_${book.serial_number}_${dateStr}.xlsx`;
+                    // Use a clean ASCII filename to prevent encoding issues with Android native intent sharing
+                    const fileName = `book_report_${book.serial_number}.xlsx`;
                     
                     const file = new File([buffer], fileName, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
                     
                     window.pendingShareFile = file;
                     window.pendingShareInfo = {
-                        title: `ملف الدفتر #${book.serial_number}`,
-                        text: `مرفق ملف Excel الرسمي للدفتر رقم ${book.serial_number}`
+                        title: `Book Report #${book.serial_number}`,
+                        text: `Official Excel file for book number ${book.serial_number}`
                     };
 
                     // Check if Web Share API and file sharing is supported
