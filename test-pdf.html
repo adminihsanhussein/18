@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Test PDF Layout</title>
+    <style>
+        body { background: #ccc; padding: 20px; font-family: 'Tajawal', sans-serif; }
+        #printableReport { 
+            position: relative;
+            background: white !important;
+            width: 210mm;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+        .official-pdf-page {
+            width: 210mm;
+            height: 296.5mm; 
+            padding: 8mm 10mm; 
+            box-sizing: border-box;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            direction: rtl;
+            font-family: 'Tajawal', sans-serif;
+            color: black;
+            border: 1px solid red; /* To visualize boundary */
+        }
+        .official-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            height: 28mm;
+            border-bottom: 2px solid #000;
+            padding-bottom: 4px;
+        }
+        .official-header-side {
+            width: 35%;
+            font-size: 11px;
+            font-weight: bold;
+            line-height: 1.4;
+        }
+        .official-header-center {
+            width: 30%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .official-logo-img {
+            height: 24mm;
+            background: #eee;
+            width: 80px;
+        }
+        .official-columns-wrapper {
+            display: flex;
+            gap: 12px;
+            flex-grow: 1;
+        }
+        .official-subtable {
+            width: 50%;
+            border-collapse: collapse;
+        }
+        .official-subtable th {
+            border: 1px solid #000;
+            background-color: #ffffff !important;
+            color: #a30000;
+            font-size: 11px;
+            font-weight: bold;
+            height: 7mm;
+            text-align: center;
+        }
+        .official-subtable td {
+            border: 0.8px solid #000;
+            font-size: 10.5px;
+            height: 7.6mm;
+            text-align: center;
+        }
+        .official-subtable td.burgundy-cell {
+            color: #a30000;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        .official-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-top: 8px;
+            height: 18mm;
+            border-top: 1.5px solid #000;
+            padding-top: 4px;
+            font-size: 11.5px;
+            font-weight: bold;
+            color: #a30000;
+        }
+        .official-footer-left {
+            width: 45%;
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+        }
+        .official-footer-right {
+            width: 45%;
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div id="printableReport">
+    </div>
+
+    <script>
+        let rightRowsHTML = '';
+        let leftRowsHTML = '';
+        for (let i=0; i<25; i++) {
+            rightRowsHTML += `<tr><td class="burgundy-cell">${i+1}</td><td>الاسم ${i+1}</td><td>10,000</td><td>123456</td><td>2024-01-01</td></tr>`;
+            leftRowsHTML += `<tr><td class="burgundy-cell">${i+26}</td><td>الاسم ${i+26}</td><td>10,000</td><td>123457</td><td>2024-01-01</td></tr>`;
+        }
+
+        document.getElementById('printableReport').innerHTML = `
+            <div class="official-pdf-page">
+                <div class="official-header">
+                    <div class="official-header-side" style="text-align: right; direction: rtl; font-size: 11px;">
+                        <div style="font-size: 12px; color: #000;">التيار الشيعي الوطني</div>
+                        <div style="font-size: 11px; color: #000;">مكتب السيد الشهيد الصدر (قدس)سره</div>
+                        <div style="font-size: 12px; font-weight: 900; color: #000;">البنيان المرصوص</div>
+                        <div style="color: #000;">: المحافظةبغداد</div>
+                        <div style="color: #000;">: الدائرة الثامنة عشر</div>
+                        <div style="color: #000; font-weight: bold;">رقم الدبلك ( 1000 الى 1050 )</div>
+                    </div>
+                    <div class="official-header-center">
+                        <div class="official-logo-img"></div>
+                    </div>
+                    <div class="official-header-side" style="text-align: right;">
+                    </div>
+                </div>
+                
+                <div class="official-columns-wrapper">
+                    <table class="official-subtable">
+                        <thead>
+                            <tr>
+                                <th style="width: 6%;">ت</th>
+                                <th style="width: 44%;">اسم المساهم</th>
+                                <th style="width: 17%;">مبلغ الوصل</th>
+                                <th style="width: 15%;">رقم الوصل</th>
+                                <th style="width: 18%;">التاريخ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rightRowsHTML}
+                        </tbody>
+                    </table>
+
+                    <table class="official-subtable">
+                        <thead>
+                            <tr>
+                                <th style="width: 6%;">ت</th>
+                                <th style="width: 44%;">اسم المساهم</th>
+                                <th style="width: 17%;">مبلغ الوصل</th>
+                                <th style="width: 15%;">رقم الوصل</th>
+                                <th style="width: 18%;">التاريخ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${leftRowsHTML}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="official-footer">
+                    <div class="official-footer-right">
+                        <div>المجموع الكلي: 500,000 د.ع</div>
+                        <div>اسم الجابي: اسم تجريبي</div>
+                    </div>
+                    <div class="official-footer-left">
+                        <div>مسؤول القسم المالي</div>
+                        <div>التوقيع: ...................................</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    </script>
+</body>
+</html>

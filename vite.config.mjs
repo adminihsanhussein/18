@@ -103,6 +103,21 @@ function supabaseAdminPlugin(env) {
                     isAvailable: !newName.startsWith('[DEACTIVATED]'),
                     message: 'Status toggled successfully' 
                 };
+            } else if (action === 'update-user-name') {
+                console.log(`[Vite Admin API] Updating name for user: ${userId} to ${name}`);
+                const authRes = await supabaseAdmin.auth.admin.updateUserById(userId, {
+                    user_metadata: { full_name: name }
+                });
+                if (authRes.error) {
+                    console.error('[Vite Admin API] Auth Meta Update Error:', authRes.error.message);
+                    throw authRes.error;
+                }
+                const { error: updErr } = await supabaseAdmin
+                    .from('profiles')
+                    .update({ full_name: name })
+                    .eq('id', userId);
+                if (updErr) throw updErr;
+                result = { success: true, message: 'Name updated successfully' };
             } else {
                 throw new Error('Invalid action');
             }

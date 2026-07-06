@@ -176,6 +176,20 @@
                         <button id="saveServiceKeyBtn" class="bg-primary text-white px-4 py-2 rounded-xl text-xs font-black hover:scale-105 transition-all">حفظ</button>
                     </div>
                 </div>
+                <!-- Finance Manager Name Setting -->
+                <div class="w-full p-5 bg-white rounded-2xl shadow-sm border border-primary/10">
+                    <div class="flex items-center gap-4 mb-3">
+                        <span class="material-symbols-outlined text-primary">account_balance_wallet</span>
+                        <div class="flex-1">
+                            <span class="text-sm font-bold text-primary block">مسؤول القسم المالي (PDF)</span>
+                            <span class="text-[10px] text-on-surface-variant font-bold">الاسم الذي يظهر في أسفل التقرير الرسمي المطبوع</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="financeManagerInput" placeholder="أدخل اسم مسؤول القسم المالي..." class="flex-1 bg-surface-container-highest border-none rounded-xl text-xs px-3 py-2 focus:ring-2 focus:ring-primary/20 transition-all font-bold text-primary">
+                        <button id="saveFinanceManagerBtn" class="bg-primary text-white px-4 py-2 rounded-xl text-xs font-black hover:scale-105 transition-all">حفظ</button>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -298,6 +312,33 @@
         const SUPABASE_URL = 'https://raiwctnevoqjjhgngays.supabase.co';
 
         const adminApiCall = async (action, payload = {}) => {
+            // First check if we are running locally with Vite server and route requests to it
+            const isLocal = window.location.hostname === 'localhost' || 
+                            window.location.hostname === '127.0.0.1' || 
+                            window.location.hostname.startsWith('192.168.');
+            
+            if (isLocal) {
+                try {
+                    const localRes = await fetch('/api/admin', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ action, ...payload })
+                    });
+                    if (localRes.ok) {
+                        const localData = await localRes.json();
+                        if (localData.success) {
+                            return localData.data || { success: true };
+                        } else {
+                            throw new Error(localData.error || 'فشل الاتصال بخادم التطوير المحلي');
+                        }
+                    }
+                } catch (localErr) {
+                    console.warn('Local Admin API failed, trying direct Supabase fallback:', localErr);
+                }
+            }
+
             const serviceKey = localStorage.getItem('supabaseServiceRoleKey');
             if (!serviceKey) {
                 throw new Error('يرجى إدخال وحفظ "مفتاح الإدارة" (Service Role) أولاً في الإعدادات للقيام بهذه العملية.');
@@ -368,6 +409,27 @@
                     });
                     if (!updRes.ok) throw new Error('فشل في تحديث حالة الحساب');
                     return { success: true, isAvailable: !newName.startsWith('[DEACTIVATED]') };
+
+                } else if (action === 'update-user-name') {
+                    // 1. Update Auth User Metadata (full_name)
+                    const authRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${payload.userId}`, {
+                        method: 'PUT',
+                        headers,
+                        body: JSON.stringify({
+                            user_metadata: { full_name: payload.name }
+                        })
+                    });
+                    const authData = await authRes.json();
+                    if (!authRes.ok) throw new Error(authData.msg || authData.message || 'فشل في تحديث الاسم في المصادقة');
+
+                    // 2. Update Profile Name
+                    const updRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${payload.userId}`, {
+                        method: 'PATCH',
+                        headers: { ...headers, 'Prefer': 'return=minimal' },
+                        body: JSON.stringify({ full_name: payload.name })
+                    });
+                    if (!updRes.ok) throw new Error('فشل في تحديث الاسم في قاعدة البيانات');
+                    return { success: true };
 
                 } else {
                     throw new Error('Invalid action');
@@ -595,6 +657,35 @@
                     });
                 }
 
+                // Finance Manager Name initialization
+                const financeManagerInput = document.getElementById('financeManagerInput');
+                const saveFinanceManagerBtn = document.getElementById('saveFinanceManagerBtn');
+                
+                if (financeManagerInput && saveFinanceManagerBtn) {
+                    const existingManager = localStorage.getItem('financeManagerName');
+                    if (existingManager) {
+                        financeManagerInput.value = existingManager;
+                        saveFinanceManagerBtn.textContent = 'تم الحفظ';
+                    }
+
+                    saveFinanceManagerBtn.addEventListener('click', () => {
+                        const name = financeManagerInput.value.trim();
+                        if (!name) {
+                            localStorage.removeItem('financeManagerName');
+                            saveFinanceManagerBtn.textContent = 'حفظ';
+                            alert('تم إزالة اسم مسؤول القسم المالي.');
+                            return;
+                        }
+                        localStorage.setItem('financeManagerName', name);
+                        saveFinanceManagerBtn.textContent = 'تم الحفظ ✓';
+                        saveFinanceManagerBtn.classList.replace('bg-primary', 'bg-green-500');
+                        setTimeout(() => {
+                            saveFinanceManagerBtn.classList.replace('bg-green-500', 'bg-primary');
+                            saveFinanceManagerBtn.textContent = 'تم الحفظ';
+                        }, 2000);
+                    });
+                }
+
                 // 6. Check for #distribute hash to auto-open modal
                 const handleHash = () => {
                     if (window.location.hash === '#distribute') {
@@ -694,6 +785,9 @@
                                 </div>
                             </div>
                             <div class="flex gap-1">
+                                <button onclick="openEditNameModal('${a.id}', '${escapedName}')" class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all text-amber-400" title="تعديل الاسم">
+                                    <span class="material-symbols-outlined text-sm">edit</span>
+                                </button>
                                 <button onclick="openResetModal('${a.id}', '${escapedName}')" class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all text-blue-400" title="تغيير كلمة المرور">
                                     <span class="material-symbols-outlined text-sm">lock_reset</span>
                                 </button>
@@ -731,6 +825,43 @@
 
         window.closeResetModal = () => {
             document.getElementById('resetModal').classList.add('hidden');
+        };
+
+        window.openEditNameModal = (id, currentName) => {
+            document.getElementById('editNameUserId').value = id;
+            document.getElementById('editNameUserCurrent').textContent = currentName;
+            document.getElementById('newNameValue').value = currentName;
+            document.getElementById('editNameModal').classList.remove('hidden');
+        };
+
+        window.closeEditNameModal = () => {
+            document.getElementById('editNameModal').classList.add('hidden');
+        };
+
+        window.submitNameChange = async (e) => {
+            if (e) e.preventDefault();
+            const userId = document.getElementById('editNameUserId').value;
+            const newName = document.getElementById('newNameValue').value.trim();
+            const btn = e ? e.target : event.target;
+            
+            if (!newName) return showStatus('خطأ في البيانات', 'يرجى إدخال اسم صحيح', true);
+
+            try {
+                btn.disabled = true;
+                btn.textContent = 'جاري الحفظ...';
+                
+                await adminApiCall('update-user-name', { userId, name: newName });
+                
+                closeEditNameModal();
+                showStatus('نجاح العملية', 'تم تعديل اسم الحليف بنجاح');
+                if (window.manageAllies) window.manageAllies(); 
+            } catch (err) {
+                console.error('Name change error:', err);
+                showStatus('فشل تعديل الاسم', err.message, true);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'حفظ التغيير';
+            }
         };
 
         window.showStatus = (title, message, isError = false) => {
@@ -1214,6 +1345,22 @@
             <div class="flex gap-2">
                 <button onclick="submitPasswordReset(event)" class="flex-grow bg-primary text-white font-black py-3 rounded-xl transition-all active:scale-95">حفظ التغيير</button>
                 <button onclick="closeResetModal()" class="px-6 bg-surface-container-high font-bold py-3 rounded-xl">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Name Modal -->
+    <div id="editNameModal" class="fixed inset-0 bg-primary/40 backdrop-blur-sm z-[120] flex items-center justify-center hidden p-6">
+        <div class="bg-white w-full max-w-sm rounded-[2rem] overflow-hidden shadow-2xl p-6 space-y-4">
+            <h4 class="font-black text-primary flex items-center gap-2">
+                <span class="material-symbols-outlined">edit</span>
+                تعديل اسم الحليف: <span id="editNameUserCurrent" class="text-on-surface-variant">---</span>
+            </h4>
+            <input type="hidden" id="editNameUserId">
+            <input type="text" id="newNameValue" placeholder="أدخل الاسم الحقيقي الجديد" class="w-full bg-surface-container-low border-transparent rounded-xl py-3 px-4 focus:ring-2 focus:ring-primary/20 font-bold">
+            <div class="flex gap-2">
+                <button onclick="submitNameChange(event)" class="flex-grow bg-primary text-white font-black py-3 rounded-xl transition-all active:scale-95">حفظ التغيير</button>
+                <button onclick="closeEditNameModal()" class="px-6 bg-surface-container-high font-bold py-3 rounded-xl">إلغاء</button>
             </div>
         </div>
     </div>
