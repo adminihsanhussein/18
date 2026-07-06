@@ -774,12 +774,8 @@
 
             window.executeShareBook = async () => {
                 if (!window.pendingShareFile || !window.pendingShareInfo) return;
-                const btn = document.getElementById('confirmShareBtn');
                 const file = window.pendingShareFile;
                 const info = window.pendingShareInfo;
-                
-                btn.disabled = true;
-                btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">sync</span> جاري المشاركة...';
 
                 try {
                     if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -790,11 +786,17 @@
                         });
                         window.closeShareModal();
                     } else {
-                        throw new Error("الشير غير مدعوم");
+                        throw new Error("الشير غير مدعوم أو هذا الملف غير قابل للمشاركة");
                     }
                 } catch (err) {
                     console.error("WhatsApp Share Execute Error:", err);
-                    alert("عذراً، حدث خطأ أثناء المشاركة أو أن متصفحك لا يدعم المشاركة المباشرة للملفات. سيتم تحميل الملف بدلاً من ذلك.");
+                    
+                    // If the user cancelled the share menu, do not show error or trigger download.
+                    if (err.name === 'AbortError') {
+                        return;
+                    }
+                    
+                    alert("حدث خطأ أثناء المشاركة: " + err.message + " (" + err.name + ")\nسيتم تحميل الملف تلقائياً بدلاً من ذلك.");
                     
                     // Fallback to standard download
                     const url = window.URL.createObjectURL(file);
