@@ -1419,15 +1419,23 @@
 
             window.shareOfficialExcelToWhatsApp = async (bookId) => {
                 // Show modal immediately with loading state
-                document.getElementById('shareBookSerial').textContent = "...";
-                document.getElementById('shareModalMessage').innerHTML = 'جاري تجهيز كشف الدفتر وتحضير ملف Excel...';
+                const serialEl = document.getElementById('shareBookSerial');
+                if (serialEl) serialEl.textContent = "...";
+                
+                const messageEl = document.getElementById('shareModalMessage');
+                if (messageEl) messageEl.innerHTML = 'جاري تجهيز كشف الدفتر وتحضير ملف Excel...';
                 
                 const confirmBtn = document.getElementById('confirmShareBtn');
-                confirmBtn.disabled = true;
-                confirmBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">sync</span> جاري التحضير...';
+                if (confirmBtn) {
+                    confirmBtn.disabled = true;
+                    confirmBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">sync</span> جاري التحضير...';
+                }
                 
-                document.getElementById('shareBookModal').classList.remove('hidden');
-                document.getElementById('shareBookModal').classList.add('flex');
+                const modal = document.getElementById('shareBookModal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                }
 
                 try {
                     const data = await fetchBookAndReceipts(bookId);
@@ -1437,7 +1445,7 @@
                     }
                     const { book, receipts } = data;
                     
-                    document.getElementById('shareBookSerial').textContent = book.serial_number;
+                    if (serialEl) serialEl.textContent = book.serial_number;
 
                     const workbook = new ExcelJS.Workbook();
                     workbook.creator = 'نظام البنيان المرصوص';
@@ -1631,7 +1639,7 @@
                 </div>
                 <h3 id="shareModalTitle" class="text-xl font-black text-primary">مشاركة كشف الدفتر</h3>
                 <p id="shareModalMessage" class="text-sm text-on-surface-variant leading-relaxed">
-                    جاري تجهيز كشف الدفتر وتحضير ملف Excel...
+                    جاري تجهيز كشف الدفتر وتحضير ملف Excel للدفتر رقم (<span id="shareBookSerial" class="font-black text-green-600">---</span>)...
                 </p>
             </div>
             <div class="px-8 pb-8 flex flex-col gap-3">
