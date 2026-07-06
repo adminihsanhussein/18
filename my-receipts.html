@@ -251,7 +251,7 @@
                 <!-- Search Book Number -->
                 <div class="w-full lg:flex-grow relative">
                     <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/40">search</span>
-                    <input type="text" placeholder="ابحث برقم الدفتر..." class="w-full bg-surface-container-low border-transparent rounded-2xl py-4 pr-12 pl-4 focus:ring-4 focus:ring-primary/5 focus:border-primary/20 font-bold placeholder:text-on-surface-variant/30 transition-all">
+                    <input type="text" id="searchBookInput" placeholder="ابحث برقم الدفتر..." class="w-full bg-surface-container-low border-transparent rounded-2xl py-4 pr-12 pl-4 focus:ring-4 focus:ring-primary/5 focus:border-primary/20 font-bold placeholder:text-on-surface-variant/30 transition-all">
                 </div>
                 
                 <div class="flex flex-wrap gap-3 w-full lg:w-auto">
@@ -598,10 +598,24 @@
                 return books || [];
             };
 
-            const populateTable = (books) => {
-                window.allBooksData = books; // Store for export
+            window.unfilteredBooksData = [];
+            const populateTable = (books, isSearching = false) => {
+                if (!isSearching) {
+                    window.unfilteredBooksData = books || [];
+                }
+
+                const searchQuery = document.getElementById('searchBookInput')?.value.trim().toLowerCase() || "";
+                let displayBooks = window.unfilteredBooksData;
+                
+                if (searchQuery) {
+                    displayBooks = window.unfilteredBooksData.filter(b => 
+                        String(b.serial_number || "").toLowerCase().includes(searchQuery)
+                    );
+                }
+
+                window.allBooksData = displayBooks; // Store for export
                 const tbody = document.querySelector('tbody');
-                tbody.innerHTML = books.map(b => `
+                tbody.innerHTML = displayBooks.map(b => `
                     <tr class="hover:bg-primary/5 transition-all group">
                         <td class="py-5 px-6">
                             <span class="p-2 bg-primary-fixed rounded-xl text-primary font-black text-xs">#${b.serial_number}</span>
@@ -658,11 +672,11 @@
                 `).join('');
 
                 // Update Stats Cards
-                document.querySelector('.stat-card-total').textContent = books.length;
-                document.querySelector('.stat-card-received').textContent = books.filter(b => b.received_date).length;
-                document.querySelector('.stat-card-completed').textContent = books.filter(b => b.status === 'delivered').length;
+                document.querySelector('.stat-card-total').textContent = displayBooks.length;
+                document.querySelector('.stat-card-received').textContent = displayBooks.filter(b => b.received_date).length;
+                document.querySelector('.stat-card-completed').textContent = displayBooks.filter(b => b.status === 'delivered').length;
                 
-                const totalAmount = books.reduce((sum, b) => sum + b.total_amount, 0);
+                const totalAmount = displayBooks.reduce((sum, b) => sum + b.total_amount, 0);
                 document.querySelector('.stat-card-total-amount').textContent = totalAmount.toLocaleString();
 
             };
@@ -804,6 +818,14 @@
                 const books = await fetchBooks(e.target.value);
                 populateTable(books);
             });
+
+            // Handle search
+            const searchInput = document.getElementById('searchBookInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', () => {
+                    populateTable(window.unfilteredBooksData, true);
+                });
+            }
 
             // Animations
             const elements = document.querySelectorAll('section, .grid, tr');
