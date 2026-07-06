@@ -760,6 +760,52 @@
                     btn.innerHTML = 'تأكيد الإرجاع';
                 }
             };
+
+            // WhatsApp Share Modal Logic
+            window.pendingShareFile = null;
+            window.pendingShareInfo = null;
+
+            window.closeShareModal = () => {
+                document.getElementById('shareBookModal').classList.add('hidden');
+                document.getElementById('shareBookModal').classList.remove('flex');
+                window.pendingShareFile = null;
+                window.pendingShareInfo = null;
+            };
+
+            window.executeShareBook = async () => {
+                if (!window.pendingShareFile || !window.pendingShareInfo) return;
+                const btn = document.getElementById('confirmShareBtn');
+                const file = window.pendingShareFile;
+                const info = window.pendingShareInfo;
+                
+                btn.disabled = true;
+                btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">sync</span> جاري المشاركة...';
+
+                try {
+                    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: info.title,
+                            text: info.text
+                        });
+                        window.closeShareModal();
+                    } else {
+                        throw new Error("الشير غير مدعوم");
+                    }
+                } catch (err) {
+                    console.error("WhatsApp Share Execute Error:", err);
+                    alert("عذراً، حدث خطأ أثناء المشاركة أو أن متصفحك لا يدعم المشاركة المباشرة للملفات. سيتم تحميل الملف بدلاً من ذلك.");
+                    
+                    // Fallback to standard download
+                    const url = window.URL.createObjectURL(file);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = file.name;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    window.closeShareModal();
+                }
+            };
  
             // Admin Deletion Logic
             let bookToDelete = null;
@@ -1372,11 +1418,27 @@
             };
 
             window.shareOfficialExcelToWhatsApp = async (bookId) => {
+                // Show modal immediately with loading state
+                document.getElementById('shareBookSerial').textContent = "...";
+                document.getElementById('shareModalMessage').innerHTML = 'جاري تجهيز كشف الدفتر وتحضير ملف Excel...';
+                
+                const confirmBtn = document.getElementById('confirmShareBtn');
+                confirmBtn.disabled = true;
+                confirmBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">sync</span> جاري التحضير...';
+                
+                document.getElementById('shareBookModal').classList.remove('hidden');
+                document.getElementById('shareBookModal').classList.add('flex');
+
                 try {
                     const data = await fetchBookAndReceipts(bookId);
-                    if (!data) return;
+                    if (!data) {
+                        window.closeShareModal();
+                        return;
+                    }
                     const { book, receipts } = data;
                     
+                    document.getElementById('shareBookSerial').textContent = book.serial_number;
+
                     const workbook = new ExcelJS.Workbook();
                     workbook.creator = 'نظام البنيان المرصوص';
                     buildOfficialExcelWorksheet(workbook, book, receipts);
@@ -1387,26 +1449,27 @@
                     
                     const file = new File([buffer], fileName, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
                     
+                    window.pendingShareFile = file;
+                    window.pendingShareInfo = {
+                        title: `ملف الدفتر #${book.serial_number}`,
+                        text: `مرفق ملف Excel الرسمي للدفتر رقم ${book.serial_number}`
+                    };
+
+                    // Check if Web Share API and file sharing is supported
                     if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({
-                            files: [file],
-                            title: `ملف الدفتر #${book.serial_number}`,
-                            text: `مرفق ملف Excel الرسمي للدفتر رقم ${book.serial_number}`
-                        });
+                        document.getElementById('shareModalMessage').innerHTML = `تم تجهيز ملف Excel للدفتر رقم (<span class="font-black text-green-600">${book.serial_number}</span>) بنجاح. اضغط على الزر أدناه لإرساله عبر واتساب.`;
+                        confirmBtn.innerHTML = '<span class="material-symbols-outlined text-sm">share</span> مشاركة عبر واتساب';
+                        confirmBtn.disabled = false;
                     } else {
-                        alert("عذراً، متصفحك لا يدعم المشاركة المباشرة للملفات. سيتم تحميل الملف بدلاً من ذلك، ويمكنك إرساله يدوياً عبر واتساب.");
-                        // Fallback to standard download
-                        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = fileName;
-                        a.click();
-                        window.URL.revokeObjectURL(url);
+                        // Web Share not supported or cannot share files
+                        document.getElementById('shareModalMessage').innerHTML = `ملف Excel جاهز، ولكن متصفحك لا يدعم المشاركة المباشرة. اضغط أدناه لتحميل الملف ومن ثم إرساله يدوياً.`;
+                        confirmBtn.innerHTML = '<span class="material-symbols-outlined text-sm">download</span> تحميل الملف';
+                        confirmBtn.disabled = false;
                     }
                 } catch (err) {
-                    console.error("WhatsApp Share Error:", err);
-                    alert("حدث خطأ أثناء محاولة المشاركة: " + err.message);
+                    console.error("WhatsApp Share Prepare Error:", err);
+                    alert("حدث خطأ أثناء تحضير الملف: " + err.message);
+                    window.closeShareModal();
                 }
             };
 
@@ -1553,6 +1616,29 @@
                     تأكيد الإرجاع
                 </button>
                 <button onclick="window.closeReturnModal()" class="w-full bg-surface-container-high text-primary font-black py-4 rounded-2xl active:scale-95 transition-all">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Share WhatsApp Confirmation Modal -->
+    <div id="shareBookModal" class="fixed inset-0 bg-primary/40 backdrop-blur-md z-[100] hidden items-center justify-center p-6 transition-all duration-300">
+        <div class="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-300">
+            <div class="p-8 text-center space-y-4">
+                <div class="w-20 h-20 bg-green-50 text-green-600 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <span class="material-symbols-outlined text-4xl icon-filled text-green-600">share</span>
+                </div>
+                <h3 id="shareModalTitle" class="text-xl font-black text-primary">مشاركة كشف الدفتر</h3>
+                <p id="shareModalMessage" class="text-sm text-on-surface-variant leading-relaxed">
+                    جاري تجهيز كشف الدفتر وتحضير ملف Excel...
+                </p>
+            </div>
+            <div class="px-8 pb-8 flex flex-col gap-3">
+                <button id="confirmShareBtn" onclick="window.executeShareBook()" disabled class="w-full bg-green-600 text-white font-black py-4 rounded-2xl shadow-lg shadow-success/20 hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                    جاري التحضير...
+                </button>
+                <button onclick="window.closeShareModal()" class="w-full bg-surface-container-high text-primary font-black py-4 rounded-2xl active:scale-95 transition-all">
                     إلغاء
                 </button>
             </div>
