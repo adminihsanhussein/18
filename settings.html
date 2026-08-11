@@ -190,6 +190,45 @@
                         <button id="saveFinanceManagerBtn" class="bg-primary text-white px-4 py-2 rounded-xl text-xs font-black hover:scale-105 transition-all">حفظ</button>
                     </div>
                 </div>
+                <!-- Google Form URL Setting -->
+                <div class="w-full p-5 bg-white rounded-2xl shadow-sm border border-primary/10 space-y-3">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                            <span class="material-symbols-outlined text-xl">link</span>
+                        </div>
+                        <div class="flex-1">
+                            <span class="text-sm font-bold text-primary block">رابط فورمة كوكل (Google Form)</span>
+                            <span class="text-[10px] text-on-surface-variant font-bold">الدمج والبرمجة التلقائية للحقول حسب الاسم فور تغيير الرابط</span>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2.5">
+                        <div class="relative flex items-center">
+                            <input type="url" id="googleFormUrlInput" placeholder="الصق رابط فورمة كوكل هنا (https://docs.google.com/forms/d/...)..." class="w-full bg-surface-container-highest border-none rounded-xl text-xs py-3 px-3 focus:ring-2 focus:ring-primary/20 transition-all font-mono text-left" dir="ltr">
+                        </div>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <button id="autoSyncGoogleFormBtn" type="button" class="w-full bg-gradient-to-r from-orange-500 to-amber-600 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow-md shadow-orange-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm">sync_alt</span>
+                                ⚡ مزامنة وربط الحقول تلقائياً
+                            </button>
+                            <div class="flex gap-2">
+                                <button id="saveGoogleFormUrlBtn" class="flex-1 bg-primary text-white px-3 py-2.5 rounded-xl text-xs font-black hover:scale-105 transition-all">حفظ الرابط</button>
+                                <button id="testGoogleFormUrlBtn" type="button" class="px-3 py-2.5 rounded-xl bg-surface-container-high text-primary text-xs font-black hover:bg-surface-container-highest transition-all flex items-center justify-center gap-1" title="اختبار الرابط">
+                                    <span class="material-symbols-outlined text-xs">open_in_new</span>
+                                    اختبار
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between px-1 pt-1 border-t border-surface-container-high">
+                            <span id="googleFormStatusText" class="text-[10px] text-on-surface-variant/80 font-bold">الرابط الحالي: الافتراضي</span>
+                            <button id="viewFieldMappingBtn" type="button" class="text-[10px] text-primary font-black hover:underline flex items-center gap-1">
+                                <span class="material-symbols-outlined text-xs">tune</span>
+                                معاينة/تعديل الحقول
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -308,6 +347,7 @@
         console.log('--- Settings Module Trace: 1 ---');
         import { supabase } from './lib/supabase.js';
         import { notify } from './lib/notifications.js';
+        import { getGoogleFormConfig, saveGoogleFormUrl, parseGoogleFormHtml, matchGoogleFormQuestions } from './lib/googleFormSync.js';
         
         const SUPABASE_URL = 'https://raiwctnevoqjjhgngays.supabase.co';
 
@@ -329,7 +369,7 @@
                     if (localRes.ok) {
                         const localData = await localRes.json();
                         if (localData.success) {
-                            return localData.data || { success: true };
+                            return (localData.data !== null && localData.data !== undefined) ? localData.data : localData;
                         } else {
                             throw new Error(localData.error || 'فشل الاتصال بخادم التطوير المحلي');
                         }
@@ -685,6 +725,261 @@
                         }, 2000);
                     });
                 }
+
+                // Google Form URL & Dynamic Auto-Sync / Auto-Mapping initialization
+                const googleFormUrlInput = document.getElementById('googleFormUrlInput');
+                const autoSyncGoogleFormBtn = document.getElementById('autoSyncGoogleFormBtn');
+                const saveGoogleFormUrlBtn = document.getElementById('saveGoogleFormUrlBtn');
+                const testGoogleFormUrlBtn = document.getElementById('testGoogleFormUrlBtn');
+                const viewFieldMappingBtn = document.getElementById('viewFieldMappingBtn');
+                const googleFormStatusText = document.getElementById('googleFormStatusText');
+
+                let currentParsedForm = null;
+
+                const refreshGFormUI = () => {
+                    const currentConfig = getGoogleFormConfig();
+                    const existingSavedUrl = localStorage.getItem('googleFormUrl');
+                    let rawEntries = localStorage.getItem('googleFormEntries');
+                    let entryCount = 0;
+                    if (rawEntries) {
+                        try {
+                            const parsed = JSON.parse(rawEntries);
+                            entryCount = Object.values(parsed).filter(Boolean).length;
+                        } catch(e){}
+                    }
+
+                    if (existingSavedUrl) {
+                        if (googleFormUrlInput) googleFormUrlInput.value = existingSavedUrl;
+                        if (googleFormStatusText) {
+                            googleFormStatusText.textContent = entryCount > 0 
+                                ? `الرابط الحالي: مخصص (مربوط مبرمج مع ${entryCount} حقول ⚡)`
+                                : 'الرابط الحالي: مخصص';
+                        }
+                    } else {
+                        if (googleFormUrlInput) googleFormUrlInput.value = currentConfig.viewUrl || '';
+                        if (googleFormStatusText) googleFormStatusText.textContent = 'الرابط الحالي: الافتراضي';
+                    }
+                };
+
+                const parseFormAndShowMapping = async (showModal = true) => {
+                    const url = (googleFormUrlInput.value || '').trim();
+                    if (!url) {
+                        showStatus('رابط مفقود', 'يرجى وضع رابط فورمة كوكل أولاً', true);
+                        return null;
+                    }
+
+                    let btn = autoSyncGoogleFormBtn;
+                    let origContent = btn ? btn.innerHTML : '';
+                    if (btn) {
+                        btn.disabled = true;
+                        btn.innerHTML = `<span class="animate-spin material-symbols-outlined text-sm ml-1">sync</span> جاري البرمجة والربط الذكي...`;
+                    }
+
+                    try {
+                        let parsedResult = null;
+
+                        // Try 1: Call Vite Local Server Admin API
+                        try {
+                            const apiRes = await adminApiCall('parse-google-form', { url });
+                            if (apiRes && apiRes.entries) {
+                                parsedResult = apiRes;
+                            }
+                        } catch (apiErr) {
+                            console.warn('Vite Admin API parse failed, using client fetch fallback:', apiErr);
+                        }
+
+                        // Try 2: Client fetch fallback
+                        if (!parsedResult) {
+                            let fetchUrl = url;
+                            const match = url.match(/forms\/d\/(?:e\/)?([a-zA-Z0-9_-]+)/);
+                            if (match && match[1]) {
+                                fetchUrl = `https://docs.google.com/forms/d/e/${match[1]}/viewform`;
+                            }
+
+                            try {
+                                const rawRes = await fetch(fetchUrl);
+                                const htmlText = await rawRes.text();
+                                const clientParsed = parseGoogleFormHtml(htmlText);
+                                parsedResult = {
+                                    success: true,
+                                    entries: clientParsed.entries,
+                                    details: clientParsed.details,
+                                    allQuestions: clientParsed.allQuestions,
+                                    viewUrl: fetchUrl
+                                };
+                            } catch (clientFetchErr) {
+                                // Try 3: CORS Proxy Fallback
+                                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(fetchUrl)}`;
+                                const proxyRes = await fetch(proxyUrl);
+                                const htmlText = await proxyRes.text();
+                                const clientParsed = parseGoogleFormHtml(htmlText);
+                                parsedResult = {
+                                    success: true,
+                                    entries: clientParsed.entries,
+                                    details: clientParsed.details,
+                                    allQuestions: clientParsed.allQuestions,
+                                    viewUrl: fetchUrl
+                                };
+                            }
+                        }
+
+                        if (!parsedResult || !parsedResult.entries) {
+                            throw new Error('تعذر قراءة بيانات الشفرة من فورمة كوكل.');
+                        }
+
+                        currentParsedForm = parsedResult;
+
+                        const canonicalUrl = (parsedResult && parsedResult.viewUrl) ? parsedResult.viewUrl : url;
+                        const formId = parsedResult ? (parsedResult.formId || '') : '';
+
+                        // Save the automatically matched entries with resolved canonical URL
+                        saveGoogleFormUrl(canonicalUrl, parsedResult.entries, formId);
+                        refreshGFormUI();
+
+                        if (showModal) {
+                            openGFormMappingModal(parsedResult);
+                        } else {
+                            showStatus('تمت المزامنة بنجاح ⚡', 'تم استخراج الحقول وربطها بالأسماء تلقائياً بنجاح!');
+                        }
+
+                        return parsedResult;
+
+                    } catch (err) {
+                        console.error('Form Parsing Error:', err);
+                        showStatus('فشل قراءة الفورمة', err.message || 'تعذر استخراج حقول النموذج. تأكد من صحة الرابط وأن الفورمة عامة ومتاحة للجميع.', true);
+                        return null;
+                    } finally {
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.innerHTML = origContent;
+                        }
+                    }
+                };
+
+                // Helper to render mapping modal
+                window.openGFormMappingModal = (parsedData) => {
+                    const modal = document.getElementById('gformMappingModal');
+                    const container = document.getElementById('mappingFieldsContainer');
+                    if (!modal || !container) return;
+
+                    const activeConfig = getGoogleFormConfig();
+                    const entries = parsedData.entries || activeConfig.entries || {};
+                    const details = parsedData.details || {};
+                    const allQuestions = parsedData.allQuestions || [];
+
+                    const fieldsConfig = [
+                        { key: 'subscriberName', title: '📝 اسم المساهم / المتبرع', icon: 'person' },
+                        { key: 'receiptNumber', title: '🔢 رقم الوصل / السند', icon: 'tag' },
+                        { key: 'amount', title: '💰 مبلغ الوصل', icon: 'payments' },
+                        { key: 'receiptDate', title: '📅 تاريخ الوصل', icon: 'calendar_today' },
+                        { key: 'holderName', title: '👤 اسم صاحب الدبلك / الحليف', icon: 'badge' }
+                    ];
+
+                    container.innerHTML = fieldsConfig.map(f => {
+                        const currentEntry = entries[f.key] || '';
+                        const detail = details[f.key] || {};
+                        const matchedText = detail.matchedTitle || '';
+
+                        // Build question options dropdown
+                        let optionsHtml = `<option value="">-- حدد حقل كوكل المناسب --</option>`;
+                        allQuestions.forEach(q => {
+                            const isSelected = q.entryId === currentEntry ? 'selected' : '';
+                            optionsHtml += `<option value="${q.entryId}" ${isSelected}>${q.title} (${q.entryId})</option>`;
+                        });
+
+                        return `
+                            <div class="p-4 bg-surface-container-low rounded-2xl border border-surface-container-high space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span class="material-symbols-outlined text-primary text-base">${f.icon}</span>
+                                        <span class="text-xs font-black text-primary">${f.title}</span>
+                                    </div>
+                                    ${matchedText ? `<span class="text-[9px] bg-green-500/10 text-green-600 font-black px-2 py-0.5 rounded-md">تم المطابقة تلقائياً ✓</span>` : `<span class="text-[9px] bg-orange-500/10 text-orange-600 font-bold px-2 py-0.5 rounded-md">لم يطابق تلقائياً</span>`}
+                                </div>
+                                <select id="mapping_select_${f.key}" class="w-full bg-white border border-surface-container-highest rounded-xl text-xs py-2.5 px-3 font-bold text-primary focus:ring-2 focus:ring-primary/20">
+                                    ${optionsHtml}
+                                </select>
+                                ${matchedText ? `<p class="text-[10px] text-on-surface-variant/70 font-bold mr-1">العنوان المكتشف في كوكل: <span class="text-primary font-black">"${matchedText}"</span></p>` : ''}
+                            </div>
+                        `;
+                    }).join('');
+
+                    modal.classList.remove('hidden');
+                };
+
+                window.closeGFormMappingModal = () => {
+                    const modal = document.getElementById('gformMappingModal');
+                    if (modal) modal.classList.add('hidden');
+                };
+
+                // Confirm Mapping Button Handler
+                const confirmGFormMappingBtn = document.getElementById('confirmGFormMappingBtn');
+                if (confirmGFormMappingBtn) {
+                    confirmGFormMappingBtn.addEventListener('click', () => {
+                        const url = (googleFormUrlInput.value || '').trim();
+                        const newEntries = {
+                            subscriberName: document.getElementById('mapping_select_subscriberName')?.value || '',
+                            receiptNumber: document.getElementById('mapping_select_receiptNumber')?.value || '',
+                            amount: document.getElementById('mapping_select_amount')?.value || '',
+                            receiptDate: document.getElementById('mapping_select_receiptDate')?.value || '',
+                            holderName: document.getElementById('mapping_select_holderName')?.value || ''
+                        };
+
+                        const canonicalUrl = (currentParsedForm && currentParsedForm.viewUrl) ? currentParsedForm.viewUrl : url;
+                        const formId = currentParsedForm ? (currentParsedForm.formId || '') : '';
+
+                        saveGoogleFormUrl(canonicalUrl, newEntries, formId);
+                        closeGFormMappingModal();
+                        refreshGFormUI();
+                        showStatus('تم حفظ الربط ⚡', 'تم دمج وحفظ تعيينات حقول فورمة كوكل بنجاح!');
+                    });
+                }
+
+                if (autoSyncGoogleFormBtn) {
+                    autoSyncGoogleFormBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        parseFormAndShowMapping(true);
+                    });
+                }
+
+                if (saveGoogleFormUrlBtn) {
+                    saveGoogleFormUrlBtn.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        const url = (googleFormUrlInput.value || '').trim();
+                        if (!url) {
+                            saveGoogleFormUrl('');
+                            refreshGFormUI();
+                            showStatus('تم المسح', 'تمت العودة للرابط الافتراضي');
+                            return;
+                        }
+                        await parseFormAndShowMapping(false);
+                    });
+                }
+
+                if (testGoogleFormUrlBtn) {
+                    testGoogleFormUrlBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const activeConfig = getGoogleFormConfig();
+                        if (activeConfig && activeConfig.viewUrl) {
+                            window.open(activeConfig.viewUrl, '_blank');
+                        } else {
+                            alert('لا يوجد رابط فورمة محدد.');
+                        }
+                    });
+                }
+
+                if (viewFieldMappingBtn) {
+                    viewFieldMappingBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        if (currentParsedForm) {
+                            openGFormMappingModal(currentParsedForm);
+                        } else {
+                            parseFormAndShowMapping(true);
+                        }
+                    });
+                }
+
+                refreshGFormUI();
 
                 // 6. Check for #distribute hash to auto-open modal
                 const handleHash = () => {
@@ -1408,6 +1703,47 @@
                 <button onclick="submitDistributeBook(event)" class="w-full bg-orange-500 text-white font-black py-4 rounded-2xl shadow-lg shadow-orange-500/20 hover:scale-[1.02] active:scale-95 transition-all text-sm flex items-center justify-center gap-2">
                     <span class="material-symbols-outlined text-sm">send</span>
                     تثبيت التوزيع الآن
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Google Form Field Mapping Preview Modal -->
+    <div id="gformMappingModal" class="fixed inset-0 bg-primary/60 backdrop-blur-md z-[130] flex items-center justify-center hidden p-4">
+        <div class="bg-white w-full max-w-xl rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh] border border-white/20">
+            <div class="p-6 border-b border-surface-container-high flex justify-between items-center bg-primary/5">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-orange-500/10 text-orange-500 flex items-center justify-center font-black">
+                        <span class="material-symbols-outlined text-xl">hub</span>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-primary text-base">معاينة وتعديل ربط حقول الفورمة</h3>
+                        <p class="text-[10px] text-on-surface-variant font-bold">تم ربط حقول كوكل تلقائياً مع حقول التطبيق حسب الاسم</p>
+                    </div>
+                </div>
+                <button onclick="closeGFormMappingModal()" class="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:bg-error hover:text-white transition-all">
+                    <span class="material-symbols-outlined text-sm">close</span>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-4 overflow-y-auto custom-scrollbar">
+                <div class="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-amber-900 text-xs font-bold flex items-center gap-2">
+                    <span class="material-symbols-outlined text-amber-600 text-base">info</span>
+                    <span>قام النظام بالبحث عن الكلمات المفتاحية في شفرة فورمة كوكل وربط الحقول تلقائياً. بإمكانك تعديل اختيارات الحقول يدوياً إن أردت.</span>
+                </div>
+
+                <div class="space-y-3" id="mappingFieldsContainer">
+                    <!-- Dynamic Mapping Rows -->
+                </div>
+            </div>
+
+            <div class="p-5 border-t border-surface-container-high bg-surface-container-low flex gap-3">
+                <button id="confirmGFormMappingBtn" class="flex-1 bg-primary text-white font-black py-3 rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all text-xs flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-sm">check_circle</span>
+                    تأكيد واعتماد ربط الحقول
+                </button>
+                <button onclick="closeGFormMappingModal()" class="px-5 bg-surface-container-high text-on-surface-variant font-bold py-3 rounded-xl text-xs hover:bg-surface-container-highest transition-all">
+                    إلغاء
                 </button>
             </div>
         </div>

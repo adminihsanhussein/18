@@ -118,6 +118,135 @@ function supabaseAdminPlugin(env) {
                     .eq('id', userId);
                 if (updErr) throw updErr;
                 result = { success: true, message: 'Name updated successfully' };
+            } else if (action === 'parse-google-form') {
+                const { url } = payload;
+                console.log(`[Vite Admin API] Auto-parsing Google Form URL: ${url}`);
+                
+                let targetViewUrl = (url || '').trim();
+                const match = targetViewUrl.match(/forms\/d\/(?:e\/)?([a-zA-Z0-9_-]+)/);
+                if (match && match[1]) {
+                    targetViewUrl = `https://docs.google.com/forms/d/e/${match[1]}/viewform`;
+                }
+
+                const response = await fetch(targetViewUrl, { redirect: 'follow' });
+                const finalUrl = response.url || targetViewUrl;
+                const matchFinal = finalUrl.match(/forms\/d\/(?:e\/)?([a-zA-Z0-9_-]+)/) || match;
+                const formId = matchFinal ? matchFinal[1] : '';
+
+                const html = await response.text();
+                
+                let loadMatch = html.match(/FB_PUBLIC_LOAD_DATA_\s*=\s*(.*?);\s*<\/script>/s);
+                if (!loadMatch) {
+                    loadMatch = html.match(/FB_PUBLIC_LOAD_DATA_\s*=\s*([\s\S]*?);/);
+                }
+                if (!loadMatch) throw new Error('تعذر قراءة بيانات حقول نموذج كوكل من هذا الرابط. تأكد من أن الرابط عام ومتاح للجميع.');
+
+                const parsed = JSON.parse(loadMatch[1]);
+                const questions = parsed[1] ? parsed[1][1] : [];
+                
+                const detectedEntries = {
+                    subscriberName: null,
+                    amount: null,
+                    receiptNumber: null,
+                    receiptDate: null,
+                    holderName: null
+                };
+
+                const fieldDetails = {
+                    subscriberName: { label: 'اسم المساهم / المتبرع', entryId: '', matchedTitle: '' },
+                    amount: { label: 'مبلغ الوصل', entryId: '', matchedTitle: '' },
+                    receiptNumber: { label: 'رقم الوصل / السند', entryId: '', matchedTitle: '' },
+                    receiptDate: { label: 'تاريخ الوصل', entryId: '', matchedTitle: '' },
+                    holderName: { label: 'اسم صاحب الدبلك / الحليف', entryId: '', matchedTitle: '' }
+                };
+
+                const parsedQuestions = [];
+
+                if (Array.isArray(questions)) {
+                    questions.forEach(q => {
+                        if (!q) return;
+                        const title = (q[1] || '').trim();
+                        const itemData = q[4];
+                        if (!itemData || !itemData[0] || !itemData[0][0]) return;
+                        const entryId = `entry.${itemData[0][0]}`;
+                        parsedQuestions.push({ entryId, title });
+                    });
+
+                    parsedQuestions.forEach(({ entryId, title }) => {
+                        const cleanTitle = title.toLowerCase();
+
+                        // 1. Holder / Ally Name
+                        const isHolder = cleanTitle.includes('صاحب') || cleanTitle.includes('دبلك') || cleanTitle.includes('حليف') || cleanTitle.includes('جامع') || cleanTitle.includes('مسؤول الدفتر');
+                        if (isHolder && !detectedEntries.holderName) {
+                            detectedEntries.holderName = entryId;
+                            fieldDetails.holderName.entryId = entryId;
+                            fieldDetails.holderName.matchedTitle = title;
+                            return;
+                        }
+
+                        // 2. Receipt Date
+                        const isDate = cleanTitle.includes('تاريخ') || cleanTitle.includes('التاريخ') || cleanTitle.includes('يوم');
+                        if (isDate && !detectedEntries.receiptDate) {
+                            detectedEntries.receiptDate = entryId;
+                            fieldDetails.receiptDate.entryId = entryId;
+                            fieldDetails.receiptDate.matchedTitle = title;
+                            return;
+                        }
+
+                        // 3. Receipt Number
+                        const isNumber = (cleanTitle.includes('رقم') || cleanTitle.includes('تسلسل')) && 
+                                         !cleanTitle.includes('مبلغ') && !cleanTitle.includes('هاتف') && !cleanTitle.includes('جوال');
+                        if (isNumber && !detectedEntries.receiptNumber) {
+                            detectedEntries.receiptNumber = entryId;
+                            fieldDetails.receiptNumber.entryId = entryId;
+                            fieldDetails.receiptNumber.matchedTitle = title;
+                            return;
+                        }
+
+                        // 4. Amount
+                        const isAmount = cleanTitle.includes('مبلغ') || cleanTitle.includes('المبلغ') || cleanTitle.includes('دينار') || cleanTitle.includes('قيمة');
+                        if (isAmount && !detectedEntries.amount) {
+                            detectedEntries.amount = entryId;
+                            fieldDetails.amount.entryId = entryId;
+                            fieldDetails.amount.matchedTitle = title;
+                            return;
+                        }
+
+                        // 5. Subscriber Name
+                        const isSubscriber = (cleanTitle.includes('مساهم') || cleanTitle.includes('متبرع') || cleanTitle.includes('مشترك') || cleanTitle.includes('اسم')) && !isHolder;
+                        if (isSubscriber && !detectedEntries.subscriberName) {
+                            detectedEntries.subscriberName = entryId;
+                            fieldDetails.subscriberName.entryId = entryId;
+                            fieldDetails.subscriberName.matchedTitle = title;
+                            return;
+                        }
+                    });
+                }
+
+                result = {
+                    success: true,
+                    formId: formId,
+                    viewUrl: targetViewUrl,
+                    postUrl: targetViewUrl.replace(/\/viewform$/, '/formResponse'),
+                    entries: detectedEntries,
+                    details: fieldDetails,
+                    allQuestions: parsedQuestions
+                };
+            } else if (action === 'submit-google-form') {
+                const { postUrl, formData } = payload;
+                console.log(`[Vite Admin API] Submitting receipt to Google Form: ${postUrl}`);
+                
+                const params = new URLSearchParams(formData);
+                const gRes = await fetch(postUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: params.toString()
+                });
+
+                console.log(`[Vite Admin API] Google Form Response Status: ${gRes.status}`);
+                result = { success: true, status: gRes.status };
             } else {
                 throw new Error('Invalid action');
             }
@@ -126,7 +255,7 @@ function supabaseAdminPlugin(env) {
 
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ success: true, data: result?.data || null }));
+            res.end(JSON.stringify({ success: true, data: result }));
           } catch (err) {
             console.error('[Vite Admin API] Error:', err.message);
             res.statusCode = 400;

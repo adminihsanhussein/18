@@ -166,6 +166,10 @@
                        class="w-full h-full bg-surface-container-low border-transparent rounded-2xl py-4 pr-12 pl-4 focus:ring-4 focus:ring-primary/5 focus:border-primary/20 font-bold placeholder:text-on-surface-variant/30 transition-all">
             </div>
             <div class="flex gap-2 shrink-0">
+                <button onclick="window.sendCurrentBookToGoogleForm()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 active:scale-95" title="تحويل كافة وصولات هذا الدفتر إلى Google Form">
+                    <span class="material-symbols-outlined icon-filled">cloud_upload</span>
+                    <span class="hidden sm:inline">تحويل لـ Google Form</span>
+                </button>
                 <button onclick="window.generateHighFidelityExcel()" class="bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20 active:scale-95">
                     <span class="material-symbols-outlined icon-filled">table_view</span>
                     <span class="hidden sm:inline">تصدير Excel</span>
@@ -188,7 +192,7 @@
                             <th class="py-5 px-6 text-center">رقم الوصل</th>
                             <th class="py-5 px-6 text-center">التاريخ</th>
                             <th class="py-5 px-6 text-center">المبلغ</th>
-
+                            <th class="py-5 px-6 text-center">Google Form</th>
                             <th class="py-5 px-6 text-center" id="adminActionsHeader">الإجراءات</th>
                         </tr>
                     </thead>
@@ -256,6 +260,7 @@
     <script type="module">
         import { supabase } from './lib/supabase.js';
         import { notify } from './lib/notifications.js';
+        import { sendReceiptToGoogleForm, sendBulkReceiptsToGoogleForm, isReceiptSyncedToGoogle, getPrefilledGoogleFormUrl } from './lib/googleFormSync.js';
 
         let bookData = null;
         let receipts = [];
@@ -573,10 +578,14 @@
             if (!container) return;
             container.innerHTML = '';
 
+            const allyName = bookData?.profiles?.full_name || '';
+
             data.forEach((r, i) => {
                 const name = r.subscriber_name || 'بدون اسم';
                 const dateStr = r.receipt_date ? new Date(r.receipt_date).toLocaleDateString('ar-EG') : new Date(r.created_at).toLocaleDateString('ar-EG');
                 const initial = name.substring(0, 2);
+                const isSynced = isReceiptSyncedToGoogle(r);
+                const prefilledUrl = getPrefilledGoogleFormUrl(r, allyName);
 
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-primary/5 transition-all group receipt-row';
@@ -593,6 +602,23 @@
                     </td>
                     <td class="py-5 px-6 text-center text-xs font-bold text-on-surface-variant">${dateStr}</td>
                     <td class="py-5 px-6 text-center font-black text-primary italic">${r.amount.toLocaleString()} <span class="text-[10px] not-italic">د.ع</span></td>
+
+                    <td class="py-5 px-6 text-center">
+                        <div class="flex items-center justify-center gap-1.5">
+                            ${isSynced 
+                                ? `
+                                    <span class="px-2.5 py-1 bg-green-50 text-green-700 border border-green-200/60 rounded-full text-[10px] font-black flex items-center gap-1 shadow-sm"><span class="material-symbols-outlined text-xs">check_circle</span> تم التحويل</span>
+                                    <button onclick="window.sendSingleReceiptToGoogleForm('${r.id || r.receipt_number}')" title="إعادة تحويل الوصل إلى Google Form" class="px-2.5 py-1 bg-amber-50 text-amber-700 hover:bg-amber-600 hover:text-white rounded-full text-[10px] font-black transition-all flex items-center gap-1 border border-amber-200/60 shadow-sm active:scale-95">
+                                        <span class="material-symbols-outlined text-xs">sync</span> إعادة تحويل
+                                    </button>
+                                  `
+                                : `<button onclick="window.sendSingleReceiptToGoogleForm('${r.id || r.receipt_number}')" title="إرسال آلي إلى Google Form" class="px-2.5 py-1 bg-blue-50 text-[#0056b3] hover:bg-[#0056b3] hover:text-white rounded-full text-[10px] font-black transition-all flex items-center gap-1 border border-blue-100 shadow-sm"><span class="material-symbols-outlined text-xs">cloud_upload</span> تحويل الآن</button>`
+                            }
+                            <a href="${prefilledUrl}" target="_blank" title="معاينة في رابط الجوجل (تعبئة مسبقة)" class="p-1 text-primary/40 hover:text-primary transition-colors">
+                                <span class="material-symbols-outlined text-sm">open_in_new</span>
+                            </a>
+                        </div>
+                    </td>
 
                     <td class="py-5 px-6 text-center admin-action-cell ${window.userRole !== 'admin' ? 'hidden' : ''}">
                         <div class="flex justify-center gap-2">
@@ -611,6 +637,88 @@
 
             document.getElementById('noResults').style.display = data.length === 0 ? 'block' : 'none';
         }
+
+        window.sendSingleReceiptToGoogleForm = async (receiptId) => {
+            const target = receipts.find(r => (r.id === receiptId || String(r.receipt_number) === String(receiptId)));
+            if (!target) return;
+
+            const allyName = bookData?.profiles?.full_name || '';
+            try {
+                await notify('جاري التحويل', `جاري إرسال الوصل رقم #${target.receipt_number} إلى Google Form...`, { toast: true, native: false, type: 'info' });
+                await sendReceiptToGoogleForm(target, allyName, supabase);
+                await notify('تم التحويل بنجاح', `تم تحويل الوصل رقم #${target.receipt_number} إلى رابط Google Form!`, { toast: true, native: true, type: 'success' });
+                renderReceipts(receipts);
+            } catch (err) {
+                console.error(err);
+                await notify('خطأ في الإرسال', 'تعذر إرسال الوصل إلى Google Form', { toast: true, native: false, type: 'error' });
+            }
+        };
+
+        window.sendCurrentBookToGoogleForm = () => {
+            if (!receipts || receipts.length === 0) {
+                alert('لا توجد وصولات تحول في هذا الدفتر');
+                return;
+            }
+
+            const modal = document.getElementById('bulkSyncModal');
+            const serialLabel = document.getElementById('bulkSyncBookSerial');
+            const countLabel = document.getElementById('bulkSyncReceiptCount');
+            const confirmState = document.getElementById('bulkSyncConfirmState');
+            const progressState = document.getElementById('bulkSyncProgressState');
+            const doneState = document.getElementById('bulkSyncDoneState');
+
+            if (!modal) return;
+
+            if (serialLabel) serialLabel.textContent = bookData?.serial_number || '---';
+            if (countLabel) countLabel.textContent = `${receipts.length} وصل`;
+
+            confirmState.classList.remove('hidden');
+            progressState.classList.add('hidden');
+            doneState.classList.add('hidden');
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        };
+
+        window.closeBulkSyncModal = () => {
+            const modal = document.getElementById('bulkSyncModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        };
+
+        window.executeBulkSyncProgress = async () => {
+            const confirmState = document.getElementById('bulkSyncConfirmState');
+            const progressState = document.getElementById('bulkSyncProgressState');
+            const doneState = document.getElementById('bulkSyncDoneState');
+            const progressBar = document.getElementById('bulkSyncProgressBar');
+            const progressSub = document.getElementById('bulkSyncProgressSub');
+            const doneText = document.getElementById('bulkSyncDoneText');
+
+            confirmState.classList.add('hidden');
+            progressState.classList.remove('hidden');
+
+            const allyName = bookData?.profiles?.full_name || '';
+
+            try {
+                const res = await sendBulkReceiptsToGoogleForm(receipts, allyName, (current, total, r) => {
+                    const percent = Math.round((current / total) * 100);
+                    if (progressBar) progressBar.style.width = `${percent}%`;
+                    if (progressSub) progressSub.textContent = `إرسال الوصل (${current} / ${total}): #${r.receipt_number} (${r.subscriber_name || ''})`;
+                }, supabase);
+
+                progressState.classList.add('hidden');
+                doneState.classList.remove('hidden');
+                if (doneText) doneText.textContent = `تم إرسال ${res.sent} وصل من إجمالي ${res.total} بنجاح إلى فورمة كوكل! ⚡`;
+                
+                renderReceipts(receipts);
+            } catch (err) {
+                console.error('Bulk sync error:', err);
+                alert('حدث خطأ أثناء التحويل الجماعي: ' + err.message);
+                closeBulkSyncModal();
+            }
+        };
 
         function filterReceipts(query) {
             const filtered = receipts.filter(r => 
@@ -680,6 +788,7 @@
             const amount = parseInt(document.getElementById('editAmount').value);
             const number = parseInt(document.getElementById('editNumber').value);
             const date = document.getElementById('editDate').value;
+            const shouldReSync = document.getElementById('reSyncGoogleFormCheck')?.checked;
 
             try {
                 const { error } = await supabase
@@ -693,8 +802,27 @@
                     .eq('id', id);
 
                 if (error) throw error;
+
+                const updatedReceipt = {
+                    id,
+                    subscriber_name: name,
+                    amount,
+                    receipt_number: number,
+                    receipt_date: date
+                };
+
+                let syncMsg = '';
+                if (shouldReSync) {
+                    try {
+                        const allyName = bookData?.profiles?.full_name || '';
+                        await sendReceiptToGoogleForm(updatedReceipt, allyName, supabase);
+                        syncMsg = ' وإعادة تحويله إلى Google Form بالبيانات الجديدة ⚡';
+                    } catch (gErr) {
+                        console.warn('Re-sync on edit error:', gErr);
+                    }
+                }
                 
-                await notify('تم التعديل', `تم تحديث بيانات المساهم ${name} بنجاح`, { native: true, toast: true, type: 'success' });
+                await notify('تم التعديل بنجاح', `تم تحديث بيانات المساهم ${name}${syncMsg}`, { native: true, toast: true, type: 'success' });
                 
                 closeEditModal();
                 fetchData(bookData.id);
@@ -762,7 +890,13 @@
                     <label class="text-[10px] font-black text-primary/60 uppercase mb-1 block">تاريخ الوصل</label>
                     <input type="date" id="editDate" class="w-full bg-surface-container-low border-transparent rounded-xl py-3 px-4 focus:ring-2 focus:ring-primary/20">
                 </div>
-                <button onclick="submitEdit()" class="w-full bg-primary text-white font-black py-4 rounded-xl shadow-lg active:scale-95 transition-all mt-4">حفظ التعديلات</button>
+                <div class="pt-2">
+                    <label class="flex items-center gap-2 cursor-pointer bg-blue-50/70 p-3 rounded-xl border border-blue-100">
+                        <input type="checkbox" id="reSyncGoogleFormCheck" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" checked>
+                        <span class="text-xs font-bold text-primary">إعادة تحويل الوصل تلقائياً إلى Google Form بالبيانات المعدلة ⚡</span>
+                    </label>
+                </div>
+                <button onclick="submitEdit()" class="w-full bg-primary text-white font-black py-4 rounded-xl shadow-lg active:scale-95 transition-all mt-2">حفظ التعديلات</button>
             </div>
         </div>
     </div>
@@ -830,6 +964,86 @@
                 <button onclick="document.getElementById('deleteFullBookModal').classList.add('hidden'); document.getElementById('deleteFullBookModal').classList.remove('flex');" class="w-full bg-surface-container-high text-primary font-black py-4 rounded-2xl active:scale-95 transition-all">
                     تراجع
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Google Form Sync Interactive Modal -->
+    <div id="bulkSyncModal" class="fixed inset-0 bg-primary/60 backdrop-blur-md z-[130] hidden items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col border border-white/20">
+            <!-- Modal Header -->
+            <div class="p-6 border-b border-surface-container-high flex justify-between items-center bg-blue-50/50">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-blue-600/10 text-blue-600 flex items-center justify-center font-black">
+                        <span class="material-symbols-outlined text-xl">cloud_upload</span>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-primary text-base">تحويل وصولات الدفتر إلى Google Form</h3>
+                        <p class="text-[10px] text-on-surface-variant font-bold">المزامنة الشاملة لكافة وصولات الدفتر الحالية</p>
+                    </div>
+                </div>
+                <button onclick="closeBulkSyncModal()" class="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:bg-error hover:text-white transition-all">
+                    <span class="material-symbols-outlined text-sm">close</span>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-5">
+                <!-- State 1: Confirmation Form -->
+                <div id="bulkSyncConfirmState" class="space-y-4">
+                    <div class="p-4 bg-surface-container-low rounded-2xl border border-surface-container-high space-y-2">
+                        <div class="flex justify-between items-center text-xs font-bold text-primary">
+                            <span>الدفتر المحدد:</span>
+                            <span id="bulkSyncBookSerial" class="font-black text-blue-600">---</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs font-bold text-primary">
+                            <span>إجمالي الوصولات:</span>
+                            <span id="bulkSyncReceiptCount" class="font-black text-primary">---</span>
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-on-surface-variant font-bold leading-relaxed">
+                        سيقوم النظام بتحويل جميع الوصولات المسجلة في هذا الدفتر بشكل متسلسل ومباشر إلى رابط فورمة كوكل المعتمد في الإعدادات.
+                    </p>
+
+                    <div class="flex gap-3 pt-2">
+                        <button id="startBulkSyncBtn" onclick="executeBulkSyncProgress()" class="flex-1 bg-blue-600 text-white font-black py-3.5 rounded-xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 active:scale-95 transition-all text-xs flex items-center justify-center gap-2">
+                            <span class="material-symbols-outlined text-sm">bolt</span>
+                            بدء التحويل الآن ⚡
+                        </button>
+                        <button onclick="closeBulkSyncModal()" class="px-5 bg-surface-container-high text-on-surface-variant font-bold py-3.5 rounded-xl text-xs hover:bg-surface-container-highest transition-all">
+                            إلغاء
+                        </button>
+                    </div>
+                </div>
+
+                <!-- State 2: Active Progress -->
+                <div id="bulkSyncProgressState" class="hidden space-y-5 text-center py-2">
+                    <div class="w-16 h-16 rounded-full bg-blue-600/10 text-blue-600 flex items-center justify-center mx-auto">
+                        <span class="material-symbols-outlined text-3xl animate-spin">sync</span>
+                    </div>
+                    <div>
+                        <h4 id="bulkSyncProgressTitle" class="font-black text-primary text-base">جاري إرسال الوصولات...</h4>
+                        <p id="bulkSyncProgressSub" class="text-xs text-on-surface-variant font-bold mt-1">الوصل (0 / 0)</p>
+                    </div>
+
+                    <div class="w-full bg-surface-container-high rounded-full h-3 overflow-hidden p-0.5 border border-primary/5">
+                        <div id="bulkSyncProgressBar" class="bg-gradient-to-r from-blue-600 to-amber-500 h-full rounded-full transition-all duration-300 w-0"></div>
+                    </div>
+                </div>
+
+                <!-- State 3: Done -->
+                <div id="bulkSyncDoneState" class="hidden space-y-4 text-center py-2">
+                    <div class="w-16 h-16 rounded-full bg-green-500/10 text-green-600 flex items-center justify-center mx-auto">
+                        <span class="material-symbols-outlined text-3xl">task_alt</span>
+                    </div>
+                    <div>
+                        <h4 class="font-black text-primary text-base">اكتمل التحويل الجماعي بنجاح! ⚡</h4>
+                        <p id="bulkSyncDoneText" class="text-xs text-on-surface-variant font-bold mt-1">تم تحويل جميع الوصولات للفرومة بنجاح.</p>
+                    </div>
+                    <button onclick="closeBulkSyncModal()" class="w-full bg-primary text-white font-black py-3.5 rounded-xl shadow-lg active:scale-95 transition-all text-xs">
+                        تم وإغلاق
+                    </button>
+                </div>
             </div>
         </div>
     </div>

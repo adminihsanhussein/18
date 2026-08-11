@@ -278,6 +278,10 @@
 
                     <!-- Export Actions -->
                     <div class="flex flex-wrap gap-2">
+                        <button onclick="window.sendAllVisibleBooksToGoogleForm()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 active:scale-95" title="تحويل كافة وصولات الدفاتر الظاهرة إلى Google Form">
+                            <span class="material-symbols-outlined icon-filled">cloud_upload</span>
+                            <span class="hidden sm:inline">تحويل إلى Google Form</span>
+                        </button>
                         <button onclick="window.generateHighFidelityExcel()" class="bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20 active:scale-95">
                             <span class="material-symbols-outlined icon-filled">table_view</span>
                             <span class="hidden sm:inline">تصدير Excel</span>
@@ -489,7 +493,9 @@
 
     <script type="module">
         import { supabase } from './lib/supabase.js';
+        import { notify } from './lib/notifications.js';
         import { getSelectedMonth, setSelectedMonth, formatMonthArabic, getMonthBounds, openGlobalMonthPicker } from './lib/date-utils.js';
+        import { sendBulkReceiptsToGoogleForm } from './lib/googleFormSync.js';
 
         document.addEventListener('DOMContentLoaded', async () => {
             // 1. Session Check
@@ -662,6 +668,9 @@
                         </td>
                         <td class="py-5 px-6">
                             <div class="flex gap-2 justify-end">
+                                <button onclick="window.sendBookToGoogleForm('${b.id}', '${b.serial_number}')" class="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all inline-block" title="تحويل وصولات هذا الدفتر إلى Google Form">
+                                    <span class="material-symbols-outlined text-sm">cloud_upload</span>
+                                </button>
                                 <button onclick="window.exportOfficialExcelSingle('${b.id}')" class="p-2 bg-emerald-50 text-emerald-700 rounded-xl hover:bg-emerald-600 hover:text-white transition-all inline-block" title="تصدير Excel (رسمي)">
                                     <span class="material-symbols-outlined text-sm">grid_on</span>
                                 </button>
@@ -680,6 +689,75 @@
                         </td>
                     </tr>
                 `).join('');
+
+                // Implement Google Form sync window functions
+                window.sendBookToGoogleForm = async (bookId, serialNumber) => {
+                    try {
+                        await notify('جاري التجهيز', `جاري جلب وصولات الدفتر #${serialNumber}...`, { toast: true, native: false, type: 'info' });
+
+                        const { data: recs, error } = await supabase
+                            .from('receipts')
+                            .select('*')
+                            .eq('book_id', bookId);
+
+                        if (error) throw error;
+                        if (!recs || recs.length === 0) {
+                            alert('لا توجد وصولات في هذا الدفتر لربطها وتحويلها.');
+                            return;
+                        }
+
+                        const targetBook = window.unfilteredBooksData.find(b => b.id === bookId);
+                        const allyName = targetBook?.profiles?.full_name || '';
+
+                        const confirmMsg = `هل تريد تحويل جميع وصولات الدفتر #${serialNumber} (عددها ${recs.length} وصل) إلى رابط Google Form؟`;
+                        if (!confirm(confirmMsg)) return;
+
+                        const res = await sendBulkReceiptsToGoogleForm(recs, allyName, (current, total, r) => {
+                            notify('جاري الإرسال...', `إرسال الوصل (${current}/${total}): #${r.receipt_number}`, { toast: true, native: false, type: 'info' });
+                        }, supabase);
+
+                        await notify('اكتمل الإرسال', `تم تحويل ${res.sent} وصل من الدفتر #${serialNumber} إلى Google Form بنجاح!`, { toast: true, native: true, type: 'success' });
+                    } catch (err) {
+                        console.error('Google Form sync error:', err);
+                        await notify('خطأ', 'فشل تحويل وصولات الدفتر إلى Google Form', { toast: true, native: false, type: 'error' });
+                    }
+                };
+
+                window.sendAllVisibleBooksToGoogleForm = async () => {
+                    const books = window.allBooksData || window.unfilteredBooksData || [];
+                    if (books.length === 0) {
+                        alert('لا توجد دفاتر ظاهرة لتحويل وصولاتها');
+                        return;
+                    }
+
+                    const bookIds = books.map(b => b.id);
+                    const confirmMsg = `هل تريد تحويل كافة وصولات الدفاتر الظاهرة (${books.length} دفتر) إلى رابط Google Form الخاص بدائرة العمل؟`;
+                    if (!confirm(confirmMsg)) return;
+
+                    try {
+                        await notify('جاري تحضير وصولات كافة الدفاتر', 'جاري جلب البيانات...', { toast: true, native: false, type: 'info' });
+
+                        const { data: allRecs, error } = await supabase
+                            .from('receipts')
+                            .select('*')
+                            .in('book_id', bookIds);
+
+                        if (error) throw error;
+                        if (!allRecs || allRecs.length === 0) {
+                            alert('لا توجد وصولات في الدفاتر المختارة');
+                            return;
+                        }
+
+                        const res = await sendBulkReceiptsToGoogleForm(allRecs, '', (current, total, r) => {
+                            notify('تحويل الدفاتر آلياً...', `إرسال الوصل (${current}/${total}): #${r.receipt_number}`, { toast: true, native: false, type: 'info' });
+                        }, supabase);
+
+                        await notify('اكتمل التحويل الشامل', `تم تحويل ${res.sent} وصل إجمالاً إلى Google Form بنجاح!`, { toast: true, native: true, type: 'success' });
+                    } catch (err) {
+                        console.error('Google Form bulk sync error:', err);
+                        await notify('خطأ في التحويل الشامل', 'حدث خطأ أثناء إرسال البيانات إلى Google Form', { toast: true, native: false, type: 'error' });
+                    }
+                };
 
                 // Update Stats Cards
                 document.querySelector('.stat-card-total').textContent = displayBooks.length;
