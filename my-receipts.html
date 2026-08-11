@@ -278,7 +278,7 @@
 
                     <!-- Export Actions -->
                     <div class="flex flex-wrap gap-2">
-                        <button onclick="window.sendAllVisibleBooksToGoogleForm()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 active:scale-95" title="تحويل كافة وصولات الدفاتر الظاهرة إلى Google Form">
+                        <button id="bulkGoogleFormBtn" onclick="window.sendAllVisibleBooksToGoogleForm()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 active:scale-95 hidden" title="تحويل كافة وصولات الدفاتر الظاهرة إلى Google Form">
                             <span class="material-symbols-outlined icon-filled">cloud_upload</span>
                             <span class="hidden sm:inline">تحويل إلى Google Form</span>
                         </button>
@@ -513,6 +513,7 @@
             // Show/Hide Admin UI elements
             const adminHeaderActions = document.getElementById('adminHeaderActions');
             if (isAdmin) {
+                document.getElementById('bulkGoogleFormBtn')?.classList.remove('hidden');
                 adminHeaderActions.innerHTML = `
                     <button onclick="window.location.href='settings.html#distribute'" class="bg-primary text-on-primary px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:scale-105 transition-all">
                         <span class="material-symbols-outlined text-lg">add_box</span>
@@ -668,9 +669,11 @@
                         </td>
                         <td class="py-5 px-6">
                             <div class="flex gap-2 justify-end">
+                                ${isAdmin ? `
                                 <button onclick="window.sendBookToGoogleForm('${b.id}', '${b.serial_number}')" class="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all inline-block" title="تحويل وصولات هذا الدفتر إلى Google Form">
                                     <span class="material-symbols-outlined text-sm">cloud_upload</span>
                                 </button>
+                                ` : ''}
                                 <button onclick="window.exportOfficialExcelSingle('${b.id}')" class="p-2 bg-emerald-50 text-emerald-700 rounded-xl hover:bg-emerald-600 hover:text-white transition-all inline-block" title="تصدير Excel (رسمي)">
                                     <span class="material-symbols-outlined text-sm">grid_on</span>
                                 </button>
@@ -692,6 +695,10 @@
 
                 // Implement Google Form sync window functions
                 window.sendBookToGoogleForm = async (bookId, serialNumber) => {
+                    if (!isAdmin) {
+                        await notify('غير مصرح', 'ميزة تحويل الوصولات متاحة للمدير فقط', { toast: true, native: false, type: 'error' });
+                        return;
+                    }
                     try {
                         await notify('جاري التجهيز', `جاري جلب وصولات الدفتر #${serialNumber}...`, { toast: true, native: false, type: 'info' });
 
@@ -724,6 +731,10 @@
                 };
 
                 window.sendAllVisibleBooksToGoogleForm = async () => {
+                    if (!isAdmin) {
+                        await notify('غير مصرح', 'ميزة تحويل الوصولات متاحة للمدير فقط', { toast: true, native: false, type: 'error' });
+                        return;
+                    }
                     const books = window.allBooksData || window.unfilteredBooksData || [];
                     if (books.length === 0) {
                         alert('لا توجد دفاتر ظاهرة لتحويل وصولاتها');
