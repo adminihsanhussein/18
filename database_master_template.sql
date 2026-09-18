@@ -243,6 +243,12 @@ ON public.books FOR SELECT TO authenticated USING (ally_id = auth.uid());
 CREATE POLICY "Admins can manage all books" 
 ON public.books FOR ALL TO authenticated USING (public.is_admin());
 
+CREATE POLICY "Allies can create assigned books" 
+ON public.books FOR INSERT TO authenticated WITH CHECK (ally_id = auth.uid());
+
+CREATE POLICY "Allies can update assigned books" 
+ON public.books FOR UPDATE TO authenticated USING (ally_id = auth.uid());
+
 -- 🛡️ 4. سياسات جدول Receipts
 CREATE POLICY "Admins can view all receipts" 
 ON public.receipts FOR SELECT TO authenticated USING (public.is_admin());

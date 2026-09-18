@@ -187,3 +187,17 @@ input, select, textarea {
 ::-webkit-scrollbar {
     display: none;
 }
+
+/* Modal and Dark Select Dropdown Options */
+select option {
+    background-color: #0b1e36;
+    color: #ffffff;
+}
+
+.bg-white select option,
+select.bg-white option,
+select.bg-surface-container-low option {
+    background-color: #ffffff;
+    color: #1a1c1e;
+}
+

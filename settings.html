@@ -8,6 +8,18 @@
     <link href="./lib/app-style.css" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
     <script src="./lib/theme-config.js" type="module"></script>
+    <style>
+        #distributeModal select, 
+        #distributeModal select option {
+            background-color: #0b1e36 !important;
+            color: #ffffff !important;
+        }
+        #distributeModal select option:hover,
+        #distributeModal select option:checked {
+            background-color: #1e3a8a !important;
+            color: #ffffff !important;
+        }
+    </style>
 </head>
 <body class="bg-background text-on-background min-h-screen flex flex-col font-body pb-24 md:pb-0">
 
@@ -190,6 +202,20 @@
                         <button id="saveFinanceManagerBtn" class="bg-primary text-white px-4 py-2 rounded-xl text-xs font-black hover:scale-105 transition-all">حفظ</button>
                     </div>
                 </div>
+                <!-- District / Circle Number Setting -->
+                <div class="w-full p-5 bg-white rounded-2xl shadow-sm border border-primary/10">
+                    <div class="flex items-center gap-4 mb-3">
+                        <span class="material-symbols-outlined text-primary">apartment</span>
+                        <div class="flex-1">
+                            <span class="text-sm font-bold text-primary block">رقم الدائرة (District Number)</span>
+                            <span class="text-[10px] text-on-surface-variant font-bold">الرقم المخصص للدائرة الذي يتم إرساله تلقائياً إلى فورمة كوكل مع كل وصل (الافتراضي: 18)</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="circleNumberInput" placeholder="أدخل رقم الدائرة (مثلاً 18)..." class="flex-1 bg-surface-container-highest border-none rounded-xl text-xs px-3 py-2 focus:ring-2 focus:ring-primary/20 transition-all font-bold text-primary">
+                        <button id="saveCircleNumberBtn" class="bg-primary text-white px-4 py-2 rounded-xl text-xs font-black hover:scale-105 transition-all">حفظ</button>
+                    </div>
+                </div>
                 <!-- Google Form URL Setting -->
                 <div class="w-full p-5 bg-white rounded-2xl shadow-sm border border-primary/10 space-y-3">
                     <div class="flex items-center gap-4">
@@ -347,7 +373,7 @@
         console.log('--- Settings Module Trace: 1 ---');
         import { supabase } from './lib/supabase.js';
         import { notify } from './lib/notifications.js';
-        import { getGoogleFormConfig, saveGoogleFormUrl, parseGoogleFormHtml, matchGoogleFormQuestions } from './lib/googleFormSync.js';
+        import { getGoogleFormConfig, saveGoogleFormUrl, parseGoogleFormHtml, matchGoogleFormQuestions, getCircleNumber, setCircleNumber } from './lib/googleFormSync.js';
         
         const SUPABASE_URL = 'https://raiwctnevoqjjhgngays.supabase.co';
 
@@ -726,6 +752,26 @@
                     });
                 }
 
+                // District / Circle Number initialization & save
+                const circleNumberInput = document.getElementById('circleNumberInput');
+                const saveCircleNumberBtn = document.getElementById('saveCircleNumberBtn');
+                if (circleNumberInput) {
+                    circleNumberInput.value = getCircleNumber();
+                }
+                if (saveCircleNumberBtn) {
+                    saveCircleNumberBtn.addEventListener('click', () => {
+                        const val = (circleNumberInput?.value || '').trim() || '18';
+                        setCircleNumber(val);
+                        saveCircleNumberBtn.textContent = 'تم الحفظ ✓';
+                        saveCircleNumberBtn.classList.replace('bg-primary', 'bg-green-500');
+                        showStatus('تم الحفظ 🏛️', `تم حفظ رقم الدائرة بنجاح: ${val}`);
+                        setTimeout(() => {
+                            saveCircleNumberBtn.classList.replace('bg-green-500', 'bg-primary');
+                            saveCircleNumberBtn.textContent = 'حفظ';
+                        }, 2000);
+                    });
+                }
+
                 // Google Form URL & Dynamic Auto-Sync / Auto-Mapping initialization
                 const googleFormUrlInput = document.getElementById('googleFormUrlInput');
                 const autoSyncGoogleFormBtn = document.getElementById('autoSyncGoogleFormBtn');
@@ -746,6 +792,8 @@
                             const parsed = JSON.parse(rawEntries);
                             entryCount = Object.values(parsed).filter(Boolean).length;
                         } catch(e){}
+                    } else if (currentConfig && currentConfig.entries) {
+                        entryCount = Object.values(currentConfig.entries).filter(Boolean).length;
                     }
 
                     if (existingSavedUrl) {
@@ -757,7 +805,11 @@
                         }
                     } else {
                         if (googleFormUrlInput) googleFormUrlInput.value = currentConfig.viewUrl || '';
-                        if (googleFormStatusText) googleFormStatusText.textContent = 'الرابط الحالي: الافتراضي';
+                        if (googleFormStatusText) {
+                            googleFormStatusText.textContent = entryCount > 0 
+                                ? `الرابط الحالي: الافتراضي (${entryCount} حقول مبرمجة ⚡)` 
+                                : 'الرابط الحالي: الافتراضي';
+                        }
                     }
                 };
 
@@ -791,9 +843,13 @@
                         // Try 2: Client fetch fallback
                         if (!parsedResult) {
                             let fetchUrl = url;
-                            const match = url.match(/forms\/d\/(?:e\/)?([a-zA-Z0-9_-]+)/);
-                            if (match && match[1]) {
-                                fetchUrl = `https://docs.google.com/forms/d/e/${match[1]}/viewform`;
+                            if (url.includes('forms.gle/HAa2b3vrgWaNFgFAA')) {
+                                fetchUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSfQMjSgbrv3diues9q_yuAAmX_qgh1TEeqOP1po8kSZ4LaUqA/viewform';
+                            } else {
+                                const match = url.match(/forms\/d\/(?:e\/)?([a-zA-Z0-9_-]+)/);
+                                if (match && match[1]) {
+                                    fetchUrl = `https://docs.google.com/forms/d/e/${match[1]}/viewform`;
+                                }
                             }
 
                             try {
@@ -809,18 +865,57 @@
                                 };
                             } catch (clientFetchErr) {
                                 // Try 3: CORS Proxy Fallback
-                                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(fetchUrl)}`;
-                                const proxyRes = await fetch(proxyUrl);
-                                const htmlText = await proxyRes.text();
-                                const clientParsed = parseGoogleFormHtml(htmlText);
-                                parsedResult = {
-                                    success: true,
-                                    entries: clientParsed.entries,
-                                    details: clientParsed.details,
-                                    allQuestions: clientParsed.allQuestions,
-                                    viewUrl: fetchUrl
-                                };
+                                try {
+                                    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(fetchUrl)}`;
+                                    const proxyRes = await fetch(proxyUrl);
+                                    const htmlText = await proxyRes.text();
+                                    const clientParsed = parseGoogleFormHtml(htmlText);
+                                    parsedResult = {
+                                        success: true,
+                                        entries: clientParsed.entries,
+                                        details: clientParsed.details,
+                                        allQuestions: clientParsed.allQuestions,
+                                        viewUrl: fetchUrl
+                                    };
+                                } catch (proxyErr) {
+                                    console.warn('CORS Proxy fallback failed:', proxyErr);
+                                }
                             }
+                        }
+
+                        // Try 4: Known Forms Direct Fallback
+                        if (!parsedResult && (url.includes('1FAIpQLSfQMjSgbrv3diues9q_yuAAmX_qgh1TEeqOP1po8kSZ4LaUqA') || url.includes('HAa2b3vrgWaNFgFAA'))) {
+                            const matchedId = '1FAIpQLSfQMjSgbrv3diues9q_yuAAmX_qgh1TEeqOP1po8kSZ4LaUqA';
+                            parsedResult = {
+                                success: true,
+                                formId: matchedId,
+                                viewUrl: `https://docs.google.com/forms/d/e/${matchedId}/viewform`,
+                                postUrl: `https://docs.google.com/forms/d/e/${matchedId}/formResponse`,
+                                entries: {
+                                    subscriberName: 'entry.1521483675',
+                                    amount: 'entry.674104686',
+                                    receiptNumber: 'entry.2054327106',
+                                    receiptDate: 'entry.1483196086',
+                                    holderName: 'entry.1561160346',
+                                    circleNumber: 'entry.1370839413'
+                                },
+                                details: {
+                                    subscriberName: { label: 'اسم المساهم / المتبرع', entryId: 'entry.1521483675', matchedTitle: 'الاسم الثلاثي للمساهم' },
+                                    amount: { label: 'مبلغ الوصل', entryId: 'entry.674104686', matchedTitle: 'مبلغ الوصل رقماً' },
+                                    receiptNumber: { label: 'رقم الوصل / السند', entryId: 'entry.2054327106', matchedTitle: 'رقم الوصل' },
+                                    receiptDate: { label: 'تاريخ الوصل', entryId: 'entry.1483196086', matchedTitle: 'تاريخ الوصل' },
+                                    holderName: { label: 'اسم صاحب الدبلك / الحليف', entryId: 'entry.1561160346', matchedTitle: 'اسم الحليف' },
+                                    circleNumber: { label: 'رقم الدائرة', entryId: 'entry.1370839413', matchedTitle: 'رقم الدائرة' }
+                                },
+                                allQuestions: [
+                                    { entryId: 'entry.1521483675', title: 'الاسم الثلاثي للمساهم' },
+                                    { entryId: 'entry.674104686', title: 'مبلغ الوصل رقماً' },
+                                    { entryId: 'entry.2054327106', title: 'رقم الوصل' },
+                                    { entryId: 'entry.1483196086', title: 'تاريخ الوصل' },
+                                    { entryId: 'entry.1561160346', title: 'اسم الحليف' },
+                                    { entryId: 'entry.1370839413', title: 'رقم الدائرة' }
+                                ]
+                            };
                         }
 
                         if (!parsedResult || !parsedResult.entries) {
@@ -839,7 +934,7 @@
                         if (showModal) {
                             openGFormMappingModal(parsedResult);
                         } else {
-                            showStatus('تمت المزامنة بنجاح ⚡', 'تم استخراج الحقول وربطها بالأسماء تلقائياً بنجاح!');
+                            showStatus('تمت المزامنة بنجاح ⚡', 'تم استخراج الحقول وربطها بالأسماء تلقائياً بنجاح بما فيها رقم الدائرة!');
                         }
 
                         return parsedResult;
@@ -872,7 +967,8 @@
                         { key: 'receiptNumber', title: '🔢 رقم الوصل / السند', icon: 'tag' },
                         { key: 'amount', title: '💰 مبلغ الوصل', icon: 'payments' },
                         { key: 'receiptDate', title: '📅 تاريخ الوصل', icon: 'calendar_today' },
-                        { key: 'holderName', title: '👤 اسم صاحب الدبلك / الحليف', icon: 'badge' }
+                        { key: 'holderName', title: '👤 اسم صاحب الدبلك / الحليف', icon: 'badge' },
+                        { key: 'circleNumber', title: '🏛️ رقم الدائرة', icon: 'apartment' }
                     ];
 
                     container.innerHTML = fieldsConfig.map(f => {
@@ -922,7 +1018,8 @@
                             receiptNumber: document.getElementById('mapping_select_receiptNumber')?.value || '',
                             amount: document.getElementById('mapping_select_amount')?.value || '',
                             receiptDate: document.getElementById('mapping_select_receiptDate')?.value || '',
-                            holderName: document.getElementById('mapping_select_holderName')?.value || ''
+                            holderName: document.getElementById('mapping_select_holderName')?.value || '',
+                            circleNumber: document.getElementById('mapping_select_circleNumber')?.value || ''
                         };
 
                         const canonicalUrl = (currentParsedForm && currentParsedForm.viewUrl) ? currentParsedForm.viewUrl : url;
@@ -1492,7 +1589,7 @@
             const select = document.getElementById('distributeAllySelect');
             
             modal.classList.remove('hidden');
-            select.innerHTML = '<option value="">جاري تحميل القائمة...</option>';
+            select.innerHTML = '<option value="" class="bg-[#0b1e36] text-white">جاري تحميل القائمة...</option>';
 
             try {
                 const { data: allies, error } = await supabase
@@ -1503,11 +1600,11 @@
                 
                 if (error) throw error;
                 
-                select.innerHTML = '<option value="">اختر الحليف المسؤول...</option>' + 
-                    allies.map(a => `<option value="${a.id}">${a.full_name}</option>`).join('');
+                select.innerHTML = '<option value="" class="bg-[#0b1e36] text-white">اختر الحليف المسؤول...</option>' + 
+                    allies.map(a => `<option value="${a.id}" class="bg-[#0b1e36] text-white">${a.full_name}</option>`).join('');
             } catch (err) {
                 console.error('Error fetching allies for distribution:', err);
-                select.innerHTML = '<option value="">فشل تحميل الحلفاء</option>';
+                select.innerHTML = '<option value="" class="bg-[#0b1e36] text-white">فشل تحميل الحلفاء</option>';
             }
         };
 
@@ -1677,19 +1774,19 @@
                 <div class="space-y-4">
                     <div class="space-y-1">
                         <label class="text-[10px] font-black text-white/40 uppercase tracking-widest mr-2">الحليف المسؤول</label>
-                        <select id="distributeAllySelect" class="w-full bg-white/5 border-white/10 text-white rounded-2xl py-4 px-4 focus:ring-2 focus:ring-orange-500/50 transition-all text-sm font-bold">
+                        <select id="distributeAllySelect" class="w-full bg-[#002447] border border-white/10 text-white rounded-2xl py-4 px-4 focus:ring-2 focus:ring-orange-500/50 transition-all text-sm font-bold [color-scheme:dark] cursor-pointer">
                             <!-- Dynamic List -->
                         </select>
                     </div>
 
                     <div class="space-y-1">
                         <label class="text-[10px] font-black text-white/40 uppercase tracking-widest mr-2">رقم الدفتر (أول وصل)</label>
-                        <input type="number" id="distributeSerial" placeholder="مثلاً: 1251" class="w-full bg-white/5 border-white/10 text-white rounded-2xl py-4 px-4 focus:ring-2 focus:ring-orange-500/50 transition-all text-sm font-bold placeholder:text-white/20">
+                        <input type="number" id="distributeSerial" placeholder="مثلاً: 1251" class="w-full bg-white/5 border border-white/10 text-white rounded-2xl py-4 px-4 focus:ring-2 focus:ring-orange-500/50 transition-all text-sm font-bold placeholder:text-white/20">
                     </div>
 
                     <div class="space-y-1">
                         <label class="text-[10px] font-black text-white/40 uppercase tracking-widest mr-2">الشهر المخصص</label>
-                        <input type="month" id="distributeMonth" class="w-full bg-white/5 border-white/10 text-white rounded-2xl py-4 px-4 focus:ring-2 focus:ring-orange-500/50 transition-all text-sm font-bold">
+                        <input type="month" id="distributeMonth" class="w-full bg-white/5 border border-white/10 text-white rounded-2xl py-4 px-4 focus:ring-2 focus:ring-orange-500/50 transition-all text-sm font-bold [color-scheme:dark] cursor-pointer">
                     </div>
                 </div>
 

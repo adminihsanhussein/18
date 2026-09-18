@@ -142,7 +142,7 @@
         let userProfile = null;
         let openBooks = [];
 
-        async function loadBooks() {
+        async function loadBooks(autoSelect = true) {
             const { data: books, error } = await supabase
                 .from('books')
                 .select('*')
@@ -155,9 +155,21 @@
             openBooks = books || [];
             if (openBooks.length === 0) {
                 bookSelect.innerHTML = '<option value="">لا يوجد لديك دفتر حاليا</option>';
+                receiptNumberInput.value = '';
+                headerBookBadge.textContent = 'لا توجد دفاتر نشطة';
+                headerBookBadge.className = "bg-red-50 text-red-700 text-[10px] font-black px-3 py-1.5 rounded-full border border-red-100";
             } else {
+                const currentVal = bookSelect.value;
                 bookSelect.innerHTML = '<option value="">اختر الدفتر...</option>' + 
                     openBooks.map(b => `<option value="${b.id}" data-serial="${b.serial_number}" data-count="${b.receipt_count}" data-month="${b.month_year || ''}">${b.book_name} (${b.month_year || 'بلا تاريخ'})</option>`).join('');
+                
+                if (autoSelect) {
+                    const targetBookId = currentVal || localStorage.getItem('lastSelectedBookId');
+                    if (targetBookId && openBooks.some(b => b.id === targetBookId)) {
+                        bookSelect.value = targetBookId;
+                        await updateBookSequence(targetBookId);
+                    }
+                }
             }
         }
 
@@ -173,7 +185,7 @@
             const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
             userProfile = profile;
 
-            await loadBooks();
+            await loadBooks(true);
         });
 
         // Search Lookup
@@ -228,18 +240,30 @@
             amountInput.value = val;
             document.querySelectorAll('.preset-btn').forEach(b => b.classList.replace('bg-[#0056b3]', 'bg-[#f8faff]'));
             document.querySelectorAll('.preset-btn').forEach(b => b.classList.replace('text-white', 'text-[#0056b3]'));
-            event.target.classList.replace('bg-[#f8faff]', 'bg-[#0056b3]');
-            event.target.classList.replace('text-[#0056b3]', 'text-white');
+            if (window.event && window.event.currentTarget) {
+                window.event.currentTarget.classList.replace('bg-[#f8faff]', 'bg-[#0056b3]');
+                window.event.currentTarget.classList.replace('text-[#0056b3]', 'text-white');
+            }
         };
 
         const receiptNumberInput = document.getElementById('receiptNumber');
 
-        bookSelect.addEventListener('change', async (e) => {
-            const id = e.target.value;
-            if (!id) { receiptNumberInput.value = ''; headerBookBadge.textContent = 'بانتظار الاختيار...'; return; }
+        async function updateBookSequence(id) {
+            if (!id) {
+                receiptNumberInput.value = '';
+                headerBookBadge.textContent = 'بانتظار اختيار الدفتر...';
+                headerBookBadge.className = "bg-blue-900/5 text-[#0056b3] text-[10px] font-black px-3 py-1.5 rounded-full border border-blue-100/50";
+                return false;
+            }
 
-            const opt = e.target.selectedOptions[0];
-            const start = parseInt(opt.getAttribute('data-serial'));
+            const opt = bookSelect.querySelector(`option[value="${id}"]`);
+            if (!opt) {
+                receiptNumberInput.value = '';
+                headerBookBadge.textContent = 'بانتظار اختيار الدفتر...';
+                headerBookBadge.className = "bg-blue-900/5 text-[#0056b3] text-[10px] font-black px-3 py-1.5 rounded-full border border-blue-100/50";
+                return false;
+            }
+            const start = parseInt(opt.getAttribute('data-serial')) || 1;
             
             try {
                 let count = 0;
@@ -252,7 +276,7 @@
                         .eq('book_id', id);
                         
                     if (countError) throw countError;
-                    count = dbCount;
+                    count = dbCount || 0;
                     
                     const { data } = await supabase
                         .from('receipts')
@@ -279,21 +303,35 @@
                 }
                 
                 if (count >= 50) {
-                    await notify('تم اكتمال الدفتر', 'لا يمكن تسجيل وصولات جديدة في هذا الدفتر لأنه مكتمل ويحتوي على 50 وصلاً بالفعل.', { native: true, toast: true, type: 'error' });
+                    await notify('تم اكتمال الدفتر', 'اكتمل هذا الدفتر وبلغ 50 وصلاً! يرجى اختيار دفتر جديد لمتابعة التسجيل.', { native: true, toast: true, type: 'warning' });
                     bookSelect.value = '';
                     receiptNumberInput.value = '';
-                    headerBookBadge.textContent = 'الدفتر مكتمل بالفعل!';
+                    headerBookBadge.textContent = 'الدفتر مكتمل (50 وصلاً)';
                     headerBookBadge.className = "bg-red-50 text-red-700 text-[10px] font-black px-3 py-1.5 rounded-full border border-red-100";
-                    return;
+                    localStorage.removeItem('lastSelectedBookId');
+                    await loadBooks(false);
+                    return false;
                 }
                 
                 receiptNumberInput.value = next;
                 headerBookBadge.textContent = `الوصل القادم: #${next}`;
                 headerBookBadge.className = "bg-green-50 text-green-700 text-[10px] font-black px-3 py-1.5 rounded-full border border-green-100";
+                return true;
             } catch (err) { 
                 console.error(err);
                 notify('خطأ', 'فشل في جلب تسلسل الوصل القادم', { toast: true, native: false, type: 'error' });
+                return false;
             }
+        }
+
+        bookSelect.addEventListener('change', async (e) => {
+            const id = e.target.value;
+            if (id) {
+                localStorage.setItem('lastSelectedBookId', id);
+            } else {
+                localStorage.removeItem('lastSelectedBookId');
+            }
+            await updateBookSequence(id);
         });
 
         form.addEventListener('submit', async (e) => {
@@ -302,7 +340,10 @@
             const originalBtnContent = btn.innerHTML;
             
             const rNum = parseInt(receiptNumberInput.value);
-            if (!bookSelect.value) { alert('اختر الدفتر أولاً'); return; }
+            if (!bookSelect.value) { 
+                await notify('تنبيه', 'يرجى اختيار الدفتر أولاً', { native: false, toast: true, type: 'warning' });
+                return; 
+            }
 
             btn.disabled = true;
             btn.innerHTML = '<span class="animate-spin material-symbols-outlined">sync</span>';
@@ -316,7 +357,7 @@
                         .eq('book_id', bookSelect.value);
                     
                     if (countError) throw countError;
-                    count = dbCount;
+                    count = dbCount || 0;
                 } else {
                     const opt = bookSelect.selectedOptions[0];
                     const baseCount = parseInt(opt.getAttribute('data-count')) || 0;
@@ -328,6 +369,11 @@
 
                 if (count >= 50) {
                     await notify('تم اكتمال الدفتر', 'لا يمكن تسجيل وصولات جديدة في هذا الدفتر لأنه مكتمل ويحتوي على 50 وصلاً بالفعل.', { native: true, toast: true, type: 'error' });
+                    bookSelect.value = '';
+                    receiptNumberInput.value = '';
+                    headerBookBadge.textContent = 'الدفتر مكتمل (50 وصلاً)';
+                    headerBookBadge.className = "bg-red-50 text-red-700 text-[10px] font-black px-3 py-1.5 rounded-full border border-red-100";
+                    localStorage.removeItem('lastSelectedBookId');
                     btn.disabled = false;
                     btn.innerHTML = originalBtnContent;
                     return;
@@ -339,7 +385,7 @@
                     subscriber_name: subscriberNameInput.value,
                     receipt_number: rNum,
                     amount: parseInt(amountInput.value),
-                    month_year: bookSelect.selectedOptions[0].getAttribute('data-month') || new Date().toISOString().substring(0, 7),
+                    month_year: bookSelect.selectedOptions[0]?.getAttribute('data-month') || new Date().toISOString().substring(0, 7),
                     receipt_date: document.getElementById('receiptDate').value
                 };
 
@@ -354,13 +400,12 @@
                     .single();
 
                 if (error) throw error;
-                const finalReceipt = insertedData || receiptData;
 
                 const successMsg = `تم حفظ وصل بقيمة ${parseInt(amountInput.value).toLocaleString()} د.ع للمساهم ${subscriberNameInput.value} بنجاح!`;
 
                 await notify('تم تسجيل الوصل', successMsg, { native: true, toast: true, type: 'success' });
                 
-                resetForm();
+                await resetForm(true);
             } catch (err) {
                 console.error(err);
                 if (err.message === 'Offline' || err.message === 'Failed to fetch') {
@@ -370,7 +415,7 @@
                         subscriber_name: subscriberNameInput.value,
                         receipt_number: rNum,
                         amount: parseInt(amountInput.value),
-                        month_year: bookSelect.selectedOptions[0].getAttribute('data-month') || new Date().toISOString().substring(0, 7),
+                        month_year: bookSelect.selectedOptions[0]?.getAttribute('data-month') || new Date().toISOString().substring(0, 7),
                         receipt_date: document.getElementById('receiptDate').value
                     };
 
@@ -381,12 +426,7 @@
 
                     await notify('حفظ محلي (بدون إنترنت)', `تم حفظ الوصل محلياً بنجاح.`, { native: true, toast: true, type: 'warning' });
                     
-                    // Increment number locally for next entry
-                    const nextNum = rNum + 1;
-                    receiptNumberInput.value = nextNum;
-                    headerBookBadge.textContent = `الوصل القادم: #${nextNum}`;
-                    
-                    resetForm(true); // reset but keep the incremented number
+                    await resetForm(true);
                 } else {
                     await notify('خطأ في العملية', err.message, { native: false, toast: true, type: 'error' });
                 }
@@ -396,21 +436,40 @@
             }
         });
 
-        function resetForm(keepNextNumber = false) {
-            const currentNum = receiptNumberInput.value;
-            form.reset();
-            document.getElementById('receiptDate').value = new Date().toISOString().slice(0, 10);
+        async function resetForm(keepBook = true) {
+            // 1. Clear subscriber input and suggestions
+            subscriberNameInput.value = '';
+            suggestBox.innerHTML = '';
+            suggestBox.classList.add('hidden');
+            
+            // 2. Clear amount and reset preset buttons
+            amountInput.value = '';
+            const amountWords = document.getElementById('amountWords');
+            if (amountWords) amountWords.textContent = 'حدد المبلغ...';
             document.querySelectorAll('.preset-btn').forEach(b => {
                 b.classList.remove('bg-[#0056b3]', 'text-white');
                 b.classList.add('bg-[#f8faff]', 'text-[#0056b3]');
             });
             
-            if (keepNextNumber) {
-                receiptNumberInput.value = currentNum;
-            } else {
-                // Trigger serial number update from DB if online
-                bookSelect.dispatchEvent(new Event('change'));
+            // 3. Keep current date intact
+            if (!document.getElementById('receiptDate').value) {
+                document.getElementById('receiptDate').value = new Date().toISOString().slice(0, 10);
             }
+
+            // 4. Handle book retention and update next receipt number or handle full book
+            const currentBookId = bookSelect.value;
+            if (keepBook && currentBookId) {
+                await updateBookSequence(currentBookId);
+            } else {
+                bookSelect.value = '';
+                receiptNumberInput.value = '';
+                headerBookBadge.textContent = 'بانتظار اختيار الدفتر...';
+                headerBookBadge.className = "bg-blue-900/5 text-[#0056b3] text-[10px] font-black px-3 py-1.5 rounded-full border border-blue-100/50";
+                localStorage.removeItem('lastSelectedBookId');
+            }
+            
+            // 5. Refocus subscriber input for speedy entry
+            subscriberNameInput.focus();
         }
     </script>
 </body>

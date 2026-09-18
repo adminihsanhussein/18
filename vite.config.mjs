@@ -132,6 +132,8 @@ function supabaseAdminPlugin(env) {
                 const finalUrl = response.url || targetViewUrl;
                 const matchFinal = finalUrl.match(/forms\/d\/(?:e\/)?([a-zA-Z0-9_-]+)/) || match;
                 const formId = matchFinal ? matchFinal[1] : '';
+                const canonicalViewUrl = formId ? `https://docs.google.com/forms/d/e/${formId}/viewform` : finalUrl;
+                const canonicalPostUrl = formId ? `https://docs.google.com/forms/d/e/${formId}/formResponse` : finalUrl.replace(/\/viewform.*$/, '/formResponse');
 
                 const html = await response.text();
                 
@@ -149,7 +151,8 @@ function supabaseAdminPlugin(env) {
                     amount: null,
                     receiptNumber: null,
                     receiptDate: null,
-                    holderName: null
+                    holderName: null,
+                    circleNumber: null
                 };
 
                 const fieldDetails = {
@@ -157,7 +160,8 @@ function supabaseAdminPlugin(env) {
                     amount: { label: 'مبلغ الوصل', entryId: '', matchedTitle: '' },
                     receiptNumber: { label: 'رقم الوصل / السند', entryId: '', matchedTitle: '' },
                     receiptDate: { label: 'تاريخ الوصل', entryId: '', matchedTitle: '' },
-                    holderName: { label: 'اسم صاحب الدبلك / الحليف', entryId: '', matchedTitle: '' }
+                    holderName: { label: 'اسم صاحب الدبلك / الحليف', entryId: '', matchedTitle: '' },
+                    circleNumber: { label: 'رقم الدائرة', entryId: '', matchedTitle: '' }
                 };
 
                 const parsedQuestions = [];
@@ -175,7 +179,16 @@ function supabaseAdminPlugin(env) {
                     parsedQuestions.forEach(({ entryId, title }) => {
                         const cleanTitle = title.toLowerCase();
 
-                        // 1. Holder / Ally Name
+                        // 1. Circle Number (highest priority to avoid confusion with receipt number)
+                        const isCircle = cleanTitle.includes('دائر') || cleanTitle.includes('دائرة') || cleanTitle.includes('الدائرة') || cleanTitle.includes('district');
+                        if (isCircle && !detectedEntries.circleNumber) {
+                            detectedEntries.circleNumber = entryId;
+                            fieldDetails.circleNumber.entryId = entryId;
+                            fieldDetails.circleNumber.matchedTitle = title;
+                            return;
+                        }
+
+                        // 2. Holder / Ally Name
                         const isHolder = cleanTitle.includes('صاحب') || cleanTitle.includes('دبلك') || cleanTitle.includes('حليف') || cleanTitle.includes('جامع') || cleanTitle.includes('مسؤول الدفتر');
                         if (isHolder && !detectedEntries.holderName) {
                             detectedEntries.holderName = entryId;
@@ -184,7 +197,7 @@ function supabaseAdminPlugin(env) {
                             return;
                         }
 
-                        // 2. Receipt Date
+                        // 3. Receipt Date
                         const isDate = cleanTitle.includes('تاريخ') || cleanTitle.includes('التاريخ') || cleanTitle.includes('يوم');
                         if (isDate && !detectedEntries.receiptDate) {
                             detectedEntries.receiptDate = entryId;
@@ -193,9 +206,9 @@ function supabaseAdminPlugin(env) {
                             return;
                         }
 
-                        // 3. Receipt Number
+                        // 4. Receipt Number
                         const isNumber = (cleanTitle.includes('رقم') || cleanTitle.includes('تسلسل')) && 
-                                         !cleanTitle.includes('مبلغ') && !cleanTitle.includes('هاتف') && !cleanTitle.includes('جوال');
+                                         !cleanTitle.includes('مبلغ') && !cleanTitle.includes('هاتف') && !cleanTitle.includes('جوال') && !cleanTitle.includes('دائر');
                         if (isNumber && !detectedEntries.receiptNumber) {
                             detectedEntries.receiptNumber = entryId;
                             fieldDetails.receiptNumber.entryId = entryId;
@@ -203,7 +216,7 @@ function supabaseAdminPlugin(env) {
                             return;
                         }
 
-                        // 4. Amount
+                        // 5. Amount
                         const isAmount = cleanTitle.includes('مبلغ') || cleanTitle.includes('المبلغ') || cleanTitle.includes('دينار') || cleanTitle.includes('قيمة');
                         if (isAmount && !detectedEntries.amount) {
                             detectedEntries.amount = entryId;
@@ -212,8 +225,8 @@ function supabaseAdminPlugin(env) {
                             return;
                         }
 
-                        // 5. Subscriber Name
-                        const isSubscriber = (cleanTitle.includes('مساهم') || cleanTitle.includes('متبرع') || cleanTitle.includes('مشترك') || cleanTitle.includes('اسم')) && !isHolder;
+                        // 6. Subscriber Name
+                        const isSubscriber = (cleanTitle.includes('مساهم') || cleanTitle.includes('متبرع') || cleanTitle.includes('مشترك') || cleanTitle.includes('اسم')) && !isHolder && !isCircle;
                         if (isSubscriber && !detectedEntries.subscriberName) {
                             detectedEntries.subscriberName = entryId;
                             fieldDetails.subscriberName.entryId = entryId;
@@ -226,8 +239,8 @@ function supabaseAdminPlugin(env) {
                 result = {
                     success: true,
                     formId: formId,
-                    viewUrl: targetViewUrl,
-                    postUrl: targetViewUrl.replace(/\/viewform$/, '/formResponse'),
+                    viewUrl: canonicalViewUrl,
+                    postUrl: canonicalPostUrl,
                     entries: detectedEntries,
                     details: fieldDetails,
                     allQuestions: parsedQuestions
@@ -276,6 +289,7 @@ export default defineConfig(({ mode }) => {
   console.log('***************************************************');
 
   return {
+    base: './',
     plugins: [supabaseAdminPlugin(env)],
     build: {
       rollupOptions: {
