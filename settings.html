@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>الإعدادات - نظام المساهمات</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <style>
+        #distributeModal select, 
+        #distributeModal select option {
+            background-color: #0b1e36 !important;
+            color: #ffffff !important;
+        }
+        #distributeModal select option:hover,
+        #distributeModal select option:checked {
+            background-color: #1e3a8a !important;
+            color: #ffffff !important;
+        }
+    </style>
+  <script type="module" crossorigin src="./assets/settings-D9RNuJPc.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/notifications-02TcF-6C.js">
+  <link rel="modulepreload" crossorigin href="./assets/theme-config-CSLxHe3X.js">
+  <link rel="modulepreload" crossorigin href="./assets/googleFormSync-BVF_BFJ7.js">
+  <link rel="stylesheet" crossorigin href="./assets/theme-config-R4rSkD3u.css">
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body pb-24 md:pb-0">
+
+    <!-- Top AppBar -->
+    <header class="flex items-center justify-between px-6 py-4 sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-primary/5">
+        <div class="flex items-center gap-4">
+            <a href="dashboard.html" class="p-2 hover:bg-surface-container-high rounded-xl transition-all">
+                <span class="material-symbols-outlined text-primary">arrow_forward</span>
+            </a>
+            <h1 class="text-xl font-black text-primary">الإعدادات</h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+            <span class="text-[10px] font-black text-on-surface-variant uppercase">متصل بالخادم</span>
+        </div>
+    </header>
+
+    <main class="max-w-2xl mx-auto w-full p-6 space-y-8">
+
+        <!-- Account Section -->
+        <section class="space-y-4">
+            <h2 class="text-xs font-black text-primary/60 uppercase mr-2 flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">security</span>
+                الحساب والأمان
+            </h2>
+            <div class="bg-white rounded-3xl shadow-xl shadow-primary/5 overflow-hidden border border-white/40">
+                <!-- Profile Row -->
+                <div class="p-5 flex items-center justify-between border-b border-surface-container-high">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                            <span class="material-symbols-outlined text-2xl">person</span>
+                        </div>
+                        <div>
+                            <p id="profileName" class="font-black text-primary">علي إحسان</p>
+                            <p id="profileRole" class="text-[10px] text-on-surface-variant font-bold">حليف قاطع جنوب الرصافة</p>
+                        </div>
+                    </div>
+                    <button id="editProfileBtn" onclick="openAdminProfileModal()" class="hidden text-primary text-xs font-black hover:underline px-3 py-1 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">edit</span>
+                        تعديل
+                    </button>
+                </div>
+
+                <div class="w-full p-5 flex items-center justify-between setting-row">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-on-surface-variant/60">fingerprint</span>
+                        <span class="text-sm font-bold">قفل التطبيق (بصمة/رمز)</span>
+                    </div>
+                    <div class="relative flex items-center cursor-pointer">
+                        <input type="checkbox" id="appLock" class="sr-only toggle-checkbox">
+                        <label for="appLock" class="w-11 h-6 bg-surface-container-high rounded-full p-1 transition-all duration-300 toggle-label">
+                            <div class="w-4 h-4 bg-white rounded-full shadow-md transition-all duration-300 toggle-dot"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sync Section -->
+        <section class="space-y-4">
+            <h2 class="text-xs font-black text-primary/60 uppercase mr-2 flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">sync</span>
+                المزامنة والبيانات
+            </h2>
+            <div class="bg-white rounded-3xl shadow-xl shadow-primary/5 p-5 flex items-center justify-between border border-white/40">
+                <div class="flex items-center gap-4">
+                    <div id="syncIconContainer" class="w-12 h-12 rounded-2xl bg-surface-container-high flex items-center justify-center text-on-surface-variant">
+                        <span id="syncIcon" class="material-symbols-outlined text-2xl">cloud_queue</span>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold">حالة المزامنة</p>
+                        <p id="syncStatusText" class="text-[10px] text-green-500 font-black">تمت مزامنة جميع الوصولات</p>
+                    </div>
+                </div>
+                <button id="syncNowBtn" onclick="syncOfflineReceipts()" class="bg-primary text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:pointer-events-none transition-all">مزامنة الآن</button>
+            </div>
+        </section>
+
+        <!-- UI & Notifications Section -->
+        <section class="space-y-4">
+            <h2 class="text-xs font-black text-primary/60 uppercase mr-2 flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">palette</span>
+                الواجهة والإشعارات
+            </h2>
+            <div class="bg-white rounded-3xl shadow-xl shadow-primary/5 overflow-hidden border border-white/40">
+                <div class="w-full p-5 flex items-center justify-between setting-row border-b border-surface-container-high">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-on-surface-variant/60">dark_mode</span>
+                        <span class="text-sm font-bold">الوضع الداكن (Dark Mode)</span>
+                    </div>
+                    <div class="relative flex items-center cursor-pointer">
+                        <input type="checkbox" id="darkModeToggle" class="sr-only toggle-checkbox">
+                        <label for="darkModeToggle" class="w-11 h-6 bg-surface-container-high rounded-full p-1 transition-all duration-300 toggle-label">
+                            <div class="w-4 h-4 bg-white rounded-full shadow-md transition-all duration-300 toggle-dot"></div>
+                        </label>
+                    </div>
+                </div>
+                <div class="w-full p-5 flex items-center justify-between setting-row">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-on-surface-variant/60">notifications</span>
+                        <span class="text-sm font-bold">تنبيهات النظام</span>
+                    </div>
+                    <div class="relative flex items-center cursor-pointer">
+                        <input type="checkbox" id="notifToggle" checked class="sr-only toggle-checkbox">
+                        <label for="notifToggle" class="w-11 h-6 bg-surface-container-high rounded-full p-1 transition-all duration-300 toggle-label">
+                            <div class="w-4 h-4 bg-white rounded-full shadow-md transition-all duration-300 toggle-dot"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin Only Section (Special Styling) -->
+        <section id="adminSection" class="space-y-4 p-6 bg-primary/5 rounded-[2.5rem] border border-primary/10">
+            <h2 class="text-xs font-black text-primary uppercase mr-2 flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">admin_panel_settings</span>
+                إعدادات خاصة بالمسؤول (أنت فقط)
+            </h2>
+            <div class="space-y-3">
+                <button id="adminProfileSettingsBtn" onclick="openAdminProfileModal()" class="w-full p-5 bg-white rounded-2xl flex items-center justify-between shadow-sm hover:shadow-md transition-all group border border-primary/10">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">manage_accounts</span>
+                        <div class="text-right">
+                            <span class="text-sm font-bold block text-primary">بيانات حساب مدير النظام</span>
+                            <span class="text-[10px] text-on-surface-variant font-bold">تعديل اسم، بريد إلكتروني، وكلمة سر الآدمن</span>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-on-surface-variant/40">chevron_left</span>
+                </button>
+                <button id="manageAlliesBtn" class="w-full p-5 bg-white rounded-2xl flex items-center justify-between shadow-sm hover:shadow-md transition-all group">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">group_add</span>
+                        <span class="text-sm font-bold">إدارة الحلفاء (إضافة / تعديل / إيقاف / حذف)</span>
+                    </div>
+                    <span class="material-symbols-outlined text-on-surface-variant/40">chevron_left</span>
+                </button>
+                <button id="distributeBookBtn" class="w-full p-5 bg-white rounded-2xl flex items-center justify-between shadow-sm hover:shadow-md transition-all group">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">library_add</span>
+                        <span class="text-sm font-bold">توزيع الدفاتر الشهري (جديد)</span>
+                    </div>
+                    <span class="material-symbols-outlined text-on-surface-variant/40">chevron_left</span>
+                </button>
+                <button id="backupDataBtn" class="w-full p-5 bg-white rounded-2xl flex items-center justify-between shadow-sm hover:shadow-md transition-all group">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">cloud_download</span>
+                        <div class="text-right">
+                            <span class="text-sm font-bold block text-primary">سحب نسخة احتياطية (Backup)</span>
+                            <span class="text-[10px] text-on-surface-variant font-bold">تنزيل جميع البيانات كملف JSON</span>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-on-surface-variant/40">chevron_left</span>
+                </button>
+                <div class="relative w-full">
+                    <button id="restoreDataBtn" class="w-full p-0 bg-white rounded-2xl flex items-center justify-between shadow-sm hover:shadow-md transition-all group overflow-hidden border border-dashed border-primary/40">
+                        <div class="w-full p-5 flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">upload_file</span>
+                                <div class="text-right">
+                                    <span class="text-sm font-bold block text-primary">استرجاع نسخة (Restore)</span>
+                                    <span class="text-[10px] text-on-surface-variant font-bold">رفع ملف JSON لاستعادة النظام بالكامل</span>
+                                </div>
+                            </div>
+                            <span class="material-symbols-outlined text-on-surface-variant/40">chevron_left</span>
+                        </div>
+                    </button>
+                    <input type="file" id="restoreFileInput" accept=".json" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" title="اختر ملف النسخة الاحتياطية" />
+                </div>
+                <div class="w-full p-5 bg-white rounded-2xl shadow-sm border border-orange-500/20">
+                    <div class="flex items-center gap-4 mb-3">
+                        <span class="material-symbols-outlined text-orange-500">key</span>
+                        <div class="flex-1">
+                            <span class="text-sm font-bold text-primary block">مفتاح الإدارة (Service Role)</span>
+                            <span class="text-[10px] text-on-surface-variant font-bold">مطلوب لعمل الصلاحيات في الرابط العام</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="password" id="serviceRoleInput" placeholder="الصق المفتاح السري هنا..." class="flex-1 bg-surface-container-highest border-none rounded-xl text-xs px-3 py-2 focus:ring-2 focus:ring-primary/20 transition-all font-mono">
+                        <button id="saveServiceKeyBtn" class="bg-primary text-white px-4 py-2 rounded-xl text-xs font-black hover:scale-105 transition-all">حفظ</button>
+                    </div>
+                </div>
+                <!-- Finance Manager Name Setting -->
+                <div class="w-full p-5 bg-white rounded-2xl shadow-sm border border-primary/10">
+                    <div class="flex items-center gap-4 mb-3">
+                        <span class="material-symbols-outlined text-primary">account_balance_wallet</span>
+                        <div class="flex-1">
+                            <span class="text-sm font-bold text-primary block">مسؤول القسم المالي (PDF)</span>
+                            <span class="text-[10px] text-on-surface-variant font-bold">الاسم الذي يظهر في أسفل التقرير الرسمي المطبوع</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="financeManagerInput" placeholder="أدخل اسم مسؤول القسم المالي..." class="flex-1 bg-surface-container-highest border-none rounded-xl text-xs px-3 py-2 focus:ring-2 focus:ring-primary/20 transition-all font-bold text-primary">
+                        <button id="saveFinanceManagerBtn" class="bg-primary text-white px-4 py-2 rounded-xl text-xs font-black hover:scale-105 transition-all">حفظ</button>
+                    </div>
+                </div>
+                <!-- District / Circle Number Setting -->
+                <div class="w-full p-5 bg-white rounded-2xl shadow-sm border border-primary/10">
+                    <div class="flex items-center gap-4 mb-3">
+                        <span class="material-symbols-outlined text-primary">apartment</span>
+                        <div class="flex-1">
+                            <span class="text-sm font-bold text-primary block">رقم الدائرة (District Number)</span>
+                            <span class="text-[10px] text-on-surface-variant font-bold">الرقم المخصص للدائرة الذي يتم إرساله تلقائياً إلى فورمة كوكل مع كل وصل (الافتراضي: 18)</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="circleNumberInput" placeholder="أدخل رقم الدائرة (مثلاً 18)..." class="flex-1 bg-surface-container-highest border-none rounded-xl text-xs px-3 py-2 focus:ring-2 focus:ring-primary/20 transition-all font-bold text-primary">
+                        <button id="saveCircleNumberBtn" class="bg-primary text-white px-4 py-2 rounded-xl text-xs font-black hover:scale-105 transition-all">حفظ</button>
+                    </div>
+                </div>
+                <!-- Google Form URL Setting -->
+                <div class="w-full p-5 bg-white rounded-2xl shadow-sm border border-primary/10 space-y-3">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                            <span class="material-symbols-outlined text-xl">link</span>
+                        </div>
+                        <div class="flex-1">
+                            <span class="text-sm font-bold text-primary block">رابط فورمة كوكل (Google Form)</span>
+                            <span class="text-[10px] text-on-surface-variant font-bold">الدمج والبرمجة التلقائية للحقول حسب الاسم فور تغيير الرابط</span>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2.5">
+                        <div class="relative flex items-center">
+                            <input type="url" id="googleFormUrlInput" placeholder="الصق رابط فورمة كوكل هنا (https://docs.google.com/forms/d/...)..." class="w-full bg-surface-container-highest border-none rounded-xl text-xs py-3 px-3 focus:ring-2 focus:ring-primary/20 transition-all font-mono text-left" dir="ltr">
+                        </div>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <button id="autoSyncGoogleFormBtn" type="button" class="w-full bg-gradient-to-r from-orange-500 to-amber-600 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow-md shadow-orange-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm">sync_alt</span>
+                                ⚡ مزامنة وربط الحقول تلقائياً
+                            </button>
+                            <div class="flex gap-2">
+                                <button id="saveGoogleFormUrlBtn" class="flex-1 bg-primary text-white px-3 py-2.5 rounded-xl text-xs font-black hover:scale-105 transition-all">حفظ الرابط</button>
+                                <button id="testGoogleFormUrlBtn" type="button" class="px-3 py-2.5 rounded-xl bg-surface-container-high text-primary text-xs font-black hover:bg-surface-container-highest transition-all flex items-center justify-center gap-1" title="اختبار الرابط">
+                                    <span class="material-symbols-outlined text-xs">open_in_new</span>
+                                    اختبار
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between px-1 pt-1 border-t border-surface-container-high">
+                            <span id="googleFormStatusText" class="text-[10px] text-on-surface-variant/80 font-bold">الرابط الحالي: الافتراضي</span>
+                            <button id="viewFieldMappingBtn" type="button" class="text-[10px] text-primary font-black hover:underline flex items-center gap-1">
+                                <span class="material-symbols-outlined text-xs">tune</span>
+                                معاينة/تعديل الحقول
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Support Section -->
+        <section class="space-y-4">
+            <h2 class="text-xs font-black text-primary/60 uppercase mr-2 flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">help</span>
+                الدعم والمساعدة
+            </h2>
+            <div class="bg-white rounded-3xl shadow-xl shadow-primary/5 overflow-hidden border border-white/40">
+                <button class="w-full p-5 flex items-center justify-between setting-row border-b border-surface-container-high group">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-on-surface-variant/60 group-hover:text-primary">menu_book</span>
+                        <span class="text-sm font-bold">دليل استخدام التطبيق</span>
+                    </div>
+                    <span class="material-symbols-outlined text-on-surface-variant/40">open_in_new</span>
+                </button>
+                <button class="w-full p-5 flex items-center justify-between setting-row group">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-on-surface-variant/60 group-hover:text-primary">support_agent</span>
+                        <span class="text-sm font-bold">تواصل مع الإدارة مباشرة</span>
+                    </div>
+                    <span class="material-symbols-outlined text-on-surface-variant/40">send</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Logout -->
+        <a href="index.html" onclick="handleGlobalLogout(event)" class="w-full p-6 bg-[#d32f2f]/5 text-[#d32f2f] rounded-3xl flex items-center justify-center gap-3 font-black border border-[#d32f2f]/10 hover:bg-[#d32f2f] hover:text-white transition-all active:scale-95 group">
+            <span class="material-symbols-outlined group-hover:rotate-180 transition-transform">logout</span>
+            تسجيل الخروج الآمن
+        </a>
+
+        <p class="text-center text-[10px] font-bold text-on-surface-variant opacity-40">نسخة التطبيق v1.0.0.26 - الدائرة الثامنة عشر</p>
+
+    </main>
+
+    <!-- Custom Confirm Modal -->
+    <div id="confirmModal" class="hidden fixed inset-0 z-[999] bg-primary/80 backdrop-blur-sm items-center justify-center p-4">
+        <div class="bg-white rounded-[2rem] p-6 w-full max-w-sm shadow-2xl border border-white/50 relative transform transition-all">
+            <div class="flex items-center gap-4 mb-4">
+                <div id="confirmIconContainer" class="w-12 h-12 rounded-full flex items-center justify-center font-black">
+                    <span id="confirmIcon" class="material-symbols-outlined text-2xl">question_mark</span>
+                </div>
+                <div>
+                    <h3 id="confirmTitle" class="text-lg font-black text-primary tracking-tight">تأكيد الإجراء</h3>
+                    <p id="confirmMessage" class="text-xs font-bold text-on-surface-variant mt-1">هل أنت متأكد؟</p>
+                </div>
+            </div>
+            
+            <div class="flex gap-3 mt-6">
+                <button id="confirmBtnYes" class="flex-1 py-3 px-4 rounded-xl font-black text-sm transition-all shadow-md">
+                    تأكيد
+                </button>
+                <button id="confirmBtnNo" onclick="closeConfirmModal()" class="flex-1 bg-surface-container-high text-on-surface-variant py-3 px-4 rounded-xl font-bold text-sm hover:bg-surface-container-highest transition-all shadow-sm">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-8 pt-4 bg-white/95 backdrop-blur-xl rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] border-t border-primary/5 md:hidden pointer-events-auto">
+        <a class="flex flex-col items-center justify-center text-on-surface-variant/40 px-5 py-2 hover:bg-surface-container-high rounded-2xl transition-all" href="dashboard.html">
+            <span class="material-symbols-outlined mb-1 text-2xl">home</span>
+            <span class="text-[10px] font-bold">الرئيسية</span>
+        </a>
+
+        <a class="flex flex-col items-center justify-center text-on-surface-variant/40 px-5 py-2 hover:bg-surface-container-high rounded-2xl transition-all" href="analytics.html">
+            <span class="material-symbols-outlined mb-1 text-2xl">leaderboard</span>
+            <span class="text-[10px] font-bold">الإحصائيات</span>
+        </a>
+
+        <a class="flex flex-col items-center justify-center text-on-surface-variant/40 px-5 py-2 hover:bg-surface-container-high rounded-2xl transition-all" href="my-receipts.html">
+            <span class="material-symbols-outlined mb-1 text-2xl">menu_book</span>
+            <span class="text-[10px] font-bold">وصولاتي</span>
+        </a>
+
+        <a class="flex flex-col items-center justify-center bg-primary-fixed text-primary rounded-2xl px-5 py-2 transition-all shadow-sm" href="#">
+            <span class="material-symbols-outlined icon-filled mb-1 text-2xl">settings</span>
+            <span class="text-[10px] font-black">الإعدادات</span>
+        </a>
+    </nav>
+
+    <!-- Sidebar Navigation (Desktop) -->
+    <nav class="hidden md:flex fixed right-6 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-3xl rounded-3xl shadow-2xl border border-white/40 p-3 flex-col gap-4 z-40">
+        <a class="flex items-center justify-center text-on-surface-variant/50 hover:bg-primary-fixed hover:text-primary w-14 h-14 rounded-2xl group relative transition-all hover:scale-105" href="dashboard.html">
+            <span class="material-symbols-outlined">home</span>
+            <span class="absolute right-full mr-4 bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-all translate-x-4 group-hover:translate-x-0">الرئيسية</span>
+        </a>
+
+        <a class="flex items-center justify-center text-on-surface-variant/50 hover:bg-primary-fixed hover:text-primary w-14 h-14 rounded-2xl group relative transition-all hover:scale-105" href="analytics.html">
+            <span class="material-symbols-outlined">leaderboard</span>
+            <span class="absolute right-full mr-4 bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-all translate-x-4 group-hover:translate-x-0">الإحصائيات</span>
+        </a>
+
+        <a class="flex items-center justify-center text-on-surface-variant/50 hover:bg-primary-fixed hover:text-primary w-14 h-14 rounded-2xl group relative transition-all hover:scale-105" href="my-receipts.html">
+            <span class="material-symbols-outlined">menu_book</span>
+            <span class="absolute right-full mr-4 bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-all translate-x-4 group-hover:translate-x-0">وصولاتي</span>
+        </a>
+
+        <a class="flex items-center justify-center bg-primary-fixed text-primary w-14 h-14 rounded-2xl group relative hover:scale-110 transition-all shadow-sm" href="#">
+            <span class="material-symbols-outlined icon-filled">settings</span>
+            <span class="absolute right-full mr-4 bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-all translate-x-4 group-hover:translate-x-0">الإعدادات</span>
+        </a>
+    </nav>
+
+    <script>
+        window.addEventListener('error', function(e) {
+            console.error('GLOBAL ERROR:', e.message, 'at', e.filename, ':', e.lineno);
+            // alert('خطأ في تحميل الصفحة: ' + e.message);
+        });
+    </script>
+
+
+    <!-- Ally Management Modal -->
+    <div id="allyModal" class="fixed inset-0 bg-primary/60 backdrop-blur-md z-[110] flex items-center justify-center hidden p-4">
+        <div class="bg-primary-container w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh] border border-white/10">
+            <div class="p-8 border-b border-white/10 flex justify-between items-center bg-white/5">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-orange-400">group_add</span>
+                    <h3 class="font-black text-white text-xl">إدارة حسابات الحلفاء</h3>
+                </div>
+                <button onclick="closeAllyModal()" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-error transition-all hover:rotate-90">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            
+            <div class="p-8 space-y-8 overflow-y-auto custom-scrollbar">
+                <!-- Add New Ally Form -->
+                <div class="bg-white/5 rounded-3xl p-6 border border-white/10 space-y-4">
+                    <p class="text-[10px] font-black text-orange-400 uppercase tracking-widest flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-orange-400"></span>
+                        إنشاء حساب حليف جديد
+                    </p>
+                    <div class="grid gap-3">
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">person</span>
+                            <input type="text" id="newAllyName" placeholder="الاسم الكامل للحليف" class="w-full bg-white/5 border-white/10 text-white rounded-2xl py-4 pr-12 pl-4 focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all text-sm font-bold placeholder:text-white/20">
+                        </div>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">alternate_email</span>
+                            <input type="email" id="newAllyEmail" placeholder="البريد الإلكتروني" class="w-full bg-white/5 border-white/10 text-white rounded-2xl py-4 pr-12 pl-4 focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all text-sm font-bold placeholder:text-white/20">
+                        </div>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">lock</span>
+                            <input type="text" id="newAllyPass" placeholder="كلمة المرور الافتراضية" class="w-full bg-white/5 border-white/10 text-white rounded-2xl py-4 pr-12 pl-4 focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all text-sm font-bold placeholder:text-white/20">
+                        </div>
+                    </div>
+                    <button onclick="submitAddAlly(event)" class="w-full bg-orange-500 text-white font-black py-4 rounded-2xl shadow-lg shadow-orange-500/20 hover:scale-[1.02] active:scale-95 transition-all text-sm flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-sm">person_add</span>
+                        إضافة الآن كحليف
+                    </button>
+                </div>
+
+                <!-- Allies List Section -->
+                <div class="space-y-4">
+                    <p class="text-[10px] font-black text-white/40 uppercase tracking-widest mr-2">قائمة الحلفاء الحاليين</p>
+                    <div class="space-y-3" id="allyList">
+                        <!-- Dynamic List -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Password Reset Modal -->
+    <div id="resetModal" class="fixed inset-0 bg-primary/40 backdrop-blur-sm z-[120] flex items-center justify-center hidden p-6">
+        <div class="bg-white w-full max-w-sm rounded-[2rem] overflow-hidden shadow-2xl p-6 space-y-4">
+            <h4 class="font-black text-primary flex items-center gap-2">
+                <span class="material-symbols-outlined">lock_reset</span>
+                كلمة مرور جديدة لـ: <span id="resetUserName" class="text-on-surface-variant">---</span>
+            </h4>
+            <input type="hidden" id="resetUserId">
+            <input type="password" id="newPassValue" placeholder="أدخل كلمة المرور الجديدة" class="w-full bg-surface-container-low border-transparent rounded-xl py-3 px-4 focus:ring-2 focus:ring-primary/20">
+            <div class="flex gap-2">
+                <button onclick="submitPasswordReset(event)" class="flex-grow bg-primary text-white font-black py-3 rounded-xl transition-all active:scale-95">حفظ التغيير</button>
+                <button onclick="closeResetModal()" class="px-6 bg-surface-container-high font-bold py-3 rounded-xl">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Name Modal -->
+    <div id="editNameModal" class="fixed inset-0 bg-primary/40 backdrop-blur-sm z-[120] flex items-center justify-center hidden p-6">
+        <div class="bg-white w-full max-w-sm rounded-[2rem] overflow-hidden shadow-2xl p-6 space-y-4">
+            <h4 class="font-black text-primary flex items-center gap-2">
+                <span class="material-symbols-outlined">edit</span>
+                تعديل اسم الحليف: <span id="editNameUserCurrent" class="text-on-surface-variant">---</span>
+            </h4>
+            <input type="hidden" id="editNameUserId">
+            <input type="text" id="newNameValue" placeholder="أدخل الاسم الحقيقي الجديد" class="w-full bg-surface-container-low border-transparent rounded-xl py-3 px-4 focus:ring-2 focus:ring-primary/20 font-bold">
+            <div class="flex gap-2">
+                <button onclick="submitNameChange(event)" class="flex-grow bg-primary text-white font-black py-3 rounded-xl transition-all active:scale-95">حفظ التغيير</button>
+                <button onclick="closeEditNameModal()" class="px-6 bg-surface-container-high font-bold py-3 rounded-xl">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Book Distribution Modal -->
+    <div id="distributeModal" class="fixed inset-0 bg-primary/60 backdrop-blur-md z-[110] flex items-center justify-center hidden p-4">
+        <div class="bg-primary-container w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col border border-white/10">
+            <div class="p-8 border-b border-white/10 flex justify-between items-center bg-white/5">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-orange-400">library_add</span>
+                    <h3 class="font-black text-white text-xl">توزيع الدفاتر الشهري</h3>
+                </div>
+                <button onclick="closeDistributeModal()" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-error transition-all hover:rotate-90">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            
+            <div class="p-8 space-y-6">
+                <div class="space-y-4">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-white/40 uppercase tracking-widest mr-2">الحليف المسؤول</label>
+                        <select id="distributeAllySelect" class="w-full bg-[#002447] border border-white/10 text-white rounded-2xl py-4 px-4 focus:ring-2 focus:ring-orange-500/50 transition-all text-sm font-bold [color-scheme:dark] cursor-pointer">
+                            <!-- Dynamic List -->
+                        </select>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-white/40 uppercase tracking-widest mr-2">رقم الدفتر (أول وصل)</label>
+                        <input type="number" id="distributeSerial" placeholder="مثلاً: 1251" class="w-full bg-white/5 border border-white/10 text-white rounded-2xl py-4 px-4 focus:ring-2 focus:ring-orange-500/50 transition-all text-sm font-bold placeholder:text-white/20">
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-white/40 uppercase tracking-widest mr-2">الشهر المخصص</label>
+                        <input type="month" id="distributeMonth" class="w-full bg-white/5 border border-white/10 text-white rounded-2xl py-4 px-4 focus:ring-2 focus:ring-orange-500/50 transition-all text-sm font-bold [color-scheme:dark] cursor-pointer">
+                    </div>
+                </div>
+
+                <div class="bg-orange-500/10 border border-orange-500/20 p-4 rounded-2xl">
+                    <p class="text-[10px] text-orange-400 font-bold leading-relaxed">
+                        <span class="material-symbols-outlined text-xs align-middle ml-1">info</span>
+                        ملاحظة: سيتم قفل الدفتر تلقائياً بعد بلوغ 50 وصلاً. الترقيم سيبدأ من الرقم المدخل أعلاه.
+                    </p>
+                </div>
+
+                <button onclick="submitDistributeBook(event)" class="w-full bg-orange-500 text-white font-black py-4 rounded-2xl shadow-lg shadow-orange-500/20 hover:scale-[1.02] active:scale-95 transition-all text-sm flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-sm">send</span>
+                    تثبيت التوزيع الآن
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Google Form Field Mapping Preview Modal -->
+    <div id="gformMappingModal" class="fixed inset-0 bg-primary/60 backdrop-blur-md z-[130] flex items-center justify-center hidden p-4">
+        <div class="bg-white w-full max-w-xl rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh] border border-white/20">
+            <div class="p-6 border-b border-surface-container-high flex justify-between items-center bg-primary/5">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-orange-500/10 text-orange-500 flex items-center justify-center font-black">
+                        <span class="material-symbols-outlined text-xl">hub</span>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-primary text-base">معاينة وتعديل ربط حقول الفورمة</h3>
+                        <p class="text-[10px] text-on-surface-variant font-bold">تم ربط حقول كوكل تلقائياً مع حقول التطبيق حسب الاسم</p>
+                    </div>
+                </div>
+                <button onclick="closeGFormMappingModal()" class="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:bg-error hover:text-white transition-all">
+                    <span class="material-symbols-outlined text-sm">close</span>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-4 overflow-y-auto custom-scrollbar">
+                <div class="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-amber-900 text-xs font-bold flex items-center gap-2">
+                    <span class="material-symbols-outlined text-amber-600 text-base">info</span>
+                    <span>قام النظام بالبحث عن الكلمات المفتاحية في شفرة فورمة كوكل وربط الحقول تلقائياً. بإمكانك تعديل اختيارات الحقول يدوياً إن أردت.</span>
+                </div>
+
+                <div class="space-y-3" id="mappingFieldsContainer">
+                    <!-- Dynamic Mapping Rows -->
+                </div>
+            </div>
+
+            <div class="p-5 border-t border-surface-container-high bg-surface-container-low flex gap-3">
+                <button id="confirmGFormMappingBtn" class="flex-1 bg-primary text-white font-black py-3 rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all text-xs flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-sm">check_circle</span>
+                    تأكيد واعتماد ربط الحقول
+                </button>
+                <button onclick="closeGFormMappingModal()" class="px-5 bg-surface-container-high text-on-surface-variant font-bold py-3 rounded-xl text-xs hover:bg-surface-container-highest transition-all">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Notification Modal (Universal) -->
+    <div id="statusModal" class="fixed inset-0 bg-primary/60 backdrop-blur-md z-[200] flex items-center justify-center hidden p-6">
+        <div class="bg-white dark:bg-[#2d3133] w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl p-8 space-y-6 animate-modal-pop border border-white/10 text-center">
+            <div id="statusContainer" class="w-20 h-20 rounded-3xl mx-auto flex items-center justify-center">
+                <span id="statusIcon" class="material-symbols-outlined text-4xl"></span>
+            </div>
+            
+            <div class="space-y-2">
+                <h3 id="statusTitle" class="text-xl font-black text-primary dark:text-white"></h3>
+                <p id="statusMessage" class="text-sm font-medium text-on-surface-variant dark:text-white/60 leading-relaxed"></p>
+            </div>
+
+            <button onclick="closeStatusModal()" class="w-full bg-primary text-white font-black py-4 rounded-2xl shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all text-sm">
+                حسناً، فهمت
+            </button>
+        </div>
+    </div>
+
+    <!-- Admin Profile Settings Modal -->
+    <div id="adminProfileModal" class="fixed inset-0 bg-primary/60 backdrop-blur-md z-[120] flex items-center justify-center hidden p-4">
+        <div class="bg-primary-container w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col border border-white/10 text-right animate-modal-pop">
+            <div class="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-black">
+                        <span class="material-symbols-outlined text-xl">manage_accounts</span>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-white text-lg">بيانات حساب مدير النظام</h3>
+                        <p class="text-[10px] text-white/50 font-bold">تعديل الاسم والبريد وكلمة السر للمدير</p>
+                    </div>
+                </div>
+                <button onclick="closeAdminProfileModal()" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-error transition-all hover:rotate-90">
+                    <span class="material-symbols-outlined text-sm">close</span>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-4 overflow-y-auto max-h-[80vh] custom-scrollbar">
+                <!-- Name -->
+                <div class="space-y-1">
+                    <label class="text-[11px] font-black text-white/60 uppercase mr-1">اسم مدير النظام</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">person</span>
+                        <input type="text" id="adminFullNameInput" placeholder="أدخل اسم المدير" class="w-full bg-white/5 border border-white/10 text-white rounded-2xl py-3 pr-12 pl-4 focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all text-sm font-bold placeholder:text-white/20">
+                    </div>
+                </div>
+
+                <!-- Email -->
+                <div class="space-y-1">
+                    <label class="text-[11px] font-black text-white/60 uppercase mr-1">البريد الإلكتروني</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">alternate_email</span>
+                        <input type="email" id="adminEmailInput" placeholder="admin@example.com" class="w-full bg-white/5 border border-white/10 text-white rounded-2xl py-3 pr-12 pl-4 focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all text-sm font-bold placeholder:text-white/20 text-left dir-ltr">
+                    </div>
+                </div>
+
+                <!-- Password divider -->
+                <div class="pt-2 border-t border-white/10">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[11px] font-black text-amber-400">تغيير كلمة المرور (اختياري)</span>
+                        <span class="text-[9px] text-white/40">اتركها فارغة للإبقاء على الحالية</span>
+                    </div>
+
+                    <!-- New Password -->
+                    <div class="space-y-2">
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">lock</span>
+                            <input type="password" id="adminNewPasswordInput" placeholder="كلمة المرور الجديدة (6 رموز على الأقل)" class="w-full bg-white/5 border border-white/10 text-white rounded-2xl py-3 pr-12 pl-12 focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all text-sm font-bold placeholder:text-white/20">
+                            <button type="button" onclick="toggleAdminPasswordVisibility('adminNewPasswordInput', 'toggleNewPassIcon')" class="absolute left-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-1">
+                                <span id="toggleNewPassIcon" class="material-symbols-outlined text-sm">visibility</span>
+                            </button>
+                        </div>
+
+                        <!-- Confirm Password -->
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">lock_clock</span>
+                            <input type="password" id="adminConfirmPasswordInput" placeholder="تأكيد كلمة المرور الجديدة" class="w-full bg-white/5 border border-white/10 text-white rounded-2xl py-3 pr-12 pl-12 focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all text-sm font-bold placeholder:text-white/20">
+                            <button type="button" onclick="toggleAdminPasswordVisibility('adminConfirmPasswordInput', 'toggleConfirmPassIcon')" class="absolute left-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-1">
+                                <span id="toggleConfirmPassIcon" class="material-symbols-outlined text-sm">visibility</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-amber-500/10 border border-amber-500/20 p-3 rounded-2xl">
+                    <p class="text-[10px] text-amber-300 font-bold leading-relaxed flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-xs">shield</span>
+                        <span>سيتم تطبيق البيانات فوراً على الحساب وجدول المدير في قاعدة البيانات.</span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="p-5 border-t border-white/10 bg-white/5 flex gap-2">
+                <button id="saveAdminProfileBtn" onclick="submitAdminProfileUpdate(event)" class="flex-1 bg-amber-500 text-white font-black py-3 rounded-xl shadow-lg shadow-amber-500/20 hover:scale-[1.02] active:scale-95 transition-all text-xs flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-sm">save</span>
+                    حفظ التغييرات
+                </button>
+                <button onclick="closeAdminProfileModal()" class="px-5 bg-white/10 text-white font-bold py-3 rounded-xl text-xs hover:bg-white/20 transition-all">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

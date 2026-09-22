@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>وصولاتي - نظام المساهمات</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&amp;family=Public+Sans:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary-container": "#003366",
+                        "background": "#f7f9fc",
+                        "on-background": "#191c1e",
+                        "surface": "#f7f9fc",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#eceef1",
+                        "primary": "#001e40",
+                        "primary-fixed": "#d5e3ff",
+                        "surface-container-low": "#f2f4f7",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#e6e8eb",
+                        "on-surface-variant": "#43474f",
+                        "success": "#2e7d32",
+                        "warning": "#ed6c02",
+                        "error": "#d32f2f"
+                    },
+                    borderRadius: {
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "2xl": "2.5rem"
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .icon-filled {
+            font-variation-settings: 'FILL' 1;
+        }
+
+        .glass-header {
+            background: rgba(247, 249, 252, 0.8);
+            backdrop-filter: blur(12px);
+        }
+
+        .nav-item-active {
+            background-color: #d5e3ff;
+            color: #001e40;
+        }
+
+        /* Report Styling for PDF and Print */
+        #printableReport {
+            direction: rtl;
+            font-family: 'Tajawal', sans-serif;
+            color: black;
+            background: white !important;
+            width: 210mm;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+
+        .pdf-page {
+            width: 210mm;
+            height: 296.5mm;
+            padding: 12mm 15mm;
+            box-sizing: border-box;
+            background: white;
+            page-break-after: always;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .pdf-page:last-child {
+            page-break-after: auto;
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+        }
+
+        .report-table th,
+        .report-table td {
+            border: 1.2px solid #000 !important;
+            padding: 0 4px;
+            height: 8.4mm;
+            text-align: center;
+            font-weight: 700;
+            font-size: 11px;
+        }
+
+        .report-table th {
+            background-color: #f2f2f2 !important;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .report-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .report-logo {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            margin-bottom: 5px;
+        }
+
+        .report-meta {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .report-meta-side {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            font-weight: 900;
+            font-size: 13px;
+        }
+
+        @media print {
+            @page {
+                size: A4;
+                margin: 0;
+            }
+
+            body {
+                background: white !important;
+                font-size: 11px;
+                margin: 0;
+                padding: 0;
+            }
+
+            .print\:hidden {
+                display: none !important;
+            }
+
+            .print\:block {
+                display: block !important;
+            }
+
+            #printableReport {
+                display: block !important;
+            }
+        }
+
+        .official-pdf-page {
+            width: 210mm;
+            height: 296.5mm;
+            padding: 8mm 10mm;
+            box-sizing: border-box;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            direction: rtl;
+            font-family: 'Tajawal', sans-serif;
+            color: black;
+
+        }
+
+        .official-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            height: 28mm;
+            border-bottom: 2px solid #000;
+            padding-bottom: 4px;
+        }
+
+        .official-header-side {
+            width: 35%;
+            font-size: 11px;
+            font-weight: bold;
+            line-height: 1.4;
+        }
+
+        .official-header-center {
+            width: 30%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .official-logo-img {
+            height: 24mm;
+
+            width: 80px;
+        }
+
+        .official-columns-wrapper {
+            display: flex;
+            gap: 12px;
+            flex-grow: 1;
+        }
+
+        .official-subtable {
+            width: 50%;
+            border-collapse: collapse;
+        }
+
+        .official-subtable th {
+            border: 1px solid #000;
+            background-color: #ffffff !important;
+            color: #a30000;
+            font-size: 11px;
+            font-weight: bold;
+            height: 7mm;
+            text-align: center;
+        }
+
+        .official-subtable td {
+            border: 0.8px solid #000;
+            font-size: 10.5px;
+            height: 7.6mm;
+            text-align: center;
+        }
+
+        .official-subtable td.burgundy-cell {
+            color: #a30000;
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        .official-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-top: 8px;
+            height: 18mm;
+            border-top: 1.5px solid #000;
+            padding-top: 4px;
+            font-size: 11.5px;
+            font-weight: bold;
+            color: #a30000;
+        }
+
+        .official-footer-left {
+            width: 45%;
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .official-footer-right {
+            width: 45%;
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+    </style>
+  <script type="module" crossorigin src="./assets/my-receipts-BXsdi_o1.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/notifications-02TcF-6C.js">
+  <link rel="modulepreload" crossorigin href="./assets/date-utils-DVY1kC5i.js">
+  <link rel="modulepreload" crossorigin href="./assets/googleFormSync-BVF_BFJ7.js">
+</head>
+
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body pb-32 md:pb-0">
+
+    <!-- Header Section -->
+    <header class="sticky top-0 z-50 glass-header border-b border-surface-container-high px-6 py-4">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="dashboard.html"
+                    class="p-2 hover:bg-surface-container-high rounded-xl transition-all active:scale-90">
+                    <span class="material-symbols-outlined text-primary">arrow_forward</span>
+                </a>
+                <h1 class="text-lg font-black text-primary tracking-tight">إدارة الدفاتر (وصولاتي)</h1>
+            </div>
+            <div class="flex gap-2" id="adminHeaderActions">
+                <!-- Will be populated for admins -->
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto w-full p-6 space-y-6">
+        <!-- Printable Report Container (Hidden on screen) -->
+        <div id="printableReport" class="hidden"></div>
+
+        <!-- Search & Filters -->
+        <section class="bg-surface-container-lowest rounded-3xl p-6 shadow-xl shadow-primary/5 border border-white/40">
+            <div class="flex flex-col lg:flex-row gap-4 items-center">
+                <!-- Search Book Number -->
+                <div class="w-full lg:flex-grow relative">
+                    <span
+                        class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/40">search</span>
+                    <input type="text" id="searchBookInput" placeholder="ابحث برقم الدفتر..."
+                        class="w-full bg-surface-container-low border-transparent rounded-2xl py-4 pr-12 pl-4 focus:ring-4 focus:ring-primary/5 focus:border-primary/20 font-bold placeholder:text-on-surface-variant/30 transition-all">
+                </div>
+
+                <div class="flex flex-wrap gap-3 w-full lg:w-auto">
+                    <!-- Filter Ally -->
+                    <div class="relative flex-grow lg:flex-grow-0">
+                        <span
+                            class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-primary text-sm">person</span>
+                        <select
+                            class="w-full bg-white border border-primary/5 rounded-2xl py-3 pr-10 pl-4 font-bold text-sm focus:ring-primary/10 cursor-pointer appearance-none shadow-sm">
+                            <option>جميع الحلفاء المستلمين</option>
+                            <option>علي إحسان</option>
+                            <option>حسين علي لفتة</option>
+                            <option>جعفر الصادق</option>
+                        </select>
+                    </div>
+
+                    <!-- Filter Month -->
+                    <div class="relative flex-grow lg:flex-grow-0 min-w-[200px]">
+                        <button id="openMonthPickerBtn"
+                            class="w-full bg-white border border-primary/5 rounded-2xl py-3 px-4 font-bold text-sm shadow-sm flex items-center justify-between cursor-pointer hover:border-primary/20 hover:bg-surface-container-lowest transition-all">
+                            <div class="flex items-center gap-2 pointer-events-none">
+                                <span class="material-symbols-outlined text-primary text-sm">calendar_month</span>
+                                <span id="receiptsMonthLabel">جميع الأشهر</span>
+                            </div>
+                        </button>
+                    </div>
+
+                    <!-- Export Actions -->
+                    <div class="flex flex-wrap gap-2">
+                        <button id="bulkGoogleFormBtn" onclick="window.sendAllVisibleBooksToGoogleForm()"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 active:scale-95 hidden"
+                            title="تحويل كافة وصولات الدفاتر الظاهرة إلى Google Form">
+                            <span class="material-symbols-outlined icon-filled">cloud_upload</span>
+                            <span class="hidden sm:inline">تحويل إلى Google Form</span>
+                        </button>
+                        <button onclick="window.generateHighFidelityExcel()"
+                            class="bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20 active:scale-95">
+                            <span class="material-symbols-outlined icon-filled">table_view</span>
+                            <span class="hidden sm:inline">تصدير Excel</span>
+                        </button>
+                        <button onclick="window.generateHighFidelityPDF()"
+                            class="bg-primary hover:bg-primary-container text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-95">
+                            <span class="material-symbols-outlined icon-filled">picture_as_pdf</span>
+                            <span class="hidden sm:inline">تحميل PDF</span>
+                        </button>
+                        <button onclick="window.generateOfficialTemplateExcelAll()"
+                            class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 active:scale-95"
+                            title="تصدير كشف الوصولات بالنموذج الرسمي">
+                            <span class="material-symbols-outlined icon-filled">grid_on</span>
+                            <span class="hidden sm:inline">Excel (رسمي)</span>
+                        </button>
+                        <button onclick="window.generateOfficialTemplatePDFAll()"
+                            class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 active:scale-95"
+                            title="تحميل كشف الوصولات بالنموذج الرسمي">
+                            <span class="material-symbols-outlined icon-filled">print</span>
+                            <span class="hidden sm:inline">PDF (رسمي)</span>
+                        </button>
+                    </div>
+
+                    <!-- Filter Toggle Button -->
+                    <button
+                        class="bg-surface-container-high p-4 rounded-2xl hover:bg-primary hover:text-white transition-all shadow-sm">
+                        <span class="material-symbols-outlined text-lg">tune</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats Quick Look -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-primary/5">
+                <p class="text-[10px] font-black text-primary/40 uppercase mb-1">إجمالي الدفاتر</p>
+                <div class="flex justify-between items-end">
+                    <p class="text-lg font-black text-primary stat-card-total">0</p>
+                    <span class="material-symbols-outlined text-primary/20 text-2xl">menu_book</span>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-primary/5">
+                <p class="text-[10px] font-black text-primary/40 uppercase mb-1">الدفاتر المستلمة</p>
+                <div class="flex justify-between items-end">
+                    <p class="text-xl font-black text-success stat-card-received">0</p>
+                    <span class="material-symbols-outlined text-success/20 text-3xl">inbox</span>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-primary/5">
+                <p class="text-[10px] font-black text-primary/40 uppercase mb-1">عدد الوصولات الكلي</p>
+                <div class="flex justify-between items-end">
+                    <p class="text-xl font-black text-secondary stat-card-total-receipts">0</p>
+                    <span class="material-symbols-outlined text-secondary/20 text-3xl">receipt_long</span>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-primary/5">
+                <p class="text-[10px] font-black text-primary/40 uppercase mb-1">مجموع مبالغ الدفاتر</p>
+                <div class="flex justify-between items-end">
+                    <p class="text-xl font-black text-primary stat-card-total-amount">0</p>
+                    <span class="material-symbols-outlined text-primary/20 text-3xl">payments</span>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-primary/5">
+                <p class="text-[10px] font-black text-primary/40 uppercase mb-1">الدفاتر المكتملة</p>
+                <div class="flex justify-between items-end">
+                    <p class="text-lg font-black text-primary-container stat-card-completed">0</p>
+                    <span class="material-symbols-outlined text-primary-container/20 text-2xl">verified</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Books Data Table -->
+        <section
+            class="bg-surface-container-lowest rounded-[2.5rem] shadow-2xl shadow-primary/5 overflow-hidden border border-white/60">
+            <div class="overflow-x-auto">
+                <table class="w-full text-right border-collapse min-w-[1000px]">
+                    <thead>
+                        <tr
+                            class="bg-primary/5 text-primary text-[10px] font-black uppercase tracking-widest border-b border-primary/10">
+                            <th class="py-5 px-6">رقم الدفتر</th>
+                            <th class="py-5 px-6">اسم الحليف المستلم</th>
+                            <th class="py-5 px-6">الشهر المخصص</th>
+                            <th class="py-5 px-6">تاريخ التوزيع</th>
+                            <th class="py-5 px-6 text-center">عدد الوصولات</th>
+                            <th class="py-5 px-6 text-center">المبلغ الكلي</th>
+                            <th class="py-5 px-6 text-center">الحالة</th>
+                            <th class="py-5 px-6"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-primary/5">
+                        <!-- Book 1 -->
+                        <tr class="hover:bg-primary/5 transition-all group">
+                            <td class="py-5 px-6">
+                                <span
+                                    class="p-2 bg-primary-fixed rounded-xl text-primary font-black text-xs">#9041</span>
+                            </td>
+                            <td class="py-5 px-6">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs">
+                                        عي</div>
+                                    <p class="font-black text-primary text-sm tracking-tight">علي إحسان</p>
+                                </div>
+                            </td>
+                            <td class="py-5 px-6 text-xs font-bold text-on-surface-variant">2026/04/10</td>
+                            <td class="py-5 px-6 text-xs font-bold text-on-surface-variant">2026/04/15</td>
+                            <td class="py-5 px-6 text-center font-black text-primary italic">50 <span
+                                    class="text-[10px] not-italic">وصل</span></td>
+                            <td class="py-5 px-6 text-center font-black text-primary text-lg">250,000 <span
+                                    class="text-xs">د.ع</span></td>
+                            <td class="py-5 px-6 text-center">
+                                <span
+                                    class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-black">مكتمل
+                                    ومدقق</span>
+                            </td>
+                            <td class="py-5 px-6">
+                                <a href="book-details.html"
+                                    class="p-2 bg-surface-container-high rounded-xl text-primary hover:bg-primary hover:text-white transition-all inline-block">
+                                    <span class="material-symbols-outlined text-sm">visibility</span>
+                                </a>
+                            </td>
+                        </tr>
+
+                        <!-- Book 2 -->
+                        <tr class="hover:bg-primary/5 transition-all group">
+                            <td class="py-5 px-6">
+                                <span
+                                    class="p-2 bg-primary-fixed rounded-xl text-primary font-black text-xs">#9042</span>
+                            </td>
+                            <td class="py-5 px-6">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs">
+                                        حل</div>
+                                    <p class="font-black text-primary text-sm tracking-tight">حسين علي لفتة</p>
+                                </div>
+                            </td>
+                            <td class="py-5 px-6 text-xs font-bold text-on-surface-variant">2026/04/12</td>
+                            <td class="py-5 px-6 text-xs font-bold text-on-surface-variant italic opacity-50">لم يتم
+                                الاستلام</td>
+                            <td class="py-5 px-6 text-center font-black text-primary italic">32 <span
+                                    class="text-[10px] not-italic">وصل</span></td>
+                            <td class="py-5 px-6 text-center font-black text-primary text-lg">160,000 <span
+                                    class="text-xs">د.ع</span></td>
+                            <td class="py-5 px-6 text-center">
+                                <span
+                                    class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-[10px] font-black">قيد
+                                    التدقيق</span>
+                            </td>
+                            <td class="py-5 px-6">
+                                <a href="book-details.html"
+                                    class="p-2 bg-surface-container-high rounded-xl text-primary hover:bg-primary hover:text-white transition-all inline-block">
+                                    <span class="material-symbols-outlined text-sm">visibility</span>
+                                </a>
+                            </td>
+                        </tr>
+
+                        <!-- Book 3 -->
+                        <tr class="hover:bg-primary/5 transition-all group">
+                            <td class="py-5 px-6">
+                                <span
+                                    class="p-2 bg-primary-fixed rounded-xl text-primary font-black text-xs">#9043</span>
+                            </td>
+                            <td class="py-5 px-6">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs">
+                                        جص</div>
+                                    <p class="font-black text-primary text-sm tracking-tight">جعفر الصادق</p>
+                                </div>
+                            </td>
+                            <td class="py-5 px-6 text-xs font-bold text-on-surface-variant">2026/04/14</td>
+                            <td class="py-5 px-6 text-xs font-bold text-on-surface-variant">2026/04/16</td>
+                            <td class="py-5 px-6 text-center font-black text-primary italic">45 <span
+                                    class="text-[10px] not-italic">وصل</span></td>
+                            <td class="py-5 px-6 text-center font-black text-primary text-lg">225,000 <span
+                                    class="text-xs">د.ع</span></td>
+                            <td class="py-5 px-6 text-center">
+                                <span
+                                    class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-[10px] font-black">مرفوض
+                                    / نقص</span>
+                            </td>
+                            <td class="py-5 px-6">
+                                <a href="book-details.html"
+                                    class="p-2 bg-surface-container-high rounded-xl text-primary hover:bg-primary hover:text-white transition-all inline-block">
+                                    <span class="material-symbols-outlined text-sm">visibility</span>
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="p-8 text-center bg-white border-t border-primary/5">
+                <button
+                    class="bg-primary/5 text-primary px-8 py-3 rounded-2xl text-sm font-black hover:bg-primary hover:text-white transition-all active:scale-95 flex items-center gap-2 mx-auto shadow-sm">
+                    <span class="material-symbols-outlined text-lg animation-spin">sync</span>
+                    <span>تحميل المزيد من السجلات</span>
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Bottom Navigation (Mobile) -->
+    <nav
+        class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-8 pt-4 bg-white/95 backdrop-blur-xl rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] border-t border-primary/5 md:hidden pointer-events-auto">
+        <a class="flex flex-col items-center justify-center text-on-surface-variant/40 px-5 py-2 hover:bg-surface-container-high rounded-2xl transition-all"
+            href="dashboard.html">
+            <span class="material-symbols-outlined mb-1 text-2xl">home</span>
+            <span class="text-[10px] font-bold">الرئيسية</span>
+        </a>
+
+        <a class="flex flex-col items-center justify-center text-on-surface-variant/40 px-5 py-2 hover:bg-surface-container-high rounded-2xl transition-all"
+            href="analytics.html">
+            <span class="material-symbols-outlined mb-1 text-2xl">leaderboard</span>
+            <span class="text-[10px] font-bold">الإحصائيات</span>
+        </a>
+
+        <a class="flex flex-col items-center justify-center bg-primary text-white rounded-2xl px-5 py-2 transition-all shadow-lg shadow-primary/20"
+            href="#">
+            <span class="material-symbols-outlined icon-filled mb-1 text-2xl">menu_book</span>
+            <span class="text-[10px] font-black">وصولاتي</span>
+        </a>
+
+        <a class="flex flex-col items-center justify-center text-on-surface-variant/40 px-5 py-2 hover:bg-surface-container-high rounded-2xl transition-all"
+            href="settings.html">
+            <span class="material-symbols-outlined mb-1 text-2xl">settings</span>
+            <span class="text-[10px] font-bold">الإعدادات</span>
+        </a>
+    </nav>
+
+    <!-- Sidebar Navigation (Desktop) -->
+    <nav
+        class="hidden md:flex fixed right-6 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-3xl rounded-3xl shadow-2xl border border-white/40 p-3 flex-col gap-4 z-40">
+        <a class="flex items-center justify-center text-on-surface-variant/50 hover:bg-primary-fixed hover:text-primary w-14 h-14 rounded-2xl group relative transition-all hover:scale-105"
+            href="dashboard.html">
+            <span class="material-symbols-outlined">home</span>
+            <span
+                class="absolute right-full mr-4 bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-all translate-x-4 group-hover:translate-x-0">الرئيسية</span>
+        </a>
+
+        <a class="flex items-center justify-center text-on-surface-variant/50 hover:bg-primary-fixed hover:text-primary w-14 h-14 rounded-2xl group relative transition-all hover:scale-105"
+            href="analytics.html">
+            <span class="material-symbols-outlined">leaderboard</span>
+            <span
+                class="absolute right-full mr-4 bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-all translate-x-4 group-hover:translate-x-0">الإحصائيات</span>
+        </a>
+
+        <a class="flex items-center justify-center bg-primary text-white w-14 h-14 rounded-2xl group relative hover:scale-110 transition-all shadow-xl shadow-primary/20"
+            href="#">
+            <span class="material-symbols-outlined icon-filled">menu_book</span>
+            <span
+                class="absolute right-full mr-4 bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-all translate-x-4 group-hover:translate-x-0">وصولاتي</span>
+        </a>
+
+        <a class="flex items-center justify-center text-on-surface-variant/50 hover:bg-primary-fixed hover:text-primary w-14 h-14 rounded-2xl group relative transition-all hover:scale-105"
+            href="settings.html">
+            <span class="material-symbols-outlined">settings</span>
+            <span
+                class="absolute right-full mr-4 bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-all translate-x-4 group-hover:translate-x-0">الإعدادات</span>
+        </a>
+    </nav>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteBookModal"
+        class="fixed inset-0 bg-primary/40 backdrop-blur-md z-[100] hidden items-center justify-center p-6 transition-all duration-300">
+        <div
+            class="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-300">
+            <div class="p-8 text-center space-y-4">
+                <div class="w-20 h-20 bg-error/10 text-error rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <span class="material-symbols-outlined text-4xl icon-filled">delete_forever</span>
+                </div>
+                <h3 class="text-xl font-black text-primary">حذف الدفتر آلياً؟</h3>
+                <p class="text-sm text-on-surface-variant leading-relaxed">
+                    هل أنت متأكد من حذف الدفتر رقم (<span id="deleteBookSerial"
+                        class="font-black text-error">---</span>)؟
+                    <br>
+                    <span class="text-[10px] opacity-60 font-bold">ملاحظة: سيتم حذف جميع الوصولات المرتبطة به
+                        نهائياً.</span>
+                </p>
+            </div>
+            <div class="px-8 pb-8 flex flex-col gap-3">
+                <button id="confirmDeleteBtn" onclick="window.executeDeleteBook()"
+                    class="w-full bg-[#d32f2f] text-white font-black py-4 rounded-2xl shadow-lg shadow-error/20 hover:bg-[#b71c1c] active:scale-95 transition-all">
+                    نعم، احذف الدفتر
+                </button>
+                <button onclick="window.closeDeleteModal()"
+                    class="w-full bg-surface-container-high text-primary font-black py-4 rounded-2xl active:scale-95 transition-all">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receive Confirmation Modal -->
+    <div id="receiveBookModal"
+        class="fixed inset-0 bg-primary/40 backdrop-blur-md z-[100] hidden items-center justify-center p-6 transition-all duration-300">
+        <div
+            class="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-300">
+            <div class="p-8 text-center space-y-4">
+                <div
+                    class="w-20 h-20 bg-success/10 text-success rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <span class="material-symbols-outlined text-4xl icon-filled">check_circle</span>
+                </div>
+                <h3 class="text-xl font-black text-primary">تأكيد استلام الدفتر؟</h3>
+                <p class="text-sm text-on-surface-variant leading-relaxed">
+                    هل أنت متأكد من تأكيد استلام الدفتر رقم (<span id="receiveBookSerial"
+                        class="font-black text-success">---</span>)؟
+                </p>
+            </div>
+            <div class="px-8 pb-8 flex flex-col gap-3">
+                <button id="confirmReceiveBtn" onclick="window.executeMarkAsReceived()"
+                    class="w-full bg-success text-white font-black py-4 rounded-2xl shadow-lg shadow-success/20 hover:opacity-90 active:scale-95 transition-all">
+                    تأكيد الاستلام
+                </button>
+                <button onclick="window.closeReceiveModal()"
+                    class="w-full bg-surface-container-high text-primary font-black py-4 rounded-2xl active:scale-95 transition-all">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Return Confirmation Modal -->
+    <div id="returnBookModal"
+        class="fixed inset-0 bg-primary/40 backdrop-blur-md z-[100] hidden items-center justify-center p-6 transition-all duration-300">
+        <div
+            class="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-300">
+            <div class="p-8 text-center space-y-4">
+                <div
+                    class="w-20 h-20 bg-warning/10 text-warning rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <span class="material-symbols-outlined text-4xl icon-filled">undo</span>
+                </div>
+                <h3 class="text-xl font-black text-primary">إرجاع الدفتر للحليف؟</h3>
+                <p class="text-sm text-on-surface-variant leading-relaxed">
+                    هل أنت متأكد من إرجاع الدفتر رقم (<span id="returnBookSerial"
+                        class="font-black text-warning">---</span>)؟
+                    <br>
+                    <span class="text-[10px] opacity-60 font-bold">سيتم إلغاء حالة الاستلام وإعادة الدفتر للحليف.</span>
+                </p>
+            </div>
+            <div class="px-8 pb-8 flex flex-col gap-3">
+                <button id="confirmReturnBtn" onclick="window.executeReturnBook()"
+                    class="w-full bg-warning text-white font-black py-4 rounded-2xl shadow-lg shadow-warning/20 hover:opacity-90 active:scale-95 transition-all">
+                    تأكيد الإرجاع
+                </button>
+                <button onclick="window.closeReturnModal()"
+                    class="w-full bg-surface-container-high text-primary font-black py-4 rounded-2xl active:scale-95 transition-all">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>سجل الوصولات الكامل - نظام المساهمات</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+  <script type="module" crossorigin src="./assets/records-Cfky8Aqn.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/notifications-02TcF-6C.js">
+  <link rel="modulepreload" crossorigin href="./assets/theme-config-CSLxHe3X.js">
+  <link rel="modulepreload" crossorigin href="./assets/date-utils-DVY1kC5i.js">
+  <link rel="stylesheet" crossorigin href="./assets/theme-config-R4rSkD3u.css">
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+
+    <!-- Header Section -->
+    <header class="sticky top-0 z-50 glass-header border-b border-surface-container-high px-6 py-4">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="dashboard.html" class="p-2 hover:bg-surface-container-high rounded-xl transition-all active:scale-90">
+                    <span class="material-symbols-outlined text-primary">arrow_forward</span>
+                </a>
+                <h1 class="text-2xl font-black text-primary tracking-tight">السجل الكامل للوصولات</h1>
+            </div>
+            <div class="flex gap-2">
+                <button id="exportBtn" class="bg-primary text-on-primary px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:scale-105 transition-all">
+                    <span class="material-symbols-outlined text-lg">download</span>
+                    تصدير ملف Excel
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto w-full p-6 space-y-6">
+
+        <!-- Filters Bar -->
+        <section class="bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-surface-container-high flex flex-wrap gap-4 items-center">
+            <div class="flex-grow min-w-[300px] relative">
+                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/40">search</span>
+                <input type="text" id="searchInput" placeholder="ابحث باسم المساهم أو رقم الوصل..." class="w-full bg-surface-container-low border-transparent rounded-xl py-3 pr-12 pl-4 focus:ring-2 focus:ring-primary/10 focus:border-primary/20 font-medium">
+            </div>
+            <div class="flex gap-3">
+                <select id="allyFilter" class="bg-surface-container-low border-transparent rounded-xl py-3 px-6 font-bold text-sm focus:ring-0 cursor-pointer">
+                    <option value="">جميع الحلفاء</option>
+                </select>
+                <button id="openMonthPickerBtn" class="bg-surface-container-low border-transparent rounded-xl py-3 px-4 font-bold text-sm cursor-pointer flex items-center justify-between gap-3 min-w-[150px] hover:bg-surface-container-high transition-all">
+                    <span id="recordsMonthLabel" class="text-primary truncate">جميع الشهور</span>
+                    <span class="material-symbols-outlined text-primary/50 text-xl pointer-events-none">calendar_month</span>
+                </button>
+                <button class="bg-surface-container-high p-3 rounded-xl hover:bg-primary hover:text-white transition-all">
+                    <span class="material-symbols-outlined">filter_list</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Stats Overview for current view -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-primary-container/5 rounded-2xl p-5 border border-primary/5">
+                <p class="text-[10px] font-black text-primary/60 uppercase mb-1">إجمالي المبالغ المعروضة</p>
+                <p class="text-2xl font-black text-primary"><span id="totalAmountStat">0</span> <span class="text-xs">د.ع</span></p>
+            </div>
+            <div class="bg-primary-container/5 rounded-2xl p-5 border border-primary/5">
+                <p class="text-[10px] font-black text-primary/60 uppercase mb-1">عدد الوصولات</p>
+                <p class="text-2xl font-black text-primary"><span id="totalCountStat">0</span> <span class="text-xs">وصل</span></p>
+            </div>
+            <div class="bg-primary-container/5 rounded-2xl p-5 border border-primary/5">
+                <p class="text-[10px] font-black text-primary/60 uppercase mb-1">الحلفاء المشاركين</p>
+                <p class="text-2xl font-black text-primary"><span id="totalAlliesStat">0</span> <span class="text-xs">حليف</span></p>
+            </div>
+        </div>
+
+        <!-- Data Grid -->
+        <section class="space-y-4" id="recordsList">
+            <!-- Dynamic Content Cards will be injected here -->
+        </section>
+
+        </section>
+
+    </main>
+
+    <!-- Footer Summary -->
+    <footer class="mt-auto bg-primary text-on-primary p-6 text-center">
+        <p class="text-xs font-bold opacity-60">جميع الحقوق محفوظة - نظام المساهمات والتدقيق الرقمي 2026</p>
+    </footer>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="fixed inset-0 bg-primary/40 backdrop-blur-sm z-[100] flex items-center justify-center hidden p-6">
+        <div class="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+            <div class="p-6 border-b border-surface-container-high flex justify-between items-center bg-primary text-white">
+                <h3 class="font-black">تعديل بيانات الوصل</h3>
+                <button onclick="closeEditModal()" class="material-symbols-outlined">close</button>
+            </div>
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="editId">
+                <div>
+                    <label class="text-[10px] font-black text-primary/60 uppercase mb-1 block">اسم المساهم</label>
+                    <input type="text" id="editName" class="w-full bg-surface-container-low border-transparent rounded-xl py-3 px-4">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-black text-primary/60 uppercase mb-1 block">المبلغ (د.ع)</label>
+                        <input type="number" id="editAmount" class="w-full bg-surface-container-low border-transparent rounded-xl py-3 px-4">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-primary/60 uppercase mb-1 block">رقم الوصل</label>
+                        <input type="number" id="editNumber" class="w-full bg-surface-container-low border-transparent rounded-xl py-3 px-4">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-primary/60 uppercase mb-1 block">تاريخ الوصل</label>
+                    <input type="date" id="editDate" class="w-full bg-surface-container-low border-transparent rounded-xl py-3 px-4">
+                </div>
+                <button onclick="submitEdit()" class="w-full bg-primary text-white font-black py-4 rounded-xl shadow-lg active:scale-95 transition-all mt-4">حفظ التغييرات</button>
+            </div>
+        </div>
+    </div>
+    <!-- Delete Receipt Confirmation Modal -->
+    <div id="deleteReceiptModal" class="fixed inset-0 bg-primary/40 backdrop-blur-md z-[120] hidden items-center justify-center p-6 transition-all duration-300">
+        <div class="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-300">
+            <div class="p-8 text-center space-y-4">
+                <div class="w-20 h-20 bg-error/10 text-error rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <span class="material-symbols-outlined text-4xl icon-filled">delete_sweep</span>
+                </div>
+                <h3 class="text-xl font-black text-primary">حذف الوصل نهائياً؟</h3>
+                <p class="text-sm text-on-surface-variant leading-relaxed px-4">
+                    هل أنت متأكد من مسح الوصل الخاص بـ (<span id="deleteReceiptName" class="font-black text-error">---</span>) من النظام؟
+                </p>
+            </div>
+            <div class="px-8 pb-8 flex flex-col gap-3">
+                <button id="confirmDeleteReceiptBtn" onclick="window.executeDeleteReceipt()" class="w-full bg-[#d32f2f] text-white font-black py-4 rounded-2xl shadow-lg shadow-error/20 hover:bg-[#b71c1c] active:scale-95 transition-all">
+                    نعم، احذف الوصل
+                </button>
+                <button onclick="window.closeDeleteReceiptModal()" class="w-full bg-surface-container-high text-primary font-black py-4 rounded-2xl active:scale-95 transition-all">
+                    إلغاء التراجع
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
