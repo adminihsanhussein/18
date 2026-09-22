@@ -118,6 +118,96 @@ function supabaseAdminPlugin(env) {
                     .eq('id', userId);
                 if (updErr) throw updErr;
                 result = { success: true, message: 'Name updated successfully' };
+            } else if (action === 'delete-user') {
+                console.log(`[Vite Admin API] Deleting user: ${userId}`);
+                if (!userId) throw new Error('معرف المستخدم مطلوب لعملية الحذف');
+
+                // 1. Delete from auth.users (cascades to profiles, and sets null in books/receipts)
+                const authDel = await supabaseAdmin.auth.admin.deleteUser(userId);
+                if (authDel.error) {
+                    console.error('[Vite Admin API] Auth Delete Error:', authDel.error.message);
+                    throw authDel.error;
+                }
+
+                // 2. Ensure profile is deleted if not cascaded
+                const { error: profDelErr } = await supabaseAdmin
+                    .from('profiles')
+                    .delete()
+                    .eq('id', userId);
+                if (profDelErr) {
+                    console.warn('[Vite Admin API] Profile delete fallback warning:', profDelErr.message);
+                }
+
+                result = { success: true, message: 'User deleted successfully' };
+            } else if (action === 'update-admin-profile') {
+                console.log(`[Vite Admin API] Updating admin profile for: ${userId}`);
+                if (!userId) throw new Error('معرف المستخدم مطلوب للتحديث');
+
+                // Enforce admin check
+                const { data: targetProf } = await supabaseAdmin
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', userId)
+                    .single();
+                if (!targetProf || targetProf.role !== 'admin') {
+                    throw new Error('غير مصرح: تعديل بيانات الحساب متاح حصراً لمدير النظام (الآدمن)');
+                }
+
+                const authUpdates = {};
+                const profileUpdates = { updated_at: new Date().toISOString() };
+
+                if (name && name.trim()) {
+                    authUpdates.user_metadata = { full_name: name.trim() };
+                    profileUpdates.full_name = name.trim();
+                }
+
+                if (email && email.trim()) {
+                    authUpdates.email = email.trim().toLowerCase();
+                    authUpdates.email_confirm = true;
+                    profileUpdates.email = email.trim().toLowerCase();
+                }
+
+                if (password && password.trim()) {
+                    if (password.trim().length < 6) {
+                        throw new Error('كلمة المرور يجب أن تكون 6 خانات أو أكثر');
+                    }
+                    authUpdates.password = password.trim();
+                    profileUpdates.raw_password = password.trim();
+                    if (!authUpdates.user_metadata) authUpdates.user_metadata = {};
+                    authUpdates.user_metadata.raw_password = password.trim();
+                }
+
+                // 1. Update Auth user
+                if (Object.keys(authUpdates).length > 0) {
+                    const authRes = await supabaseAdmin.auth.admin.updateUserById(userId, authUpdates);
+                    if (authRes.error) {
+                        console.error('[Vite Admin API] Auth Update Error:', authRes.error.message);
+                        throw authRes.error;
+                    }
+                }
+
+                // 2. Update profiles table
+                if (Object.keys(profileUpdates).length > 1) {
+                    const { error: profErr } = await supabaseAdmin
+                        .from('profiles')
+                        .update(profileUpdates)
+                        .eq('id', userId);
+                    if (profErr) {
+                        console.warn('[Vite Admin API] Profile Update Warning:', profErr.message);
+                    }
+                }
+
+                result = { success: true, message: 'Admin profile updated successfully' };
+            } else if (action === 'distribute-book') {
+                const { bookData } = payload;
+                console.log(`[Vite Admin API] Distributing book: ${bookData?.serial_number}`);
+                const { data: insertedBook, error: bErr } = await supabaseAdmin
+                    .from('books')
+                    .insert(bookData)
+                    .select()
+                    .single();
+                if (bErr) throw bErr;
+                result = { success: true, data: insertedBook };
             } else if (action === 'parse-google-form') {
                 const { url } = payload;
                 console.log(`[Vite Admin API] Auto-parsing Google Form URL: ${url}`);

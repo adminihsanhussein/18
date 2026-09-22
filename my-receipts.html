@@ -1,12 +1,17 @@
 <!DOCTYPE html>
 <html dir="rtl" lang="ar">
+
 <head>
-    <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>وصولاتي - نظام المساهمات</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&amp;family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&amp;family=Public+Sans:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script id="tailwind-config">
@@ -41,19 +46,30 @@
         }
     </script>
     <style>
-        body { font-family: 'Tajawal', sans-serif; }
-        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-        .icon-filled { font-variation-settings: 'FILL' 1; }
+        body {
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .icon-filled {
+            font-variation-settings: 'FILL' 1;
+        }
+
         .glass-header {
             background: rgba(247, 249, 252, 0.8);
             backdrop-filter: blur(12px);
         }
+
         .nav-item-active {
             background-color: #d5e3ff;
             color: #001e40;
         }
+
         /* Report Styling for PDF and Print */
-        #printableReport { 
+        #printableReport {
             direction: rtl;
             font-family: 'Tajawal', sans-serif;
             color: black;
@@ -62,10 +78,11 @@
             margin: 0 auto;
             box-sizing: border-box;
         }
+
         .pdf-page {
             width: 210mm;
-            height: 296.5mm; 
-            padding: 12mm 15mm; 
+            height: 296.5mm;
+            padding: 12mm 15mm;
             box-sizing: border-box;
             background: white;
             page-break-after: always;
@@ -73,14 +90,19 @@
             flex-direction: column;
             position: relative;
         }
-        .pdf-page:last-child { page-break-after: auto; }
+
+        .pdf-page:last-child {
+            page-break-after: auto;
+        }
 
         .report-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 5px;
         }
-        .report-table th, .report-table td {
+
+        .report-table th,
+        .report-table td {
             border: 1.2px solid #000 !important;
             padding: 0 4px;
             height: 8.4mm;
@@ -88,10 +110,12 @@
             font-weight: 700;
             font-size: 11px;
         }
+
         .report-table th {
             background-color: #f2f2f2 !important;
             -webkit-print-color-adjust: exact;
         }
+
         .report-header {
             display: flex;
             flex-direction: column;
@@ -99,18 +123,21 @@
             margin-bottom: 20px;
             position: relative;
         }
+
         .report-logo {
             width: 80px;
             height: 80px;
             object-fit: contain;
             margin-bottom: 5px;
         }
+
         .report-meta {
             display: flex;
             justify-content: space-between;
             width: 100%;
             margin-bottom: 10px;
         }
+
         .report-meta-side {
             display: flex;
             flex-direction: column;
@@ -120,16 +147,35 @@
         }
 
         @media print {
-            @page { size: A4; margin: 0; }
-            body { background: white !important; font-size: 11px; margin: 0; padding: 0; }
-            .print\:hidden { display: none !important; }
-            .print\:block { display: block !important; }
-            #printableReport { display: block !important; }
+            @page {
+                size: A4;
+                margin: 0;
+            }
+
+            body {
+                background: white !important;
+                font-size: 11px;
+                margin: 0;
+                padding: 0;
+            }
+
+            .print\:hidden {
+                display: none !important;
+            }
+
+            .print\:block {
+                display: block !important;
+            }
+
+            #printableReport {
+                display: block !important;
+            }
         }
-    .official-pdf-page {
+
+        .official-pdf-page {
             width: 210mm;
-            height: 296.5mm; 
-            padding: 8mm 10mm; 
+            height: 296.5mm;
+            padding: 8mm 10mm;
             box-sizing: border-box;
             background: white;
             display: flex;
@@ -138,8 +184,9 @@
             direction: rtl;
             font-family: 'Tajawal', sans-serif;
             color: black;
-            
+
         }
+
         .official-header {
             display: flex;
             justify-content: space-between;
@@ -149,32 +196,38 @@
             border-bottom: 2px solid #000;
             padding-bottom: 4px;
         }
+
         .official-header-side {
             width: 35%;
             font-size: 11px;
             font-weight: bold;
             line-height: 1.4;
         }
+
         .official-header-center {
             width: 30%;
             display: flex;
             justify-content: center;
             align-items: center;
         }
+
         .official-logo-img {
             height: 24mm;
-            
+
             width: 80px;
         }
+
         .official-columns-wrapper {
             display: flex;
             gap: 12px;
             flex-grow: 1;
         }
+
         .official-subtable {
             width: 50%;
             border-collapse: collapse;
         }
+
         .official-subtable th {
             border: 1px solid #000;
             background-color: #ffffff !important;
@@ -184,17 +237,20 @@
             height: 7mm;
             text-align: center;
         }
+
         .official-subtable td {
             border: 0.8px solid #000;
             font-size: 10.5px;
             height: 7.6mm;
             text-align: center;
         }
+
         .official-subtable td.burgundy-cell {
             color: #a30000;
             font-weight: bold;
             font-size: 11px;
         }
+
         .official-footer {
             display: flex;
             justify-content: space-between;
@@ -207,6 +263,7 @@
             font-weight: bold;
             color: #a30000;
         }
+
         .official-footer-left {
             width: 45%;
             text-align: right;
@@ -215,6 +272,7 @@
             gap: 8px;
             align-items: center;
         }
+
         .official-footer-right {
             width: 45%;
             text-align: right;
@@ -224,13 +282,15 @@
         }
     </style>
 </head>
+
 <body class="bg-background text-on-background min-h-screen flex flex-col font-body pb-32 md:pb-0">
 
     <!-- Header Section -->
     <header class="sticky top-0 z-50 glass-header border-b border-surface-container-high px-6 py-4">
         <div class="max-w-7xl mx-auto flex items-center justify-between">
             <div class="flex items-center gap-4">
-                <a href="dashboard.html" class="p-2 hover:bg-surface-container-high rounded-xl transition-all active:scale-90">
+                <a href="dashboard.html"
+                    class="p-2 hover:bg-surface-container-high rounded-xl transition-all active:scale-90">
                     <span class="material-symbols-outlined text-primary">arrow_forward</span>
                 </a>
                 <h1 class="text-lg font-black text-primary tracking-tight">إدارة الدفاتر (وصولاتي)</h1>
@@ -250,15 +310,19 @@
             <div class="flex flex-col lg:flex-row gap-4 items-center">
                 <!-- Search Book Number -->
                 <div class="w-full lg:flex-grow relative">
-                    <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/40">search</span>
-                    <input type="text" id="searchBookInput" placeholder="ابحث برقم الدفتر..." class="w-full bg-surface-container-low border-transparent rounded-2xl py-4 pr-12 pl-4 focus:ring-4 focus:ring-primary/5 focus:border-primary/20 font-bold placeholder:text-on-surface-variant/30 transition-all">
+                    <span
+                        class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/40">search</span>
+                    <input type="text" id="searchBookInput" placeholder="ابحث برقم الدفتر..."
+                        class="w-full bg-surface-container-low border-transparent rounded-2xl py-4 pr-12 pl-4 focus:ring-4 focus:ring-primary/5 focus:border-primary/20 font-bold placeholder:text-on-surface-variant/30 transition-all">
                 </div>
-                
+
                 <div class="flex flex-wrap gap-3 w-full lg:w-auto">
                     <!-- Filter Ally -->
                     <div class="relative flex-grow lg:flex-grow-0">
-                         <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-primary text-sm">person</span>
-                        <select class="w-full bg-white border border-primary/5 rounded-2xl py-3 pr-10 pl-4 font-bold text-sm focus:ring-primary/10 cursor-pointer appearance-none shadow-sm">
+                        <span
+                            class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-primary text-sm">person</span>
+                        <select
+                            class="w-full bg-white border border-primary/5 rounded-2xl py-3 pr-10 pl-4 font-bold text-sm focus:ring-primary/10 cursor-pointer appearance-none shadow-sm">
                             <option>جميع الحلفاء المستلمين</option>
                             <option>علي إحسان</option>
                             <option>حسين علي لفتة</option>
@@ -268,7 +332,8 @@
 
                     <!-- Filter Month -->
                     <div class="relative flex-grow lg:flex-grow-0 min-w-[200px]">
-                        <button id="openMonthPickerBtn" class="w-full bg-white border border-primary/5 rounded-2xl py-3 px-4 font-bold text-sm shadow-sm flex items-center justify-between cursor-pointer hover:border-primary/20 hover:bg-surface-container-lowest transition-all">
+                        <button id="openMonthPickerBtn"
+                            class="w-full bg-white border border-primary/5 rounded-2xl py-3 px-4 font-bold text-sm shadow-sm flex items-center justify-between cursor-pointer hover:border-primary/20 hover:bg-surface-container-lowest transition-all">
                             <div class="flex items-center gap-2 pointer-events-none">
                                 <span class="material-symbols-outlined text-primary text-sm">calendar_month</span>
                                 <span id="receiptsMonthLabel">جميع الأشهر</span>
@@ -278,30 +343,39 @@
 
                     <!-- Export Actions -->
                     <div class="flex flex-wrap gap-2">
-                        <button id="bulkGoogleFormBtn" onclick="window.sendAllVisibleBooksToGoogleForm()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 active:scale-95 hidden" title="تحويل كافة وصولات الدفاتر الظاهرة إلى Google Form">
+                        <button id="bulkGoogleFormBtn" onclick="window.sendAllVisibleBooksToGoogleForm()"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 active:scale-95 hidden"
+                            title="تحويل كافة وصولات الدفاتر الظاهرة إلى Google Form">
                             <span class="material-symbols-outlined icon-filled">cloud_upload</span>
                             <span class="hidden sm:inline">تحويل إلى Google Form</span>
                         </button>
-                        <button onclick="window.generateHighFidelityExcel()" class="bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20 active:scale-95">
+                        <button onclick="window.generateHighFidelityExcel()"
+                            class="bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20 active:scale-95">
                             <span class="material-symbols-outlined icon-filled">table_view</span>
                             <span class="hidden sm:inline">تصدير Excel</span>
                         </button>
-                        <button onclick="window.generateHighFidelityPDF()" class="bg-primary hover:bg-primary-container text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-95">
+                        <button onclick="window.generateHighFidelityPDF()"
+                            class="bg-primary hover:bg-primary-container text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-95">
                             <span class="material-symbols-outlined icon-filled">picture_as_pdf</span>
                             <span class="hidden sm:inline">تحميل PDF</span>
                         </button>
-                        <button onclick="window.generateOfficialTemplateExcelAll()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 active:scale-95" title="تصدير كشف الوصولات بالنموذج الرسمي">
+                        <button onclick="window.generateOfficialTemplateExcelAll()"
+                            class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 active:scale-95"
+                            title="تصدير كشف الوصولات بالنموذج الرسمي">
                             <span class="material-symbols-outlined icon-filled">grid_on</span>
                             <span class="hidden sm:inline">Excel (رسمي)</span>
                         </button>
-                        <button onclick="window.generateOfficialTemplatePDFAll()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 active:scale-95" title="تحميل كشف الوصولات بالنموذج الرسمي">
+                        <button onclick="window.generateOfficialTemplatePDFAll()"
+                            class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 active:scale-95"
+                            title="تحميل كشف الوصولات بالنموذج الرسمي">
                             <span class="material-symbols-outlined icon-filled">print</span>
                             <span class="hidden sm:inline">PDF (رسمي)</span>
                         </button>
                     </div>
 
                     <!-- Filter Toggle Button -->
-                    <button class="bg-surface-container-high p-4 rounded-2xl hover:bg-primary hover:text-white transition-all shadow-sm">
+                    <button
+                        class="bg-surface-container-high p-4 rounded-2xl hover:bg-primary hover:text-white transition-all shadow-sm">
                         <span class="material-symbols-outlined text-lg">tune</span>
                     </button>
                 </div>
@@ -309,7 +383,7 @@
         </section>
 
         <!-- Stats Quick Look -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             <div class="bg-white rounded-2xl p-4 shadow-sm border border-primary/5">
                 <p class="text-[10px] font-black text-primary/40 uppercase mb-1">إجمالي الدفاتر</p>
                 <div class="flex justify-between items-end">
@@ -322,6 +396,13 @@
                 <div class="flex justify-between items-end">
                     <p class="text-xl font-black text-success stat-card-received">0</p>
                     <span class="material-symbols-outlined text-success/20 text-3xl">inbox</span>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-primary/5">
+                <p class="text-[10px] font-black text-primary/40 uppercase mb-1">عدد الوصولات الكلي</p>
+                <div class="flex justify-between items-end">
+                    <p class="text-xl font-black text-secondary stat-card-total-receipts">0</p>
+                    <span class="material-symbols-outlined text-secondary/20 text-3xl">receipt_long</span>
                 </div>
             </div>
             <div class="bg-white rounded-2xl p-4 shadow-sm border border-primary/5">
@@ -341,11 +422,13 @@
         </div>
 
         <!-- Books Data Table -->
-        <section class="bg-surface-container-lowest rounded-[2.5rem] shadow-2xl shadow-primary/5 overflow-hidden border border-white/60">
+        <section
+            class="bg-surface-container-lowest rounded-[2.5rem] shadow-2xl shadow-primary/5 overflow-hidden border border-white/60">
             <div class="overflow-x-auto">
                 <table class="w-full text-right border-collapse min-w-[1000px]">
                     <thead>
-                        <tr class="bg-primary/5 text-primary text-[10px] font-black uppercase tracking-widest border-b border-primary/10">
+                        <tr
+                            class="bg-primary/5 text-primary text-[10px] font-black uppercase tracking-widest border-b border-primary/10">
                             <th class="py-5 px-6">رقم الدفتر</th>
                             <th class="py-5 px-6">اسم الحليف المستلم</th>
                             <th class="py-5 px-6">الشهر المخصص</th>
@@ -360,23 +443,31 @@
                         <!-- Book 1 -->
                         <tr class="hover:bg-primary/5 transition-all group">
                             <td class="py-5 px-6">
-                                <span class="p-2 bg-primary-fixed rounded-xl text-primary font-black text-xs">#9041</span>
+                                <span
+                                    class="p-2 bg-primary-fixed rounded-xl text-primary font-black text-xs">#9041</span>
                             </td>
                             <td class="py-5 px-6">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs">عي</div>
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs">
+                                        عي</div>
                                     <p class="font-black text-primary text-sm tracking-tight">علي إحسان</p>
                                 </div>
                             </td>
                             <td class="py-5 px-6 text-xs font-bold text-on-surface-variant">2026/04/10</td>
                             <td class="py-5 px-6 text-xs font-bold text-on-surface-variant">2026/04/15</td>
-                            <td class="py-5 px-6 text-center font-black text-primary italic">50 <span class="text-[10px] not-italic">وصل</span></td>
-                            <td class="py-5 px-6 text-center font-black text-primary text-lg">250,000 <span class="text-xs">د.ع</span></td>
+                            <td class="py-5 px-6 text-center font-black text-primary italic">50 <span
+                                    class="text-[10px] not-italic">وصل</span></td>
+                            <td class="py-5 px-6 text-center font-black text-primary text-lg">250,000 <span
+                                    class="text-xs">د.ع</span></td>
                             <td class="py-5 px-6 text-center">
-                                <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-black">مكتمل ومدقق</span>
+                                <span
+                                    class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-black">مكتمل
+                                    ومدقق</span>
                             </td>
                             <td class="py-5 px-6">
-                                <a href="book-details.html" class="p-2 bg-surface-container-high rounded-xl text-primary hover:bg-primary hover:text-white transition-all inline-block">
+                                <a href="book-details.html"
+                                    class="p-2 bg-surface-container-high rounded-xl text-primary hover:bg-primary hover:text-white transition-all inline-block">
                                     <span class="material-symbols-outlined text-sm">visibility</span>
                                 </a>
                             </td>
@@ -385,23 +476,32 @@
                         <!-- Book 2 -->
                         <tr class="hover:bg-primary/5 transition-all group">
                             <td class="py-5 px-6">
-                                <span class="p-2 bg-primary-fixed rounded-xl text-primary font-black text-xs">#9042</span>
+                                <span
+                                    class="p-2 bg-primary-fixed rounded-xl text-primary font-black text-xs">#9042</span>
                             </td>
                             <td class="py-5 px-6">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs">حل</div>
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs">
+                                        حل</div>
                                     <p class="font-black text-primary text-sm tracking-tight">حسين علي لفتة</p>
                                 </div>
                             </td>
                             <td class="py-5 px-6 text-xs font-bold text-on-surface-variant">2026/04/12</td>
-                            <td class="py-5 px-6 text-xs font-bold text-on-surface-variant italic opacity-50">لم يتم الاستلام</td>
-                            <td class="py-5 px-6 text-center font-black text-primary italic">32 <span class="text-[10px] not-italic">وصل</span></td>
-                            <td class="py-5 px-6 text-center font-black text-primary text-lg">160,000 <span class="text-xs">د.ع</span></td>
+                            <td class="py-5 px-6 text-xs font-bold text-on-surface-variant italic opacity-50">لم يتم
+                                الاستلام</td>
+                            <td class="py-5 px-6 text-center font-black text-primary italic">32 <span
+                                    class="text-[10px] not-italic">وصل</span></td>
+                            <td class="py-5 px-6 text-center font-black text-primary text-lg">160,000 <span
+                                    class="text-xs">د.ع</span></td>
                             <td class="py-5 px-6 text-center">
-                                <span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-[10px] font-black">قيد التدقيق</span>
+                                <span
+                                    class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-[10px] font-black">قيد
+                                    التدقيق</span>
                             </td>
                             <td class="py-5 px-6">
-                                <a href="book-details.html" class="p-2 bg-surface-container-high rounded-xl text-primary hover:bg-primary hover:text-white transition-all inline-block">
+                                <a href="book-details.html"
+                                    class="p-2 bg-surface-container-high rounded-xl text-primary hover:bg-primary hover:text-white transition-all inline-block">
                                     <span class="material-symbols-outlined text-sm">visibility</span>
                                 </a>
                             </td>
@@ -410,23 +510,31 @@
                         <!-- Book 3 -->
                         <tr class="hover:bg-primary/5 transition-all group">
                             <td class="py-5 px-6">
-                                <span class="p-2 bg-primary-fixed rounded-xl text-primary font-black text-xs">#9043</span>
+                                <span
+                                    class="p-2 bg-primary-fixed rounded-xl text-primary font-black text-xs">#9043</span>
                             </td>
                             <td class="py-5 px-6">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs">جص</div>
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs">
+                                        جص</div>
                                     <p class="font-black text-primary text-sm tracking-tight">جعفر الصادق</p>
                                 </div>
                             </td>
                             <td class="py-5 px-6 text-xs font-bold text-on-surface-variant">2026/04/14</td>
                             <td class="py-5 px-6 text-xs font-bold text-on-surface-variant">2026/04/16</td>
-                            <td class="py-5 px-6 text-center font-black text-primary italic">45 <span class="text-[10px] not-italic">وصل</span></td>
-                            <td class="py-5 px-6 text-center font-black text-primary text-lg">225,000 <span class="text-xs">د.ع</span></td>
+                            <td class="py-5 px-6 text-center font-black text-primary italic">45 <span
+                                    class="text-[10px] not-italic">وصل</span></td>
+                            <td class="py-5 px-6 text-center font-black text-primary text-lg">225,000 <span
+                                    class="text-xs">د.ع</span></td>
                             <td class="py-5 px-6 text-center">
-                                <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-[10px] font-black">مرفوض / نقص</span>
+                                <span
+                                    class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-[10px] font-black">مرفوض
+                                    / نقص</span>
                             </td>
                             <td class="py-5 px-6">
-                                <a href="book-details.html" class="p-2 bg-surface-container-high rounded-xl text-primary hover:bg-primary hover:text-white transition-all inline-block">
+                                <a href="book-details.html"
+                                    class="p-2 bg-surface-container-high rounded-xl text-primary hover:bg-primary hover:text-white transition-all inline-block">
                                     <span class="material-symbols-outlined text-sm">visibility</span>
                                 </a>
                             </td>
@@ -434,9 +542,10 @@
                     </tbody>
                 </table>
             </div>
-            
+
             <div class="p-8 text-center bg-white border-t border-primary/5">
-                <button class="bg-primary/5 text-primary px-8 py-3 rounded-2xl text-sm font-black hover:bg-primary hover:text-white transition-all active:scale-95 flex items-center gap-2 mx-auto shadow-sm">
+                <button
+                    class="bg-primary/5 text-primary px-8 py-3 rounded-2xl text-sm font-black hover:bg-primary hover:text-white transition-all active:scale-95 flex items-center gap-2 mx-auto shadow-sm">
                     <span class="material-symbols-outlined text-lg animation-spin">sync</span>
                     <span>تحميل المزيد من السجلات</span>
                 </button>
@@ -446,48 +555,62 @@
     </main>
 
     <!-- Bottom Navigation (Mobile) -->
-    <nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-8 pt-4 bg-white/95 backdrop-blur-xl rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] border-t border-primary/5 md:hidden pointer-events-auto">
-        <a class="flex flex-col items-center justify-center text-on-surface-variant/40 px-5 py-2 hover:bg-surface-container-high rounded-2xl transition-all" href="dashboard.html">
+    <nav
+        class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-8 pt-4 bg-white/95 backdrop-blur-xl rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] border-t border-primary/5 md:hidden pointer-events-auto">
+        <a class="flex flex-col items-center justify-center text-on-surface-variant/40 px-5 py-2 hover:bg-surface-container-high rounded-2xl transition-all"
+            href="dashboard.html">
             <span class="material-symbols-outlined mb-1 text-2xl">home</span>
             <span class="text-[10px] font-bold">الرئيسية</span>
         </a>
 
-        <a class="flex flex-col items-center justify-center text-on-surface-variant/40 px-5 py-2 hover:bg-surface-container-high rounded-2xl transition-all" href="analytics.html">
+        <a class="flex flex-col items-center justify-center text-on-surface-variant/40 px-5 py-2 hover:bg-surface-container-high rounded-2xl transition-all"
+            href="analytics.html">
             <span class="material-symbols-outlined mb-1 text-2xl">leaderboard</span>
             <span class="text-[10px] font-bold">الإحصائيات</span>
         </a>
 
-        <a class="flex flex-col items-center justify-center bg-primary text-white rounded-2xl px-5 py-2 transition-all shadow-lg shadow-primary/20" href="#">
+        <a class="flex flex-col items-center justify-center bg-primary text-white rounded-2xl px-5 py-2 transition-all shadow-lg shadow-primary/20"
+            href="#">
             <span class="material-symbols-outlined icon-filled mb-1 text-2xl">menu_book</span>
             <span class="text-[10px] font-black">وصولاتي</span>
         </a>
 
-        <a class="flex flex-col items-center justify-center text-on-surface-variant/40 px-5 py-2 hover:bg-surface-container-high rounded-2xl transition-all" href="settings.html">
+        <a class="flex flex-col items-center justify-center text-on-surface-variant/40 px-5 py-2 hover:bg-surface-container-high rounded-2xl transition-all"
+            href="settings.html">
             <span class="material-symbols-outlined mb-1 text-2xl">settings</span>
             <span class="text-[10px] font-bold">الإعدادات</span>
         </a>
     </nav>
 
     <!-- Sidebar Navigation (Desktop) -->
-    <nav class="hidden md:flex fixed right-6 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-3xl rounded-3xl shadow-2xl border border-white/40 p-3 flex-col gap-4 z-40">
-        <a class="flex items-center justify-center text-on-surface-variant/50 hover:bg-primary-fixed hover:text-primary w-14 h-14 rounded-2xl group relative transition-all hover:scale-105" href="dashboard.html">
+    <nav
+        class="hidden md:flex fixed right-6 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-3xl rounded-3xl shadow-2xl border border-white/40 p-3 flex-col gap-4 z-40">
+        <a class="flex items-center justify-center text-on-surface-variant/50 hover:bg-primary-fixed hover:text-primary w-14 h-14 rounded-2xl group relative transition-all hover:scale-105"
+            href="dashboard.html">
             <span class="material-symbols-outlined">home</span>
-            <span class="absolute right-full mr-4 bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-all translate-x-4 group-hover:translate-x-0">الرئيسية</span>
+            <span
+                class="absolute right-full mr-4 bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-all translate-x-4 group-hover:translate-x-0">الرئيسية</span>
         </a>
 
-        <a class="flex items-center justify-center text-on-surface-variant/50 hover:bg-primary-fixed hover:text-primary w-14 h-14 rounded-2xl group relative transition-all hover:scale-105" href="analytics.html">
+        <a class="flex items-center justify-center text-on-surface-variant/50 hover:bg-primary-fixed hover:text-primary w-14 h-14 rounded-2xl group relative transition-all hover:scale-105"
+            href="analytics.html">
             <span class="material-symbols-outlined">leaderboard</span>
-            <span class="absolute right-full mr-4 bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-all translate-x-4 group-hover:translate-x-0">الإحصائيات</span>
+            <span
+                class="absolute right-full mr-4 bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-all translate-x-4 group-hover:translate-x-0">الإحصائيات</span>
         </a>
 
-        <a class="flex items-center justify-center bg-primary text-white w-14 h-14 rounded-2xl group relative hover:scale-110 transition-all shadow-xl shadow-primary/20" href="#">
+        <a class="flex items-center justify-center bg-primary text-white w-14 h-14 rounded-2xl group relative hover:scale-110 transition-all shadow-xl shadow-primary/20"
+            href="#">
             <span class="material-symbols-outlined icon-filled">menu_book</span>
-            <span class="absolute right-full mr-4 bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-all translate-x-4 group-hover:translate-x-0">وصولاتي</span>
+            <span
+                class="absolute right-full mr-4 bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-all translate-x-4 group-hover:translate-x-0">وصولاتي</span>
         </a>
 
-        <a class="flex items-center justify-center text-on-surface-variant/50 hover:bg-primary-fixed hover:text-primary w-14 h-14 rounded-2xl group relative transition-all hover:scale-105" href="settings.html">
+        <a class="flex items-center justify-center text-on-surface-variant/50 hover:bg-primary-fixed hover:text-primary w-14 h-14 rounded-2xl group relative transition-all hover:scale-105"
+            href="settings.html">
             <span class="material-symbols-outlined">settings</span>
-            <span class="absolute right-full mr-4 bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-all translate-x-4 group-hover:translate-x-0">الإعدادات</span>
+            <span
+                class="absolute right-full mr-4 bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-all translate-x-4 group-hover:translate-x-0">الإعدادات</span>
         </a>
     </nav>
 
@@ -544,7 +667,7 @@
             const monthLabel = document.getElementById('receiptsMonthLabel');
 
             let currentMonth = null; // Default to 'جميع الأشهر' on this specific view.
-            
+
             function updateMonthUI(yyyyMm) {
                 if (yyyyMm) {
                     monthLabel.textContent = formatMonthArabic(yyyyMm);
@@ -555,7 +678,7 @@
 
             // Sync with global if wanted? We'll show global by default if it was set, but allow clearing
             const globalStored = localStorage.getItem('globalFilterMonth');
-            if(globalStored) {
+            if (globalStored) {
                 currentMonth = globalStored;
                 updateMonthUI(currentMonth);
             }
@@ -600,9 +723,21 @@
                     query = query.eq('month_year', currentMonth);
                 }
 
-                const { data: books, error } = await query;
-                if (error) console.error(error);
-                return books || [];
+                let allBooks = [];
+                let from = 0;
+                const batchSize = 1000;
+                while (true) {
+                    const { data: books, error } = await query.range(from, from + batchSize - 1);
+                    if (error) {
+                        console.error(error);
+                        break;
+                    }
+                    if (!books || books.length === 0) break;
+                    allBooks.push(...books);
+                    if (books.length < batchSize) break;
+                    from += batchSize;
+                }
+                return allBooks;
             };
 
             window.unfilteredBooksData = [];
@@ -612,7 +747,7 @@
                 }
 
                 let searchQuery = document.getElementById('searchBookInput')?.value.trim().toLowerCase() || "";
-                
+
                 // Convert Eastern Arabic numerals (٠-٩) to Western Arabic numerals (0-9)
                 const arDigits = [/٠/g, /١/g, /٢/g, /٣/g, /٤/g, /٥/g, /٦/g, /٧/g, /٨/g, /٩/g];
                 for (let i = 0; i < 10; i++) {
@@ -623,9 +758,9 @@
                 searchQuery = searchQuery.replace(/^#/, "");
 
                 let displayBooks = window.unfilteredBooksData;
-                
+
                 if (searchQuery) {
-                    displayBooks = window.unfilteredBooksData.filter(b => 
+                    displayBooks = window.unfilteredBooksData.filter(b =>
                         String(b.serial_number || "").toLowerCase().includes(searchQuery)
                     );
                 }
@@ -653,7 +788,7 @@
                             <div class="flex flex-col items-center gap-2">
                                 <span class="px-3 py-1 ${getStatusClass(b)} rounded-full text-[10px] font-black">${getStatusLabel(b)}</span>
                                 ${isAdmin ? (
-                                    !b.received_date ? `
+                        !b.received_date ? `
                                     <button onclick="window.markAsReceived('${b.id}', '${b.serial_number}')" class="text-[9px] font-bold text-success hover:underline flex items-center gap-1">
                                         <span class="material-symbols-outlined text-[12px]">check_circle</span>
                                         تأكيد الاستلام
@@ -664,7 +799,7 @@
                                         ارجاع الدفتر
                                     </button>
                                     `
-                                ) : ''}
+                    ) : ''}
                             </div>
                         </td>
                         <td class="py-5 px-6">
@@ -748,10 +883,22 @@
                     try {
                         await notify('جاري تحضير وصولات كافة الدفاتر', 'جاري جلب البيانات...', { toast: true, native: false, type: 'info' });
 
-                        const { data: allRecs, error } = await supabase
-                            .from('receipts')
-                            .select('*')
-                            .in('book_id', bookIds);
+                        let allRecs = [];
+                        let from = 0;
+                        const batchSize = 1000;
+                        while (true) {
+                            const { data: chunk, error } = await supabase
+                                .from('receipts')
+                                .select('*')
+                                .in('book_id', bookIds)
+                                .range(from, from + batchSize - 1);
+
+                            if (error) throw error;
+                            if (!chunk || chunk.length === 0) break;
+                            allRecs.push(...chunk);
+                            if (chunk.length < batchSize) break;
+                            from += batchSize;
+                        }
 
                         if (error) throw error;
                         if (!allRecs || allRecs.length === 0) {
@@ -771,23 +918,27 @@
                 };
 
                 // Update Stats Cards
-                document.querySelector('.stat-card-total').textContent = displayBooks.length;
-                document.querySelector('.stat-card-received').textContent = displayBooks.filter(b => b.received_date).length;
-                document.querySelector('.stat-card-completed').textContent = displayBooks.filter(b => b.status === 'delivered').length;
-                
-                const totalAmount = displayBooks.reduce((sum, b) => sum + b.total_amount, 0);
+                document.querySelector('.stat-card-total').textContent = displayBooks.length.toLocaleString();
+                document.querySelector('.stat-card-received').textContent = displayBooks.filter(b => b.received_date).length.toLocaleString();
+                document.querySelector('.stat-card-completed').textContent = displayBooks.filter(b => (Number(b.receipt_count) || 0) >= 50 || b.status === 'delivered').length.toLocaleString();
+
+                const totalReceipts = displayBooks.reduce((sum, b) => sum + (Number(b.receipt_count) || 0), 0);
+                const totalReceiptsEl = document.querySelector('.stat-card-total-receipts');
+                if (totalReceiptsEl) totalReceiptsEl.textContent = totalReceipts.toLocaleString();
+
+                const totalAmount = displayBooks.reduce((sum, b) => sum + (Number(b.total_amount) || 0), 0);
                 document.querySelector('.stat-card-total-amount').textContent = totalAmount.toLocaleString();
 
             };
 
             const getStatusClass = (b) => {
-                if (b.status === 'delivered') return 'bg-green-100 text-green-700'; // Final state
+                if ((Number(b.receipt_count) || 0) >= 50 || b.status === 'delivered') return 'bg-emerald-100 text-emerald-800 font-bold'; // Completed (reached 50)
                 if (!b.received_date) return 'bg-yellow-100 text-yellow-700'; // Not Received
                 return 'bg-green-100 text-green-700 opacity-80'; // Received but still open
             };
 
             const getStatusLabel = (b) => {
-                if (b.status === 'delivered') return 'مكتمل ومدقق';
+                if ((Number(b.receipt_count) || 0) >= 50 || b.status === 'delivered') return 'مكتمل (50 وصل)';
                 if (!b.received_date) return 'غير مستلم';
                 return 'تم الاستلام';
             };
@@ -821,7 +972,7 @@
                         .eq('id', bookToProcess.id);
 
                     if (error) throw error;
-                    
+
                     window.closeReceiveModal();
                     const updated = await fetchBooks(document.querySelector('select')?.value || 'جميع الحلفاء المستلمين');
                     populateTable(updated);
@@ -859,7 +1010,7 @@
                         .eq('id', bookToProcess.id);
 
                     if (error) throw error;
-                    
+
                     window.closeReturnModal();
                     const updated = await fetchBooks(document.querySelector('select')?.value || 'جميع الحلفاء المستلمين');
                     populateTable(updated);
@@ -870,7 +1021,7 @@
                     btn.innerHTML = 'تأكيد الإرجاع';
                 }
             };
- 
+
             // Admin Deletion Logic
             let bookToDelete = null;
 
@@ -889,7 +1040,7 @@
 
             window.executeDeleteBook = async () => {
                 if (!bookToDelete) return;
-                
+
                 const btn = document.getElementById('confirmDeleteBtn');
                 btn.disabled = true;
                 btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> جاري الحذف...';
@@ -897,7 +1048,7 @@
                 try {
                     const { error } = await supabase.from('books').delete().eq('id', bookToDelete.id);
                     if (error) throw error;
-                    
+
                     closeDeleteModal();
                     const updated = await fetchBooks();
                     populateTable(updated);
@@ -952,7 +1103,7 @@
 
                 const element = document.getElementById('printableReport');
                 element.innerHTML = ''; // Start Fresh
-                
+
                 const totalAmount = books.reduce((sum, b) => sum + b.total_amount, 0);
                 const totalReceipts = books.reduce((sum, b) => sum + b.receipt_count, 0);
                 const now = new Date();
@@ -966,7 +1117,7 @@
                 for (let p = 0; p < totalPages; p++) {
                     const page = document.createElement('div');
                     page.className = 'pdf-page';
-                    
+
                     page.innerHTML = `
                         <div class="report-header">
                             <img src="data:image/jpeg;base64,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" class="report-logo" alt="Logo">
@@ -996,11 +1147,11 @@
                     `;
 
                     const tbody = page.querySelector('tbody');
-                    
+
                     for (let i = 0; i < rowsPerPage; i++) {
                         const globalIdx = (p * rowsPerPage) + i;
                         const b = books[globalIdx];
-                        
+
                         if (b) {
                             tbody.innerHTML += `
                                 <tr>
@@ -1027,7 +1178,7 @@
 
                 // Generate
                 element.classList.remove('hidden');
-                
+
                 const opt = {
                     margin: 0,
                     filename: `تقرير_الدفاتر_${dateStr}.pdf`,
@@ -1076,7 +1227,7 @@
                 titleRow.getCell(1).font = { bold: true, size: 14 };
                 titleRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
                 titleRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEAEAEA' } };
-                titleRow.getCell(1).border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+                titleRow.getCell(1).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
 
                 // Row 2: Headers
                 const headerRow = worksheet.addRow(['ت', 'رقم الدفتر', 'عدد الوصولات', 'المبلغ']);
@@ -1085,7 +1236,7 @@
                     cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 12 };
                     cell.alignment = { horizontal: 'center', vertical: 'middle' };
                     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF001E40' } };
-                    cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+                    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
                 });
 
                 // Data Rows
@@ -1100,7 +1251,7 @@
                     row.eachCell(cell => {
                         cell.alignment = { horizontal: 'center', vertical: 'middle' };
                         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEAEAEA' } };
-                        cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+                        cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
                         cell.font = { size: 11 };
                     });
                 });
@@ -1109,7 +1260,7 @@
                 const totalAmount = books.reduce((sum, b) => sum + b.total_amount, 0);
                 const totalReceipts = books.reduce((sum, b) => sum + b.receipt_count, 0);
                 const dateStr = new Date().toLocaleDateString('ar-EG');
-                
+
                 const lastRow = worksheet.addRow([
                     'المجموع الكلي',
                     totalAmount,
@@ -1122,7 +1273,7 @@
                     cell.font = { bold: true, size: 12 };
                     cell.alignment = { horizontal: 'center', vertical: 'middle' };
                     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEAEAEA' } };
-                    cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+                    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
                 });
 
                 const buffer = await workbook.xlsx.writeBuffer();
@@ -1299,10 +1450,10 @@
                 const total = receipts.reduce((sum, r) => sum + r.amount, 0);
                 const allyName = book.profiles?.full_name || 'غير معروف';
                 const serial = book.serial_number || 'مجهول';
-                
+
                 const sheetName = `دفتر ${serial}`.substring(0, 31);
                 const worksheet = workbook.addWorksheet(sheetName, { views: [{ rightToLeft: true }] });
-                
+
                 worksheet.pageSetup = {
                     fitToPage: true,
                     fitToWidth: 1,
@@ -1311,7 +1462,7 @@
                     paperSize: 9,
                     margins: { left: 0.25, right: 0.25, top: 0.3, bottom: 0.3, header: 0.1, footer: 0.1 }
                 };
-                
+
                 worksheet.getColumn(1).width = 5;
                 worksheet.getColumn(2).width = 25;
                 worksheet.getColumn(3).width = 12;
@@ -1323,14 +1474,14 @@
                 worksheet.getColumn(9).width = 12;
                 worksheet.getColumn(10).width = 12;
                 worksheet.getColumn(11).width = 12;
-                
+
                 for (let r = 1; r <= 6; r++) worksheet.getRow(r).height = 18;
                 worksheet.getRow(7).height = 22; // Header row
                 for (let r = 8; r <= 32; r++) worksheet.getRow(r).height = 18; // Data rows
                 worksheet.getRow(33).height = 8;
                 worksheet.getRow(34).height = 20;
                 worksheet.getRow(35).height = 20;
-                
+
                 // Header right side (Columns A to E)
                 worksheet.mergeCells('A1:E5');
                 const rightHeaderCell = worksheet.getCell('A1');
@@ -1338,12 +1489,12 @@
                 rightHeaderCell.value = `التيار الشيعي الوطني\nمكتب السيد الشهيد الصدر (قدس)سره\nالبنيان المرصوص\n: المحافظةبغداد\n: الدائرة الثامنة عشر\nرقم الدبلك ( ${serial} الى ${endNo} )`;
                 rightHeaderCell.font = { bold: true, size: 10, color: { argb: 'FF000000' } };
                 rightHeaderCell.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
-                
+
                 // Header left side (Columns G to K)
                 worksheet.mergeCells('G1:K5');
                 const leftHeaderCell = worksheet.getCell('G1');
                 leftHeaderCell.value = '';
-                
+
                 // Add logo in the center (Column F)
                 try {
                     const logoId = workbook.addImage({
@@ -1357,7 +1508,7 @@
                 } catch (e) {
                     console.error("Error embedding logo in Excel:", e);
                 }
-                
+
                 // Table Headers
                 [
                     { col: 'A', val: 'ت' }, { col: 'B', val: 'اسم المساهم' }, { col: 'C', val: 'مبلغ الوصل' }, { col: 'D', val: 'رقم الوصل' }, { col: 'E', val: 'التاريخ' },
@@ -1375,13 +1526,13 @@
                         right: { style: 'thin', color: { argb: 'FF000000' } }
                     };
                 });
-                
+
                 // Data rows mapping
                 for (let i = 0; i < 25; i++) {
                     const rowIdx = 8 + i;
                     const rRight = receipts[i];
                     const rLeft = receipts[i + 25];
-                    
+
                     worksheet.getCell(`A${rowIdx}`).value = i + 1;
                     if (rRight) {
                         const recDate = rRight.receipt_date ? new Date(rRight.receipt_date).toLocaleDateString('ar-EG') : new Date(rRight.created_at).toLocaleDateString('ar-EG');
@@ -1390,7 +1541,7 @@
                         worksheet.getCell(`D${rowIdx}`).value = rRight.receipt_number;
                         worksheet.getCell(`E${rowIdx}`).value = recDate;
                     }
-                    
+
                     worksheet.getCell(`G${rowIdx}`).value = i + 26;
                     if (rLeft) {
                         const recDate = rLeft.receipt_date ? new Date(rLeft.receipt_date).toLocaleDateString('ar-EG') : new Date(rLeft.created_at).toLocaleDateString('ar-EG');
@@ -1399,7 +1550,7 @@
                         worksheet.getCell(`J${rowIdx}`).value = rLeft.receipt_number;
                         worksheet.getCell(`K${rowIdx}`).value = recDate;
                     }
-                    
+
                     ['A', 'B', 'C', 'D', 'E', 'G', 'H', 'I', 'J', 'K'].forEach(col => {
                         const cell = worksheet.getCell(`${col}${rowIdx}`);
                         cell.alignment = {
@@ -1419,14 +1570,14 @@
                         }
                     });
                 }
-                
+
                 // Footer
                 worksheet.mergeCells('A34:E34');
                 const totalCell = worksheet.getCell('A34');
                 totalCell.value = `المجموع الكلي: ${total.toLocaleString()} د.ع\nاسم الجابي: ${allyName}`;
                 totalCell.font = { bold: true, size: 11, color: { argb: 'FFA30000' } };
                 totalCell.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
-                
+
                 worksheet.mergeCells('G34:K34');
                 const financeCell = worksheet.getCell('G34');
                 financeCell.value = `مسؤول القسم المالي\n............................`;
@@ -1438,11 +1589,11 @@
                 const data = await fetchBookAndReceipts(bookId);
                 if (!data) return;
                 const { book, receipts } = data;
-                
+
                 const element = document.getElementById('printableReport');
                 element.innerHTML = generateOfficialPDFHtml(book, receipts);
                 element.classList.remove('hidden');
-                
+
                 setTimeout(() => {
                     const dateStr = new Date().toLocaleDateString('ar-EG');
                     const opt = {
@@ -1468,15 +1619,15 @@
                     const data = await fetchBookAndReceipts(bookId);
                     if (!data) return;
                     const { book, receipts } = data;
-                    
+
                     const workbook = new ExcelJS.Workbook();
                     workbook.creator = 'نظام البنيان المرصوص';
                     buildOfficialExcelWorksheet(workbook, book, receipts);
-                    
+
                     const buffer = await workbook.xlsx.writeBuffer();
                     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
                     const url = window.URL.createObjectURL(blob);
-                    
+
                     const a = document.createElement('a');
                     a.href = url;
                     const dateStr = new Date().toLocaleDateString('ar-EG');
@@ -1492,15 +1643,15 @@
             window.generateOfficialTemplatePDFAll = async () => {
                 const books = window.allBooksData || [];
                 if (books.length === 0) return alert('لا توجد بيانات لطباعتها');
-                
+
                 if (books.length > 5 && !confirm(`أنت على وشك تحميل كشف تفصيلي لـ ${books.length} دفتر. قد يستغرق ذلك بعض الوقت. هل تريد الاستمرار؟`)) {
                     return;
                 }
-                
+
                 const element = document.getElementById('printableReport');
                 element.innerHTML = `<div style="padding: 20px; font-weight: bold; text-align: center; direction: rtl;">جاري تحضير الكشف الرسمي... يرجى الانتظار...</div>`;
                 element.classList.remove('hidden');
-                
+
                 let combinedHtml = '';
                 for (let book of books) {
                     const data = await fetchBookAndReceipts(book.id);
@@ -1508,9 +1659,9 @@
                         combinedHtml += generateOfficialPDFHtml(data.book, data.receipts);
                     }
                 }
-                
+
                 element.innerHTML = combinedHtml;
-                
+
                 setTimeout(() => {
                     const opt = {
                         margin: 0,
@@ -1534,25 +1685,25 @@
                 try {
                     const books = window.allBooksData || [];
                     if (books.length === 0) return alert('لا توجد بيانات لتصديرها');
-                    
+
                     if (books.length > 10 && !confirm(`أنت على وشك تصدير ${books.length} دفتر إلى Excel. هل تريد الاستمرار؟`)) {
                         return;
                     }
-                    
+
                     const workbook = new ExcelJS.Workbook();
                     workbook.creator = 'نظام البنيان المرصوص';
-                    
+
                     for (let book of books) {
                         const data = await fetchBookAndReceipts(book.id);
                         if (data) {
                             buildOfficialExcelWorksheet(workbook, data.book, data.receipts);
                         }
                     }
-                    
+
                     const buffer = await workbook.xlsx.writeBuffer();
                     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
                     const url = window.URL.createObjectURL(blob);
-                    
+
                     const a = document.createElement('a');
                     a.href = url;
                     a.download = `كشف_الدفاتر_الرسمي_الكامل_${new Date().toLocaleDateString('ar-EG')}.xlsx`;
@@ -1566,24 +1717,30 @@
         });
     </script>
     <!-- Delete Confirmation Modal -->
-    <div id="deleteBookModal" class="fixed inset-0 bg-primary/40 backdrop-blur-md z-[100] hidden items-center justify-center p-6 transition-all duration-300">
-        <div class="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-300">
+    <div id="deleteBookModal"
+        class="fixed inset-0 bg-primary/40 backdrop-blur-md z-[100] hidden items-center justify-center p-6 transition-all duration-300">
+        <div
+            class="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-300">
             <div class="p-8 text-center space-y-4">
                 <div class="w-20 h-20 bg-error/10 text-error rounded-3xl flex items-center justify-center mx-auto mb-6">
                     <span class="material-symbols-outlined text-4xl icon-filled">delete_forever</span>
                 </div>
                 <h3 class="text-xl font-black text-primary">حذف الدفتر آلياً؟</h3>
                 <p class="text-sm text-on-surface-variant leading-relaxed">
-                    هل أنت متأكد من حذف الدفتر رقم (<span id="deleteBookSerial" class="font-black text-error">---</span>)؟
+                    هل أنت متأكد من حذف الدفتر رقم (<span id="deleteBookSerial"
+                        class="font-black text-error">---</span>)؟
                     <br>
-                    <span class="text-[10px] opacity-60 font-bold">ملاحظة: سيتم حذف جميع الوصولات المرتبطة به نهائياً.</span>
+                    <span class="text-[10px] opacity-60 font-bold">ملاحظة: سيتم حذف جميع الوصولات المرتبطة به
+                        نهائياً.</span>
                 </p>
             </div>
             <div class="px-8 pb-8 flex flex-col gap-3">
-                <button id="confirmDeleteBtn" onclick="window.executeDeleteBook()" class="w-full bg-[#d32f2f] text-white font-black py-4 rounded-2xl shadow-lg shadow-error/20 hover:bg-[#b71c1c] active:scale-95 transition-all">
+                <button id="confirmDeleteBtn" onclick="window.executeDeleteBook()"
+                    class="w-full bg-[#d32f2f] text-white font-black py-4 rounded-2xl shadow-lg shadow-error/20 hover:bg-[#b71c1c] active:scale-95 transition-all">
                     نعم، احذف الدفتر
                 </button>
-                <button onclick="window.closeDeleteModal()" class="w-full bg-surface-container-high text-primary font-black py-4 rounded-2xl active:scale-95 transition-all">
+                <button onclick="window.closeDeleteModal()"
+                    class="w-full bg-surface-container-high text-primary font-black py-4 rounded-2xl active:scale-95 transition-all">
                     إلغاء
                 </button>
             </div>
@@ -1591,22 +1748,28 @@
     </div>
 
     <!-- Receive Confirmation Modal -->
-    <div id="receiveBookModal" class="fixed inset-0 bg-primary/40 backdrop-blur-md z-[100] hidden items-center justify-center p-6 transition-all duration-300">
-        <div class="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-300">
+    <div id="receiveBookModal"
+        class="fixed inset-0 bg-primary/40 backdrop-blur-md z-[100] hidden items-center justify-center p-6 transition-all duration-300">
+        <div
+            class="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-300">
             <div class="p-8 text-center space-y-4">
-                <div class="w-20 h-20 bg-success/10 text-success rounded-3xl flex items-center justify-center mx-auto mb-6">
+                <div
+                    class="w-20 h-20 bg-success/10 text-success rounded-3xl flex items-center justify-center mx-auto mb-6">
                     <span class="material-symbols-outlined text-4xl icon-filled">check_circle</span>
                 </div>
                 <h3 class="text-xl font-black text-primary">تأكيد استلام الدفتر؟</h3>
                 <p class="text-sm text-on-surface-variant leading-relaxed">
-                    هل أنت متأكد من تأكيد استلام الدفتر رقم (<span id="receiveBookSerial" class="font-black text-success">---</span>)؟
+                    هل أنت متأكد من تأكيد استلام الدفتر رقم (<span id="receiveBookSerial"
+                        class="font-black text-success">---</span>)؟
                 </p>
             </div>
             <div class="px-8 pb-8 flex flex-col gap-3">
-                <button id="confirmReceiveBtn" onclick="window.executeMarkAsReceived()" class="w-full bg-success text-white font-black py-4 rounded-2xl shadow-lg shadow-success/20 hover:opacity-90 active:scale-95 transition-all">
+                <button id="confirmReceiveBtn" onclick="window.executeMarkAsReceived()"
+                    class="w-full bg-success text-white font-black py-4 rounded-2xl shadow-lg shadow-success/20 hover:opacity-90 active:scale-95 transition-all">
                     تأكيد الاستلام
                 </button>
-                <button onclick="window.closeReceiveModal()" class="w-full bg-surface-container-high text-primary font-black py-4 rounded-2xl active:scale-95 transition-all">
+                <button onclick="window.closeReceiveModal()"
+                    class="w-full bg-surface-container-high text-primary font-black py-4 rounded-2xl active:scale-95 transition-all">
                     إلغاء
                 </button>
             </div>
@@ -1614,28 +1777,35 @@
     </div>
 
     <!-- Return Confirmation Modal -->
-    <div id="returnBookModal" class="fixed inset-0 bg-primary/40 backdrop-blur-md z-[100] hidden items-center justify-center p-6 transition-all duration-300">
-        <div class="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-300">
+    <div id="returnBookModal"
+        class="fixed inset-0 bg-primary/40 backdrop-blur-md z-[100] hidden items-center justify-center p-6 transition-all duration-300">
+        <div
+            class="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-300">
             <div class="p-8 text-center space-y-4">
-                <div class="w-20 h-20 bg-warning/10 text-warning rounded-3xl flex items-center justify-center mx-auto mb-6">
+                <div
+                    class="w-20 h-20 bg-warning/10 text-warning rounded-3xl flex items-center justify-center mx-auto mb-6">
                     <span class="material-symbols-outlined text-4xl icon-filled">undo</span>
                 </div>
                 <h3 class="text-xl font-black text-primary">إرجاع الدفتر للحليف؟</h3>
                 <p class="text-sm text-on-surface-variant leading-relaxed">
-                    هل أنت متأكد من إرجاع الدفتر رقم (<span id="returnBookSerial" class="font-black text-warning">---</span>)؟
+                    هل أنت متأكد من إرجاع الدفتر رقم (<span id="returnBookSerial"
+                        class="font-black text-warning">---</span>)؟
                     <br>
                     <span class="text-[10px] opacity-60 font-bold">سيتم إلغاء حالة الاستلام وإعادة الدفتر للحليف.</span>
                 </p>
             </div>
             <div class="px-8 pb-8 flex flex-col gap-3">
-                <button id="confirmReturnBtn" onclick="window.executeReturnBook()" class="w-full bg-warning text-white font-black py-4 rounded-2xl shadow-lg shadow-warning/20 hover:opacity-90 active:scale-95 transition-all">
+                <button id="confirmReturnBtn" onclick="window.executeReturnBook()"
+                    class="w-full bg-warning text-white font-black py-4 rounded-2xl shadow-lg shadow-warning/20 hover:opacity-90 active:scale-95 transition-all">
                     تأكيد الإرجاع
                 </button>
-                <button onclick="window.closeReturnModal()" class="w-full bg-surface-container-high text-primary font-black py-4 rounded-2xl active:scale-95 transition-all">
+                <button onclick="window.closeReturnModal()"
+                    class="w-full bg-surface-container-high text-primary font-black py-4 rounded-2xl active:scale-95 transition-all">
                     إلغاء
                 </button>
             </div>
         </div>
     </div>
 </body>
+
 </html>

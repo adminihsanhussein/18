@@ -57,7 +57,10 @@
                             <p id="profileRole" class="text-[10px] text-on-surface-variant font-bold">حليف قاطع جنوب الرصافة</p>
                         </div>
                     </div>
-                    <button class="text-primary text-xs font-black hover:underline px-3 py-1">تعديل</button>
+                    <button id="editProfileBtn" onclick="openAdminProfileModal()" class="hidden text-primary text-xs font-black hover:underline px-3 py-1 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">edit</span>
+                        تعديل
+                    </button>
                 </div>
 
                 <div class="w-full p-5 flex items-center justify-between setting-row">
@@ -136,10 +139,20 @@
                 إعدادات خاصة بالمسؤول (أنت فقط)
             </h2>
             <div class="space-y-3">
+                <button id="adminProfileSettingsBtn" onclick="openAdminProfileModal()" class="w-full p-5 bg-white rounded-2xl flex items-center justify-between shadow-sm hover:shadow-md transition-all group border border-primary/10">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">manage_accounts</span>
+                        <div class="text-right">
+                            <span class="text-sm font-bold block text-primary">بيانات حساب مدير النظام</span>
+                            <span class="text-[10px] text-on-surface-variant font-bold">تعديل اسم، بريد إلكتروني، وكلمة سر الآدمن</span>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-on-surface-variant/40">chevron_left</span>
+                </button>
                 <button id="manageAlliesBtn" class="w-full p-5 bg-white rounded-2xl flex items-center justify-between shadow-sm hover:shadow-md transition-all group">
                     <div class="flex items-center gap-4">
                         <span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">group_add</span>
-                        <span class="text-sm font-bold">إدارة الحلفاء (إضافة/إيقاف)</span>
+                        <span class="text-sm font-bold">إدارة الحلفاء (إضافة / تعديل / إيقاف / حذف)</span>
                     </div>
                     <span class="material-symbols-outlined text-on-surface-variant/40">chevron_left</span>
                 </button>
@@ -405,10 +418,18 @@
                 }
             }
 
-            const serviceKey = localStorage.getItem('supabaseServiceRoleKey');
+            const serviceKey = (localStorage.getItem('supabaseServiceRoleKey') || '').trim().replace(/^["']|["']$/g, '');
             if (!serviceKey) {
                 throw new Error('يرجى إدخال وحفظ "مفتاح الإدارة" (Service Role) أولاً في الإعدادات للقيام بهذه العملية.');
             }
+
+            const parseApiError = (data, defaultMsg) => {
+                const msg = data?.msg || data?.message || defaultMsg;
+                if (typeof msg === 'string' && msg.toLowerCase().includes('invalid api key')) {
+                    return 'مفتاح الإدارة (Service Role) غير صالح أو منتهي الصلاحية (Invalid API key). يرجى نسخ المفتاح السري service_role من لوحة تحكم Supabase (Project Settings > API) وليس المفتاح العام.';
+                }
+                return msg;
+            };
 
             try {
                 const headers = {
@@ -432,7 +453,7 @@
                         })
                     });
                     const authData = await authRes.json();
-                    if (!authRes.ok) throw new Error(authData.msg || authData.message || 'فشل في إنشاء المستخدم');
+                    if (!authRes.ok) throw new Error(parseApiError(authData, 'فشل في إنشاء المستخدم'));
                     return { success: true, data: authData };
 
                 } else if (action === 'reset-password') {
@@ -443,7 +464,7 @@
                         body: JSON.stringify({ password: payload.newPassword })
                     });
                     const authData = await authRes.json();
-                    if (!authRes.ok) throw new Error(authData.msg || authData.message || 'فشل في تغيير كلمة المرور');
+                    if (!authRes.ok) throw new Error(parseApiError(authData, 'فشل في تغيير كلمة المرور'));
 
                     // 2. Update Profile raw_password
                     await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${payload.userId}`, {
@@ -486,7 +507,7 @@
                         })
                     });
                     const authData = await authRes.json();
-                    if (!authRes.ok) throw new Error(authData.msg || authData.message || 'فشل في تحديث الاسم في المصادقة');
+                    if (!authRes.ok) throw new Error(parseApiError(authData, 'فشل في تحديث الاسم في المصادقة'));
 
                     // 2. Update Profile Name
                     const updRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${payload.userId}`, {
@@ -495,6 +516,67 @@
                         body: JSON.stringify({ full_name: payload.name })
                     });
                     if (!updRes.ok) throw new Error('فشل في تحديث الاسم في قاعدة البيانات');
+                    return { success: true };
+
+                } else if (action === 'delete-user') {
+                    // 1. Delete user from auth
+                    const authRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${payload.userId}`, {
+                        method: 'DELETE',
+                        headers
+                    });
+                    if (!authRes.ok) {
+                        const authData = await authRes.json();
+                        throw new Error(parseApiError(authData, 'فشل في حذف المستخدم من المصادقة'));
+                    }
+
+                    // 2. Delete from profiles
+                    await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${payload.userId}`, {
+                        method: 'DELETE',
+                        headers
+                    });
+                    return { success: true };
+
+                } else if (action === 'update-admin-profile') {
+                    const authBody = {};
+                    const profileBody = { updated_at: new Date().toISOString() };
+
+                    if (payload.name && payload.name.trim()) {
+                        authBody.user_metadata = { full_name: payload.name.trim() };
+                        profileBody.full_name = payload.name.trim();
+                    }
+                    if (payload.email && payload.email.trim()) {
+                        authBody.email = payload.email.trim().toLowerCase();
+                        authBody.email_confirm = true;
+                        profileBody.email = payload.email.trim().toLowerCase();
+                    }
+                    if (payload.password && payload.password.trim()) {
+                        if (payload.password.trim().length < 6) throw new Error('كلمة المرور يجب أن تكون 6 خانات أو أكثر');
+                        authBody.password = payload.password.trim();
+                        profileBody.raw_password = payload.password.trim();
+                        if (!authBody.user_metadata) authBody.user_metadata = {};
+                        authBody.user_metadata.raw_password = payload.password.trim();
+                    }
+
+                    // 1. Update Auth
+                    if (Object.keys(authBody).length > 0) {
+                        const authRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${payload.userId}`, {
+                            method: 'PUT',
+                            headers,
+                            body: JSON.stringify(authBody)
+                        });
+                        const authData = await authRes.json();
+                        if (!authRes.ok) throw new Error(parseApiError(authData, 'فشل في تحديث بيانات المصادقة'));
+                    }
+
+                    // 2. Update profiles
+                    if (Object.keys(profileBody).length > 1) {
+                        const profRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${payload.userId}`, {
+                            method: 'PATCH',
+                            headers: { ...headers, 'Prefer': 'return=minimal' },
+                            body: JSON.stringify(profileBody)
+                        });
+                        if (!profRes.ok) console.warn('Failed to update profiles row');
+                    }
                     return { success: true };
 
                 } else {
@@ -510,6 +592,8 @@
 
         // Move these inside init or use safer selectors
         let profileName, profileRole, adminSection;
+        let currentAuthUser = null;
+        let currentAdminProfile = null;
 
         window.updateSyncUI = () => {
             const queue = JSON.parse(localStorage.getItem('offlineReceiptsQueue') || '[]');
@@ -618,6 +702,8 @@
                 
                 updateSyncUI();
 
+                currentAuthUser = user;
+
                 // 2. Load Profile
                 const { data: profile, error: profErr } = await supabase
                     .from('profiles')
@@ -628,16 +714,20 @@
                 if (profErr) {
                     console.error('Error fetching profile:', profErr);
                 } else if (profile) {
+                    currentAdminProfile = profile;
                     console.log('Profile Role:', profile.role);
                     if (profileName) profileName.textContent = profile.full_name;
                     if (profileRole) profileRole.textContent = profile.role === 'admin' ? 'مدير النظام (الآدمن)' : 'حليف الدائرة الثامنة عشر';
                     
-                    // Show/Hide Admin Section
+                    // Show/Hide Admin Section & Edit Profile Button (Strictly Admin)
+                    const editProfileBtn = document.getElementById('editProfileBtn');
                     if (profile.role !== 'admin') {
                         if (adminSection) adminSection.classList.add('hidden');
+                        if (editProfileBtn) editProfileBtn.classList.add('hidden');
                     } else {
                         localStorage.setItem('userRole', 'admin');
                         if (adminSection) adminSection.classList.remove('hidden');
+                        if (editProfileBtn) editProfileBtn.classList.remove('hidden');
                     }
                 }
 
@@ -707,18 +797,24 @@
                     }
 
                     saveServiceKeyBtn.addEventListener('click', () => {
-                        const key = serviceRoleInput.value.trim();
+                        let key = serviceRoleInput.value.trim().replace(/^["']|["']$/g, '');
                         if (!key) {
                             localStorage.removeItem('supabaseServiceRoleKey');
                             saveServiceKeyBtn.textContent = 'حفظ';
-                            alert('تم مسح المفتاح.');
+                            showStatus('تم الحذف', 'تم مسح مفتاح الإدارة بنجاح.');
+                            return;
+                        }
+                        if (key.startsWith('sb_publishable_')) {
+                            showStatus('تنبيه هام', 'المفتاح المدخل هو المفتاح العام (Publishable Key) وليس مفتاح الإدارة السري (Service Role). لن تعمل به عمليات إضافة أو حذف الحلفاء. يرجى نسخه من لوحة تحكم Supabase > Project Settings > API > service_role (secret).', true);
                             return;
                         }
                         localStorage.setItem('supabaseServiceRoleKey', key);
                         saveServiceKeyBtn.textContent = 'تم الحفظ ✓';
                         saveServiceKeyBtn.classList.replace('bg-primary', 'bg-green-500');
+                        showStatus('تم الحفظ ✓', 'تم حفظ مفتاح الإدارة (Service Role) بنجاح');
                         setTimeout(() => {
                             saveServiceKeyBtn.classList.replace('bg-green-500', 'bg-primary');
+                            saveServiceKeyBtn.textContent = 'تم الحفظ';
                         }, 2000);
                     });
                 }
@@ -1183,8 +1279,11 @@
                                 <button onclick="openResetModal('${a.id}', '${escapedName}')" class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all text-blue-400" title="تغيير كلمة المرور">
                                     <span class="material-symbols-outlined text-sm">lock_reset</span>
                                 </button>
-                                <button onclick="toggleAllyStatus('${a.id}', '${escapedName}', ${isDeactivated})" class="w-8 h-8 rounded-lg ${isDeactivated ? 'bg-green-500/10 text-green-500 hover:bg-green-500/20' : 'bg-error/10 text-error hover:bg-error/20'} flex items-center justify-center transition-all" title="${isDeactivated ? 'تفعيل الحساب' : 'إيقاف الحساب'}">
+                                <button onclick="toggleAllyStatus('${a.id}', '${escapedName}', ${isDeactivated})" class="w-8 h-8 rounded-lg ${isDeactivated ? 'bg-green-500/10 text-green-500 hover:bg-green-500/20' : 'bg-orange-500/20 text-orange-400 hover:bg-orange-500 hover:text-white'} flex items-center justify-center transition-all" title="${isDeactivated ? 'تفعيل الحساب' : 'إيقاف الحساب مؤقتاً'}">
                                     <span class="material-symbols-outlined text-sm">${isDeactivated ? 'lock_open' : 'lock'}</span>
+                                </button>
+                                <button onclick="deleteAllyAccount('${a.id}', '${escapedName}')" class="w-8 h-8 rounded-lg bg-red-500/15 text-red-400 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center" title="حذف حساب الحليف نهائياً">
+                                    <span class="material-symbols-outlined text-sm">delete</span>
                                 </button>
                             </div>
                         </div>
@@ -1371,6 +1470,215 @@
                     showStatus('فشل تغيير الحالة', err.message, true);
                 }
             });
+        };
+
+        window.deleteAllyAccount = (id, name) => {
+            const title = 'حذف حساب الحليف نهائياً';
+            const message = `تحذير: هل أنت متأكد من رغبتك في حذف حساب (${name}) نهائياً من النظام؟\n\nملاحظة هامة: سيتم حذف بيانات الدخول فقط، وستظل كافة الوصولات والدفاتر المسجلة سابقاً بأمان في قاعدة البيانات.`;
+            
+            customConfirm(title, message, true, async () => {
+                try {
+                    await adminApiCall('delete-user', { userId: id });
+                    showStatus('تم حذف الحساب بنجاح', `تم حذف حساب الحليف (${name}) نهائياً.`);
+                    if (window.manageAllies) window.manageAllies(); 
+                } catch (err) {
+                    console.error('Delete ally error:', err);
+                    showStatus('فشل عملية الحذف', err.message || 'حدث خطأ أثناء محاولة حذف الحساب', true);
+                }
+            });
+        };
+
+        window.openAdminProfileModal = async () => {
+            try {
+                if (!currentAuthUser) {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    currentAuthUser = user;
+                }
+                if (currentAuthUser) {
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', currentAuthUser.id)
+                        .single();
+                    if (profile) currentAdminProfile = profile;
+                }
+
+                // Strict security check: only admin can open this modal
+                if (!currentAdminProfile || currentAdminProfile.role !== 'admin') {
+                    showStatus('غير مصرح', 'تعديل بيانات الحساب متاح حصراً لمدير النظام (الآدمن).', true);
+                    return;
+                }
+
+                const modal = document.getElementById('adminProfileModal');
+                if (!modal) return;
+
+                const nameInput = document.getElementById('adminFullNameInput');
+                const emailInput = document.getElementById('adminEmailInput');
+                const passInput = document.getElementById('adminNewPasswordInput');
+                const passConfirmInput = document.getElementById('adminConfirmPasswordInput');
+
+                if (nameInput) nameInput.value = (currentAdminProfile && currentAdminProfile.full_name) || (currentAuthUser && currentAuthUser.user_metadata && currentAuthUser.user_metadata.full_name) || '';
+                if (emailInput) emailInput.value = (currentAdminProfile && currentAdminProfile.email) || (currentAuthUser && currentAuthUser.email) || '';
+                if (passInput) passInput.value = '';
+                if (passConfirmInput) passConfirmInput.value = '';
+
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            } catch (err) {
+                console.error('Error opening admin profile modal:', err);
+            }
+        };
+
+        window.closeAdminProfileModal = () => {
+            const modal = document.getElementById('adminProfileModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        };
+
+        window.toggleAdminPasswordVisibility = (inputId, iconId) => {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (!input || !icon) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.textContent = 'visibility_off';
+            } else {
+                input.type = 'password';
+                icon.textContent = 'visibility';
+            }
+        };
+
+        window.submitAdminProfileUpdate = async (e) => {
+            if (e) e.preventDefault();
+            const btn = document.getElementById('saveAdminProfileBtn');
+            const nameInput = document.getElementById('adminFullNameInput');
+            const emailInput = document.getElementById('adminEmailInput');
+            const passInput = document.getElementById('adminNewPasswordInput');
+            const passConfirmInput = document.getElementById('adminConfirmPasswordInput');
+
+            const name = nameInput.value.trim();
+            const email = emailInput.value.trim().toLowerCase();
+            const newPass = passInput.value;
+            const confirmPass = passConfirmInput.value;
+
+            if (!name) {
+                return showStatus('خطأ في البيانات', 'يرجى إدخال اسم مدير النظام', true);
+            }
+            if (!email || !email.includes('@')) {
+                return showStatus('خطأ في البيانات', 'يرجى إدخال بريد إلكتروني صحيح', true);
+            }
+            if (newPass) {
+                if (newPass.length < 6) {
+                    return showStatus('خطأ في كلمة المرور', 'كلمة المرور يجب ألا تقل عن 6 أحرف أو أرقام', true);
+                }
+                if (newPass !== confirmPass) {
+                    return showStatus('خطأ في التأكيد', 'كلمة المرور الجديدة وتأكيدها غير متطابقين', true);
+                }
+            }
+
+            if (!currentAuthUser || !currentAuthUser.id) {
+                return showStatus('خطأ', 'لم يتم العثور على الجلسة الحالية للمدير', true);
+            }
+
+            if (!currentAdminProfile || currentAdminProfile.role !== 'admin') {
+                return showStatus('غير مصرح', 'تعديل بيانات الحساب متاح حصراً لمدير النظام (الآدمن).', true);
+            }
+
+            const origBtnText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<div class="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto"></div>';
+
+            try {
+                // 1. Direct update using Supabase client (active session) - NO service_role key required!
+                const authUpdates = {
+                    data: {
+                        ...(currentAuthUser.user_metadata || {}),
+                        full_name: name,
+                        ...(newPass ? { raw_password: newPass } : {})
+                    }
+                };
+                if (newPass) authUpdates.password = newPass;
+
+                const emailChanged = email && email !== (currentAuthUser.email || '').toLowerCase();
+                if (emailChanged) {
+                    authUpdates.email = email;
+                }
+
+                let directAuthOk = false;
+                try {
+                    const { data: updatedUserData, error: authErr } = await supabase.auth.updateUser(authUpdates);
+                    if (authErr) throw authErr;
+                    directAuthOk = true;
+                    if (updatedUserData && updatedUserData.user) {
+                        currentAuthUser = updatedUserData.user;
+                    }
+                } catch (clientAuthErr) {
+                    console.warn('Direct auth.updateUser encountered an issue, trying adminApiCall fallback:', clientAuthErr);
+                    // Fallback to adminApiCall if direct client auth update failed
+                    await adminApiCall('update-admin-profile', {
+                        userId: currentAuthUser.id,
+                        name,
+                        email,
+                        password: newPass || undefined
+                    });
+                    directAuthOk = true;
+                }
+
+                // 2. Update Profiles table directly
+                const profUpdates = {
+                    full_name: name,
+                    email: email,
+                    updated_at: new Date().toISOString()
+                };
+                if (newPass) profUpdates.raw_password = newPass;
+
+                const { error: profErr } = await supabase
+                    .from('profiles')
+                    .update(profUpdates)
+                    .eq('id', currentAuthUser.id);
+
+                if (profErr) {
+                    console.warn('Direct profile update warning, attempting adminApiCall fallback:', profErr);
+                    try {
+                        await adminApiCall('update-admin-profile', {
+                            userId: currentAuthUser.id,
+                            name,
+                            email,
+                            password: newPass || undefined
+                        });
+                    } catch (adminErr) {
+                        console.warn('Admin API fallback also failed for profile:', adminErr);
+                    }
+                }
+
+                if (currentAdminProfile) {
+                    currentAdminProfile.full_name = name;
+                    currentAdminProfile.email = email;
+                    if (newPass) currentAdminProfile.raw_password = newPass;
+                }
+                if (currentAuthUser) {
+                    currentAuthUser.email = email;
+                    if (!currentAuthUser.user_metadata) currentAuthUser.user_metadata = {};
+                    currentAuthUser.user_metadata.full_name = name;
+                }
+
+                if (profileName) profileName.textContent = name;
+
+                closeAdminProfileModal();
+                if (emailChanged) {
+                    showStatus('تم الحفظ بنجاح', 'تم تحديث بيانات المدير بنجاح! إذا كان تأكيد البريد مفعلاً في Supabase، يرجى مراجعة بريدك الجديد لتأكيد التغيير.');
+                } else {
+                    showStatus('تم الحفظ بنجاح', 'تم تحديث بيانات مدير النظام (الاسم، البريد الإلكتروني، كلمة السر) بنجاح!');
+                }
+            } catch (err) {
+                console.error('Failed to update admin profile:', err);
+                showStatus('فشل التحديث', err.message || 'حدث خطأ أثناء تحديث بيانات المدير', true);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = origBtnText;
+            }
         };
 
         window.submitAddAlly = async (e) => {
@@ -1861,6 +2169,91 @@
             <button onclick="closeStatusModal()" class="w-full bg-primary text-white font-black py-4 rounded-2xl shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all text-sm">
                 حسناً، فهمت
             </button>
+        </div>
+    </div>
+
+    <!-- Admin Profile Settings Modal -->
+    <div id="adminProfileModal" class="fixed inset-0 bg-primary/60 backdrop-blur-md z-[120] flex items-center justify-center hidden p-4">
+        <div class="bg-primary-container w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col border border-white/10 text-right animate-modal-pop">
+            <div class="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-black">
+                        <span class="material-symbols-outlined text-xl">manage_accounts</span>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-white text-lg">بيانات حساب مدير النظام</h3>
+                        <p class="text-[10px] text-white/50 font-bold">تعديل الاسم والبريد وكلمة السر للمدير</p>
+                    </div>
+                </div>
+                <button onclick="closeAdminProfileModal()" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-error transition-all hover:rotate-90">
+                    <span class="material-symbols-outlined text-sm">close</span>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-4 overflow-y-auto max-h-[80vh] custom-scrollbar">
+                <!-- Name -->
+                <div class="space-y-1">
+                    <label class="text-[11px] font-black text-white/60 uppercase mr-1">اسم مدير النظام</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">person</span>
+                        <input type="text" id="adminFullNameInput" placeholder="أدخل اسم المدير" class="w-full bg-white/5 border border-white/10 text-white rounded-2xl py-3 pr-12 pl-4 focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all text-sm font-bold placeholder:text-white/20">
+                    </div>
+                </div>
+
+                <!-- Email -->
+                <div class="space-y-1">
+                    <label class="text-[11px] font-black text-white/60 uppercase mr-1">البريد الإلكتروني</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">alternate_email</span>
+                        <input type="email" id="adminEmailInput" placeholder="admin@example.com" class="w-full bg-white/5 border border-white/10 text-white rounded-2xl py-3 pr-12 pl-4 focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all text-sm font-bold placeholder:text-white/20 text-left dir-ltr">
+                    </div>
+                </div>
+
+                <!-- Password divider -->
+                <div class="pt-2 border-t border-white/10">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[11px] font-black text-amber-400">تغيير كلمة المرور (اختياري)</span>
+                        <span class="text-[9px] text-white/40">اتركها فارغة للإبقاء على الحالية</span>
+                    </div>
+
+                    <!-- New Password -->
+                    <div class="space-y-2">
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">lock</span>
+                            <input type="password" id="adminNewPasswordInput" placeholder="كلمة المرور الجديدة (6 رموز على الأقل)" class="w-full bg-white/5 border border-white/10 text-white rounded-2xl py-3 pr-12 pl-12 focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all text-sm font-bold placeholder:text-white/20">
+                            <button type="button" onclick="toggleAdminPasswordVisibility('adminNewPasswordInput', 'toggleNewPassIcon')" class="absolute left-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-1">
+                                <span id="toggleNewPassIcon" class="material-symbols-outlined text-sm">visibility</span>
+                            </button>
+                        </div>
+
+                        <!-- Confirm Password -->
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">lock_clock</span>
+                            <input type="password" id="adminConfirmPasswordInput" placeholder="تأكيد كلمة المرور الجديدة" class="w-full bg-white/5 border border-white/10 text-white rounded-2xl py-3 pr-12 pl-12 focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all text-sm font-bold placeholder:text-white/20">
+                            <button type="button" onclick="toggleAdminPasswordVisibility('adminConfirmPasswordInput', 'toggleConfirmPassIcon')" class="absolute left-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-1">
+                                <span id="toggleConfirmPassIcon" class="material-symbols-outlined text-sm">visibility</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-amber-500/10 border border-amber-500/20 p-3 rounded-2xl">
+                    <p class="text-[10px] text-amber-300 font-bold leading-relaxed flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-xs">shield</span>
+                        <span>سيتم تطبيق البيانات فوراً على الحساب وجدول المدير في قاعدة البيانات.</span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="p-5 border-t border-white/10 bg-white/5 flex gap-2">
+                <button id="saveAdminProfileBtn" onclick="submitAdminProfileUpdate(event)" class="flex-1 bg-amber-500 text-white font-black py-3 rounded-xl shadow-lg shadow-amber-500/20 hover:scale-[1.02] active:scale-95 transition-all text-xs flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-sm">save</span>
+                    حفظ التغييرات
+                </button>
+                <button onclick="closeAdminProfileModal()" class="px-5 bg-white/10 text-white font-bold py-3 rounded-xl text-xs hover:bg-white/20 transition-all">
+                    إلغاء
+                </button>
+            </div>
         </div>
     </div>
 </body>

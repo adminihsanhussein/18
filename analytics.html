@@ -277,10 +277,22 @@
                     receiptsQuery = receiptsQuery.eq('ally_id', user.id);
                 }
 
-                const { data: allData, error } = await receiptsQuery;
-                if (error) console.error(error);
+                let allData = [];
+                let from = 0;
+                const batchSize = 1000;
+                while (true) {
+                    const { data: chunk, error } = await receiptsQuery.range(from, from + batchSize - 1);
+                    if (error) {
+                        console.error(error);
+                        break;
+                    }
+                    if (!chunk || chunk.length === 0) break;
+                    allData.push(...chunk);
+                    if (chunk.length < batchSize) break;
+                    from += batchSize;
+                }
                 
-                const allStats = allData || [];
+                const allStats = allData;
                 
                 // Filter for current month view
                 const stats = currentMonth ? allStats.filter(r => r.month_year === currentMonth) : allStats;
