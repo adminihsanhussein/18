@@ -345,31 +345,38 @@
                     <div class="flex flex-wrap gap-2">
                         <button id="bulkGoogleFormBtn" onclick="window.sendAllVisibleBooksToGoogleForm()"
                             class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 active:scale-95 hidden"
-                            title="تحويل كافة وصولات الدفاتر الظاهرة إلى Google Form">
+                            title="تحويل كافة وصولات الدفاتر الظاهرة أو المحددة إلى Google Form">
                             <span class="material-symbols-outlined icon-filled">cloud_upload</span>
-                            <span class="hidden sm:inline">تحويل إلى Google Form</span>
+                            <span class="hidden sm:inline" id="btnTextGoogleForm">تحويل إلى Google Form</span>
+                        </button>
+                        <button onclick="window.exportSelectedBooksReceiptsExcel()"
+                            id="topExportReceiptsExcelBtn"
+                            class="bg-teal-600 hover:bg-teal-700 text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-teal-600/20 active:scale-95"
+                            title="تصدير كافة بيانات وصولات ومحتويات الدفاتر (المحددة أو الظاهرة) إلى ملف Excel واحد">
+                            <span class="material-symbols-outlined icon-filled">receipt_long</span>
+                            <span class="hidden sm:inline" id="btnTextReceiptsExcel">تصدير محتويات الدفاتر (Excel)</span>
                         </button>
                         <button onclick="window.generateHighFidelityExcel()"
                             class="bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20 active:scale-95">
                             <span class="material-symbols-outlined icon-filled">table_view</span>
-                            <span class="hidden sm:inline">تصدير Excel</span>
+                            <span class="hidden sm:inline" id="btnTextExcel">تصدير Excel</span>
                         </button>
                         <button onclick="window.generateHighFidelityPDF()"
                             class="bg-primary hover:bg-primary-container text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-95">
                             <span class="material-symbols-outlined icon-filled">picture_as_pdf</span>
-                            <span class="hidden sm:inline">تحميل PDF</span>
+                            <span class="hidden sm:inline" id="btnTextPDF">تحميل PDF</span>
                         </button>
                         <button onclick="window.generateOfficialTemplateExcelAll()"
                             class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 active:scale-95"
                             title="تصدير كشف الوصولات بالنموذج الرسمي">
                             <span class="material-symbols-outlined icon-filled">grid_on</span>
-                            <span class="hidden sm:inline">Excel (رسمي)</span>
+                            <span class="hidden sm:inline" id="btnTextOfficialExcel">Excel (رسمي)</span>
                         </button>
                         <button onclick="window.generateOfficialTemplatePDFAll()"
                             class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 active:scale-95"
                             title="تحميل كشف الوصولات بالنموذج الرسمي">
                             <span class="material-symbols-outlined icon-filled">print</span>
-                            <span class="hidden sm:inline">PDF (رسمي)</span>
+                            <span class="hidden sm:inline" id="btnTextOfficialPDF">PDF (رسمي)</span>
                         </button>
                     </div>
 
@@ -421,6 +428,32 @@
             </div>
         </div>
 
+        <!-- Selection Action Bar -->
+        <div id="selectionActionBar" class="hidden bg-primary/10 border border-primary/20 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 transition-all shadow-sm">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary text-xl icon-filled">check_circle</span>
+                <span class="font-black text-primary text-sm">
+                    تم تحديد <span id="selectedCountBadge" class="bg-primary text-white px-2 py-0.5 rounded-lg text-xs font-bold mx-1">0</span> دفتر
+                </span>
+                <span id="selectedStatsSnippet" class="text-xs font-bold text-primary/70 hidden md:inline"></span>
+                <span class="text-xs text-primary/60 font-bold hidden sm:inline">(عمليات التصدير في الأعلى ستشمل الدفاتر المحددة فقط)</span>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+                <button type="button" id="exportAllSelectedReceiptsBtn" onclick="window.exportSelectedBooksReceiptsExcel()"
+                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl border border-emerald-500 shadow-md shadow-emerald-600/20 flex items-center gap-1.5 transition-all active:scale-95"
+                    title="تصدير بيانات كافة وصولات ومحتويات الدفاتر المحددة إلى ملف Excel">
+                    <span class="material-symbols-outlined text-base">file_download</span>
+                    <span id="selBarBtnText">تصدير جميع محتويات الدفاتر (Excel)</span>
+                </button>
+                <button type="button" onclick="window.selectAllVisibleBooks()" class="px-3 py-1.5 bg-white text-primary text-xs font-black rounded-xl border border-primary/20 hover:bg-primary/5 transition-all shadow-sm active:scale-95">
+                    تحديد كافة الظاهرة
+                </button>
+                <button type="button" onclick="window.clearBookSelection()" class="px-3 py-1.5 bg-white text-error text-xs font-black rounded-xl border border-error/20 hover:bg-error/5 transition-all shadow-sm active:scale-95">
+                    إلغاء التحديد
+                </button>
+            </div>
+        </div>
+
         <!-- Books Data Table -->
         <section
             class="bg-surface-container-lowest rounded-[2.5rem] shadow-2xl shadow-primary/5 overflow-hidden border border-white/60">
@@ -429,6 +462,9 @@
                     <thead>
                         <tr
                             class="bg-primary/5 text-primary text-[10px] font-black uppercase tracking-widest border-b border-primary/10">
+                            <th class="py-5 px-4 text-center w-12">
+                                <input type="checkbox" id="selectAllCheckbox" onchange="window.toggleSelectAllBooks(this.checked)" title="تحديد / إلغاء تحديد الكل" class="w-4 h-4 rounded text-primary focus:ring-primary/20 cursor-pointer accent-primary">
+                            </th>
                             <th class="py-5 px-6">رقم الدفتر</th>
                             <th class="py-5 px-6">اسم الحليف المستلم</th>
                             <th class="py-5 px-6">الشهر المخصص</th>
@@ -741,6 +777,142 @@
             };
 
             window.unfilteredBooksData = [];
+            window.selectedBookIds = new Set();
+
+            window.handleRowClick = (bookId, event) => {
+                if (event.target.closest('button, a, select, input, label')) {
+                    return;
+                }
+                if (window.selectedBookIds.has(bookId)) {
+                    window.selectedBookIds.delete(bookId);
+                } else {
+                    window.selectedBookIds.add(bookId);
+                }
+                updateSelectionUI();
+            };
+
+            window.toggleBookSelection = (bookId, isChecked, event) => {
+                if (event) event.stopPropagation();
+                if (isChecked) {
+                    window.selectedBookIds.add(bookId);
+                } else {
+                    window.selectedBookIds.delete(bookId);
+                }
+                updateSelectionUI();
+            };
+
+            window.toggleSelectAllBooks = (isChecked) => {
+                const visibleBooks = window.allBooksData || [];
+                if (isChecked) {
+                    visibleBooks.forEach(b => window.selectedBookIds.add(b.id));
+                } else {
+                    visibleBooks.forEach(b => window.selectedBookIds.delete(b.id));
+                }
+                updateSelectionUI();
+            };
+
+            window.selectAllVisibleBooks = () => {
+                const visibleBooks = window.allBooksData || [];
+                visibleBooks.forEach(b => window.selectedBookIds.add(b.id));
+                updateSelectionUI();
+            };
+
+            window.clearBookSelection = () => {
+                window.selectedBookIds.clear();
+                updateSelectionUI();
+            };
+
+            window.getExportBooks = () => {
+                const pool = (window.unfilteredBooksData && window.unfilteredBooksData.length > 0)
+                    ? window.unfilteredBooksData
+                    : (window.allBooksData || []);
+                if (window.selectedBookIds && window.selectedBookIds.size > 0) {
+                    const selected = pool.filter(b => window.selectedBookIds.has(b.id));
+                    if (selected.length > 0) return selected;
+                }
+                return window.allBooksData || [];
+            };
+
+            const updateSelectionUI = () => {
+                const count = window.selectedBookIds.size;
+                const actionBar = document.getElementById('selectionActionBar');
+                const badge = document.getElementById('selectedCountBadge');
+                const selectAllCb = document.getElementById('selectAllCheckbox');
+                const visibleBooks = window.allBooksData || [];
+                const pool = (window.unfilteredBooksData && window.unfilteredBooksData.length > 0)
+                    ? window.unfilteredBooksData
+                    : (window.allBooksData || []);
+
+                if (badge) badge.textContent = count;
+
+                if (actionBar) {
+                    if (count > 0) {
+                        actionBar.classList.remove('hidden');
+                        const selectedBooks = pool.filter(b => window.selectedBookIds.has(b.id));
+                        const selReceipts = selectedBooks.reduce((sum, b) => sum + (Number(b.receipt_count) || 0), 0);
+                        const selAmount = selectedBooks.reduce((sum, b) => sum + (Number(b.total_amount) || 0), 0);
+                        const snippet = document.getElementById('selectedStatsSnippet');
+                        if (snippet) {
+                            snippet.textContent = `| إجمالي الوصولات: ${selReceipts.toLocaleString()} وصل | المجموع: ${selAmount.toLocaleString()} د.ع`;
+                        }
+                    } else {
+                        actionBar.classList.add('hidden');
+                    }
+                }
+
+                if (selectAllCb) {
+                    if (visibleBooks.length > 0 && visibleBooks.every(b => window.selectedBookIds.has(b.id))) {
+                        selectAllCb.checked = true;
+                        selectAllCb.indeterminate = false;
+                    } else if (visibleBooks.some(b => window.selectedBookIds.has(b.id))) {
+                        selectAllCb.checked = false;
+                        selectAllCb.indeterminate = true;
+                    } else {
+                        selectAllCb.checked = false;
+                        selectAllCb.indeterminate = false;
+                    }
+                }
+
+                document.querySelectorAll('tr[data-book-id]').forEach(row => {
+                    const id = row.getAttribute('data-book-id');
+                    const isSel = window.selectedBookIds.has(id);
+                    const cb = row.querySelector('.book-row-checkbox');
+                    if (cb) cb.checked = isSel;
+
+                    if (isSel) {
+                        row.classList.add('bg-primary/10', 'hover:bg-primary/15', 'border-r-4', 'border-r-primary');
+                    } else {
+                        row.classList.remove('bg-primary/10', 'hover:bg-primary/15', 'border-r-4', 'border-r-primary');
+                    }
+                });
+
+                const btnExcel = document.getElementById('btnTextExcel');
+                const btnPDF = document.getElementById('btnTextPDF');
+                const btnOfficialExcel = document.getElementById('btnTextOfficialExcel');
+                const btnOfficialPDF = document.getElementById('btnTextOfficialPDF');
+                const btnGoogleForm = document.getElementById('btnTextGoogleForm');
+                const btnReceiptsExcel = document.getElementById('btnTextReceiptsExcel');
+                const selBarBtnText = document.getElementById('selBarBtnText');
+
+                if (count > 0) {
+                    if (btnExcel) btnExcel.textContent = `تصدير Excel (${count})`;
+                    if (btnPDF) btnPDF.textContent = `تحميل PDF (${count})`;
+                    if (btnOfficialExcel) btnOfficialExcel.textContent = `Excel رسمي (${count})`;
+                    if (btnOfficialPDF) btnOfficialPDF.textContent = `PDF رسمي (${count})`;
+                    if (btnGoogleForm) btnGoogleForm.textContent = `تحويل إلى Form (${count})`;
+                    if (btnReceiptsExcel) btnReceiptsExcel.textContent = `تصدير وصولات الدفاتر (${count})`;
+                    if (selBarBtnText) selBarBtnText.textContent = `تصدير محتويات الـ (${count}) دفتر (Excel)`;
+                } else {
+                    if (btnExcel) btnExcel.textContent = 'تصدير Excel';
+                    if (btnPDF) btnPDF.textContent = 'تحميل PDF';
+                    if (btnOfficialExcel) btnOfficialExcel.textContent = 'Excel (رسمي)';
+                    if (btnOfficialPDF) btnOfficialPDF.textContent = 'PDF (رسمي)';
+                    if (btnGoogleForm) btnGoogleForm.textContent = 'تحويل إلى Google Form';
+                    if (btnReceiptsExcel) btnReceiptsExcel.textContent = 'تصدير محتويات الدفاتر (Excel)';
+                    if (selBarBtnText) selBarBtnText.textContent = 'تصدير جميع محتويات الدفاتر (Excel)';
+                }
+            };
+
             const populateTable = (books, isSearching = false) => {
                 if (!isSearching) {
                     window.unfilteredBooksData = books || [];
@@ -767,8 +939,19 @@
 
                 window.allBooksData = displayBooks; // Store for export
                 const tbody = document.querySelector('tbody');
-                tbody.innerHTML = displayBooks.map(b => `
-                    <tr class="hover:bg-primary/5 transition-all group">
+                tbody.innerHTML = displayBooks.map(b => {
+                    const isSelected = window.selectedBookIds.has(b.id);
+                    return `
+                    <tr class="hover:bg-primary/5 transition-all group cursor-pointer ${isSelected ? 'bg-primary/10 hover:bg-primary/15 border-r-4 border-r-primary' : ''}"
+                        onclick="window.handleRowClick('${b.id}', event)"
+                        data-book-id="${b.id}">
+                        <td class="py-5 px-4 text-center">
+                            <input type="checkbox"
+                                class="book-row-checkbox w-4 h-4 rounded text-primary focus:ring-primary/20 cursor-pointer accent-primary"
+                                data-id="${b.id}"
+                                ${isSelected ? 'checked' : ''}
+                                onchange="window.toggleBookSelection('${b.id}', this.checked, event)">
+                        </td>
                         <td class="py-5 px-6">
                             <span class="p-2 bg-primary-fixed rounded-xl text-primary font-black text-xs">#${b.serial_number}</span>
                         </td>
@@ -826,7 +1009,10 @@
                             </div>
                         </td>
                     </tr>
-                `).join('');
+                    `;
+                }).join('');
+
+                updateSelectionUI();
 
                 // Implement Google Form sync window functions
                 window.sendBookToGoogleForm = async (bookId, serialNumber) => {
@@ -870,14 +1056,17 @@
                         await notify('غير مصرح', 'ميزة تحويل الوصولات متاحة للمدير فقط', { toast: true, native: false, type: 'error' });
                         return;
                     }
-                    const books = window.allBooksData || window.unfilteredBooksData || [];
+                    const books = window.getExportBooks();
                     if (books.length === 0) {
-                        alert('لا توجد دفاتر ظاهرة لتحويل وصولاتها');
+                        alert('لا توجد دفاتر لتحويل وصولاتها');
                         return;
                     }
 
+                    const isSelection = window.selectedBookIds && window.selectedBookIds.size > 0;
                     const bookIds = books.map(b => b.id);
-                    const confirmMsg = `هل تريد تحويل كافة وصولات الدفاتر الظاهرة (${books.length} دفتر) إلى رابط Google Form الخاص بدائرة العمل؟`;
+                    const confirmMsg = isSelection
+                        ? `هل تريد تحويل كافة وصولات الدفاتر المحددة (${books.length} دفتر) إلى رابط Google Form الخاص بدائرة العمل؟`
+                        : `هل تريد تحويل كافة وصولات الدفاتر الظاهرة (${books.length} دفتر) إلى رابط Google Form الخاص بدائرة العمل؟`;
                     if (!confirm(confirmMsg)) return;
 
                     try {
@@ -1048,6 +1237,7 @@
                 try {
                     const { error } = await supabase.from('books').delete().eq('id', bookToDelete.id);
                     if (error) throw error;
+                    window.selectedBookIds.delete(bookToDelete.id);
 
                     closeDeleteModal();
                     const updated = await fetchBooks();
@@ -1091,8 +1281,9 @@
 
             // --- Export Functions ---
             window.generateHighFidelityPDF = () => {
-                const rawBooks = window.allBooksData || [];
+                const rawBooks = window.getExportBooks();
                 if (rawBooks.length === 0) return alert('لا توجد بيانات لطباعتها');
+                const isSelection = window.selectedBookIds && window.selectedBookIds.size > 0;
 
                 // Sort books numerically by serial number in ascending order
                 const books = [...rawBooks].sort((a, b) => {
@@ -1194,8 +1385,9 @@
             };
 
             window.generateHighFidelityExcel = async () => {
-                const rawBooks = window.allBooksData || [];
+                const rawBooks = window.getExportBooks();
                 if (rawBooks.length === 0) return alert('لا توجد بيانات لتصديرها');
+                const isSelection = window.selectedBookIds && window.selectedBookIds.size > 0;
 
                 // Sort books numerically by serial number in ascending order
                 const books = [...rawBooks].sort((a, b) => {
@@ -1214,8 +1406,8 @@
                 worksheet.getColumn(3).width = 25;
                 worksheet.getColumn(4).width = 25;
 
-                let titleString = "قاعدة بيانات الدفاتر";
-                if (currentMonth) {
+                let titleString = isSelection ? `قاعدة بيانات الدفاتر (دفاتر محددة - عدد ${books.length})` : "قاعدة بيانات الدفاتر";
+                if (currentMonth && !isSelection) {
                     const [y, m] = currentMonth.split('-');
                     titleString = `قاعدة بيانات الدفاتر لشهر ( ${y}/${parseInt(m)} )`;
                 }
@@ -1281,7 +1473,8 @@
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `تقرير_الدفاتر_${new Date().toLocaleDateString('ar-EG')}.xlsx`;
+                const fileNamePrefix = isSelection ? 'تقرير_الدفاتر_المحددة' : 'تقرير_الدفاتر';
+                a.download = `${fileNamePrefix}_${new Date().toLocaleDateString('ar-EG')}.xlsx`;
                 a.click();
             };
 
@@ -1641,10 +1834,15 @@
             };
 
             window.generateOfficialTemplatePDFAll = async () => {
-                const books = window.allBooksData || [];
+                const books = window.getExportBooks();
                 if (books.length === 0) return alert('لا توجد بيانات لطباعتها');
+                const isSelection = window.selectedBookIds && window.selectedBookIds.size > 0;
 
-                if (books.length > 5 && !confirm(`أنت على وشك تحميل كشف تفصيلي لـ ${books.length} دفتر. قد يستغرق ذلك بعض الوقت. هل تريد الاستمرار؟`)) {
+                const confirmMsg = isSelection
+                    ? `أنت على وشك تحميل كشف تفصيلي لـ ${books.length} دفتر محدد. قد يستغرق ذلك بعض الوقت. هل تريد الاستمرار؟`
+                    : `أنت على وشك تحميل كشف تفصيلي لـ ${books.length} دفتر. قد يستغرق ذلك بعض الوقت. هل تريد الاستمرار؟`;
+
+                if (books.length > 5 && !confirm(confirmMsg)) {
                     return;
                 }
 
@@ -1665,7 +1863,7 @@
                 setTimeout(() => {
                     const opt = {
                         margin: 0,
-                        filename: `كشف_الدفاتر_الرسمي_الكامل_${new Date().toLocaleDateString('ar-EG')}.pdf`,
+                        filename: isSelection ? `كشف_الدفاتر_المحددة_الرسمي_${new Date().toLocaleDateString('ar-EG')}.pdf` : `كشف_الدفاتر_الرسمي_الكامل_${new Date().toLocaleDateString('ar-EG')}.pdf`,
                         image: { type: 'jpeg', quality: 0.98 },
                         html2canvas: { scale: 3, useCORS: true, letterRendering: true },
                         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
@@ -1683,10 +1881,15 @@
 
             window.generateOfficialTemplateExcelAll = async () => {
                 try {
-                    const books = window.allBooksData || [];
+                    const books = window.getExportBooks();
                     if (books.length === 0) return alert('لا توجد بيانات لتصديرها');
+                    const isSelection = window.selectedBookIds && window.selectedBookIds.size > 0;
 
-                    if (books.length > 10 && !confirm(`أنت على وشك تصدير ${books.length} دفتر إلى Excel. هل تريد الاستمرار؟`)) {
+                    const confirmMsg = isSelection
+                        ? `أنت على وشك تصدير ${books.length} دفتر محدد إلى Excel. هل تريد الاستمرار؟`
+                        : `أنت على وشك تصدير ${books.length} دفتر إلى Excel. هل تريد الاستمرار؟`;
+
+                    if (books.length > 10 && !confirm(confirmMsg)) {
                         return;
                     }
 
@@ -1706,12 +1909,355 @@
 
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `كشف_الدفاتر_الرسمي_الكامل_${new Date().toLocaleDateString('ar-EG')}.xlsx`;
+                    a.download = isSelection ? `كشف_الدفاتر_المحددة_الرسمي_${new Date().toLocaleDateString('ar-EG')}.xlsx` : `كشف_الدفاتر_الرسمي_الكامل_${new Date().toLocaleDateString('ar-EG')}.xlsx`;
                     a.click();
                     window.URL.revokeObjectURL(url);
                 } catch (err) {
                     console.error("Excel Template Export Error:", err);
                     alert("حدث خطأ أثناء تصدير كشف Excel الجماعي: " + err.message);
+                }
+            };
+
+            // --- تصدير كافة بيانات ومحتويات وصولات الدفاتر المحددة إلى ملف Excel واحد ---
+            window.exportSelectedBooksReceiptsExcel = async () => {
+                const actionBtns = [
+                    document.getElementById('exportAllSelectedReceiptsBtn'),
+                    document.getElementById('topExportReceiptsExcelBtn')
+                ].filter(Boolean);
+
+                try {
+                    const books = window.getExportBooks();
+                    if (!books || books.length === 0) {
+                        alert('لا توجد دفاتر لتصدير محتوياتها');
+                        return;
+                    }
+
+                    const isSelection = window.selectedBookIds && window.selectedBookIds.size > 0;
+                    if (!isSelection) {
+                        const confirmMsg = `لم تقم بتحديد دفاتر معينة. هل تريد تصدير محتويات ووصولات جميع الدفاتر المعروضة حالياً (عدد ${books.length} دفتر)؟`;
+                        if (!confirm(confirmMsg)) return;
+                    } else if (books.length > 25) {
+                        const confirmMsg = `أنت على وشك تصدير كافة وصولات ومحتويات ${books.length} دفتر محدد إلى Excel. هل تريد الاستمرار؟`;
+                        if (!confirm(confirmMsg)) return;
+                    }
+
+                    actionBtns.forEach(btn => {
+                        btn.disabled = true;
+                        btn.classList.add('opacity-70', 'cursor-wait');
+                    });
+
+                    if (typeof notify === 'function') {
+                        notify('بدء التصدير', `جاري جلب وصولات ${books.length} دفتر وإعداد ملف Excel...`, { toast: true, type: 'primary' });
+                    }
+
+                    // خريطة لتسريع البحث عن بيانات الدفتر لكل وصل
+                    const bookMap = new Map();
+                    books.forEach(b => bookMap.set(b.id, b));
+                    const bookIds = books.map(b => b.id);
+
+                    // جلب كافة الوصولات التابعة للدفاتر مع دعم كميات كبيرة بدون قيود
+                    let allReceipts = [];
+                    const chunkSize = 30; // تجزئة آمنة للدفاتر
+                    for (let i = 0; i < bookIds.length; i += chunkSize) {
+                        const slice = bookIds.slice(i, i + chunkSize);
+                        let from = 0;
+                        const batchSize = 1000;
+                        while (true) {
+                            const { data: chunk, error } = await supabase
+                                .from('receipts')
+                                .select('*')
+                                .in('book_id', slice)
+                                .order('receipt_number', { ascending: true })
+                                .range(from, from + batchSize - 1);
+
+                            if (error) {
+                                console.error('Error fetching receipts batch:', error);
+                                throw new Error('فشل جلب بيانات الوصولات من قاعدة البيانات: ' + error.message);
+                            }
+                            if (!chunk || chunk.length === 0) break;
+                            allReceipts.push(...chunk);
+                            if (chunk.length < batchSize) break;
+                            from += batchSize;
+                        }
+                    }
+
+                    if (allReceipts.length === 0) {
+                        alert('لم يتم العثور على أي وصولات محررة في الدفاتر المحددة.');
+                        return;
+                    }
+
+                    // ترتيب الوصولات رقمياً بحسب رقم الدفتر ثم رقم الوصل
+                    allReceipts.sort((a, b) => {
+                        const serialA = Number(bookMap.get(a.book_id)?.serial_number) || 0;
+                        const serialB = Number(bookMap.get(b.book_id)?.serial_number) || 0;
+                        if (serialA !== serialB) return serialA - serialB;
+                        const numA = Number(a.receipt_number) || 0;
+                        const numB = Number(b.receipt_number) || 0;
+                        return numA - numB;
+                    });
+
+                    const workbook = new ExcelJS.Workbook();
+                    workbook.creator = 'نظام البنيان المرصوص - الدائرة الثامنة عشر';
+                    workbook.created = new Date();
+
+                    // ==========================================
+                    // ورقة العمل الأولى: كافة تفاصيل وبيانات الوصولات
+                    // ==========================================
+                    const wsReceipts = workbook.addWorksheet('كافة وصولات الدفاتر', {
+                        views: [{ rightToLeft: true }]
+                    });
+
+                    wsReceipts.pageSetup = {
+                        orientation: 'landscape',
+                        paperSize: 9,
+                        fitToPage: true,
+                        fitToWidth: 1,
+                        fitToHeight: 0
+                    };
+
+                    wsReceipts.columns = [
+                        { width: 8 },  // A: ت
+                        { width: 16 }, // B: رقم الدفتر
+                        { width: 16 }, // C: رقم الوصل
+                        { width: 34 }, // D: اسم المساهم
+                        { width: 20 }, // E: المبلغ (د.ع)
+                        { width: 18 }, // F: تاريخ الوصل
+                        { width: 28 }, // G: الحليف المستلم
+                        { width: 18 }, // H: الشهر المخصص
+                        { width: 18 }  // I: رقم الدائرة
+                    ];
+
+                    const totalAmount = allReceipts.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+                    const dateStr = new Date().toLocaleDateString('ar-EG');
+
+                    // سطر العنوان الرئيسي
+                    const titleRow = wsReceipts.addRow(['قاعدة بيانات كافة وصولات الدفاتر المحددة - الدائرة الثامنة عشر']);
+                    wsReceipts.mergeCells('A1:I1');
+                    titleRow.height = 36;
+                    titleRow.getCell(1).font = { bold: true, size: 14, color: { argb: 'FF001E40' } };
+                    titleRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+                    titleRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F4F8' } };
+                    titleRow.getCell(1).border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+
+                    // سطر الإحصائيات والمعلومات التوضيحية
+                    const metaRow = wsReceipts.addRow([
+                        `عدد الدفاتر: ${books.length} دفتر  |  إجمالي الوصولات: ${allReceipts.length.toLocaleString()} وصل  |  المجموع الكلي: ${totalAmount.toLocaleString()} د.ع  |  تاريخ التصدير: ${dateStr}`
+                    ]);
+                    wsReceipts.mergeCells('A2:I2');
+                    metaRow.height = 26;
+                    metaRow.getCell(1).font = { bold: true, size: 10, color: { argb: 'FF334155' } };
+                    metaRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+                    metaRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+                    metaRow.getCell(1).border = { top: { style: 'thin' }, bottom: { style: 'medium' }, left: { style: 'thin' }, right: { style: 'thin' } };
+
+                    // عناوين الأعمدة
+                    const headers = ['ت', 'رقم الدفتر', 'رقم الوصل', 'اسم المساهم', 'المبلغ (د.ع)', 'تاريخ الوصل', 'الحليف المستلم', 'الشهر المخصص', 'رقم الدائرة'];
+                    const headerRow = wsReceipts.addRow(headers);
+                    headerRow.height = 30;
+                    headerRow.eachCell((cell) => {
+                        cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+                        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF001E40' } };
+                        cell.border = { top: { style: 'medium' }, bottom: { style: 'medium' }, left: { style: 'thin' }, right: { style: 'thin' } };
+                    });
+
+                    // إضافة صفوف الوصولات
+                    allReceipts.forEach((r, idx) => {
+                        const b = bookMap.get(r.book_id) || {};
+                        const bookSerial = b.serial_number ? `#${b.serial_number}` : 'غير معروف';
+                        const allyName = b.profiles?.full_name || 'غير معروف';
+                        const recDate = r.receipt_date 
+                            ? new Date(r.receipt_date).toLocaleDateString('ar-EG') 
+                            : (r.created_at ? new Date(r.created_at).toLocaleDateString('ar-EG') : '');
+                        const monthStr = r.month_year || b.month_year || '-';
+
+                        const districtNumber = 'الدائرة 18';
+
+                        const row = wsReceipts.addRow([
+                            idx + 1,
+                            bookSerial,
+                            r.receipt_number || '-',
+                            r.subscriber_name || 'بدون اسم',
+                            Number(r.amount) || 0,
+                            recDate,
+                            allyName,
+                            monthStr,
+                            districtNumber
+                        ]);
+                        row.height = 22;
+
+                        const isEven = idx % 2 === 1;
+                        const bgFill = isEven 
+                            ? { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } } 
+                            : { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
+
+                        row.eachCell((cell, colNum) => {
+                            cell.fill = bgFill;
+                            cell.border = {
+                                top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+                                bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+                                left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+                                right: { style: 'thin', color: { argb: 'FFE5E7EB' } }
+                            };
+                            cell.font = { size: 10 };
+
+                            if (colNum === 4) {
+                                cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                            } else if (colNum === 5) {
+                                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                                cell.numFmt = '#,##0';
+                                cell.font = { bold: true, size: 10 };
+                            } else if (colNum === 2 || colNum === 3) {
+                                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                                cell.font = { bold: true, size: 10 };
+                            } else {
+                                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                            }
+                        });
+                    });
+
+                    // سطر المجاميع النهائية أسفل ورقة الوصولات
+                    const lastRowNum = wsReceipts.lastRow.number + 1;
+                    const totalsRow = wsReceipts.addRow([
+                        `المجموع الكلي (${allReceipts.length} وصل)`,
+                        '',
+                        '',
+                        '',
+                        totalAmount,
+                        `تاريخ التصدير: ${dateStr}`,
+                        '',
+                        `عدد الدفاتر: ${books.length}`,
+                        ''
+                    ]);
+                    totalsRow.height = 30;
+
+                    wsReceipts.mergeCells(`A${lastRowNum}:D${lastRowNum}`);
+                    wsReceipts.mergeCells(`F${lastRowNum}:G${lastRowNum}`);
+                    wsReceipts.mergeCells(`H${lastRowNum}:I${lastRowNum}`);
+
+                    totalsRow.eachCell((cell) => {
+                        cell.font = { bold: true, size: 11, color: { argb: 'FF001E40' } };
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2E8F0' } };
+                        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                        cell.border = { 
+                            top: { style: 'medium', color: { argb: 'FF001E40' } }, 
+                            bottom: { style: 'medium' }, 
+                            left: { style: 'thin' }, 
+                            right: { style: 'thin' } 
+                        };
+                    });
+                    const totalAmountCell = wsReceipts.getCell(`E${lastRowNum}`);
+                    totalAmountCell.numFmt = '#,##0';
+                    totalAmountCell.font = { bold: true, size: 12, color: { argb: 'FF001E40' } };
+
+                    // ==========================================
+                    // ورقة العمل الثانية: كشف ملخص الدفاتر المحددة
+                    // ==========================================
+                    const wsBooks = workbook.addWorksheet('ملخص الدفاتر', {
+                        views: [{ rightToLeft: true }]
+                    });
+                    wsBooks.columns = [
+                        { width: 8 },  // A: ت
+                        { width: 18 }, // B: رقم الدفتر
+                        { width: 28 }, // C: الحليف المستلم
+                        { width: 16 }, // D: عدد الوصولات
+                        { width: 22 }, // E: إجمالي المبلغ (د.ع)
+                        { width: 18 }, // F: الشهر المخصص
+                        { width: 18 }  // G: الحالة
+                    ];
+
+                    const booksTitleRow = wsBooks.addRow([`ملخص الدفاتر المشمولة بالتصدير (${books.length} دفتر)`]);
+                    wsBooks.mergeCells('A1:G1');
+                    booksTitleRow.height = 32;
+                    booksTitleRow.getCell(1).font = { bold: true, size: 13, color: { argb: 'FF001E40' } };
+                    booksTitleRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+                    booksTitleRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F4F8' } };
+                    booksTitleRow.getCell(1).border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+
+                    const bookHeaders = ['ت', 'رقم الدفتر', 'اسم الحليف المستلم', 'عدد الوصولات', 'المبلغ الكلي', 'الشهر المخصص', 'الحالة'];
+                    const bHeaderRow = wsBooks.addRow(bookHeaders);
+                    bHeaderRow.height = 28;
+                    bHeaderRow.eachCell(cell => {
+                        cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+                        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF001E40' } };
+                        cell.border = { top: { style: 'medium' }, bottom: { style: 'medium' }, left: { style: 'thin' }, right: { style: 'thin' } };
+                    });
+
+                    // فرز الدفاتر رقمياً بحسب التسلسل
+                    const sortedBooks = [...books].sort((a, b) => (Number(a.serial_number) || 0) - (Number(b.serial_number) || 0));
+
+                    sortedBooks.forEach((b, idx) => {
+                        let bStatus = 'مفتوح';
+                        if (b.status === 'received' || b.status === 'delivered') bStatus = 'مستلم';
+                        else if (b.status === 'audited') bStatus = 'مكتمل ومدقق';
+                        else if (b.status === 'rejected') bStatus = 'مرفوض';
+
+                        const row = wsBooks.addRow([
+                            idx + 1,
+                            `#${b.serial_number}`,
+                            b.profiles?.full_name || 'غير معروف',
+                            Number(b.receipt_count) || 0,
+                            Number(b.total_amount) || 0,
+                            b.month_year || '-',
+                            bStatus
+                        ]);
+                        row.height = 22;
+                        row.eachCell((cell, colNum) => {
+                            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                            cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+                            if (colNum === 5) {
+                                cell.numFmt = '#,##0';
+                                cell.font = { bold: true };
+                            }
+                        });
+                    });
+
+                    const bLastRow = wsBooks.lastRow.number + 1;
+                    const bTotalsRow = wsBooks.addRow([
+                        'المجموع الكلي',
+                        `${books.length} دفتر`,
+                        '',
+                        allReceipts.length,
+                        totalAmount,
+                        `التاريخ: ${dateStr}`,
+                        ''
+                    ]);
+                    bTotalsRow.height = 28;
+                    wsBooks.mergeCells(`A${bLastRow}:C${bLastRow}`);
+                    bTotalsRow.eachCell(cell => {
+                        cell.font = { bold: true, size: 11, color: { argb: 'FF001E40' } };
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2E8F0' } };
+                        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                        cell.border = { top: { style: 'medium' }, bottom: { style: 'medium' }, left: { style: 'thin' }, right: { style: 'thin' } };
+                    });
+                    wsBooks.getCell(`E${bLastRow}`).numFmt = '#,##0';
+
+                    // إنشاء وتحميل الملف
+                    const buffer = await workbook.xlsx.writeBuffer();
+                    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    const cleanDate = new Date().toISOString().split('T')[0];
+                    const filePrefix = isSelection 
+                        ? `كافة_وصولات_الدفاتر_المحددة_${books.length}_دفتر_${cleanDate}` 
+                        : `كافة_وصولات_الدفاتر_${cleanDate}`;
+                    a.download = `${filePrefix}.xlsx`;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+
+                    if (typeof notify === 'function') {
+                        notify('تم التصدير بنجاح', `تم تصدير ${allReceipts.length.toLocaleString()} وصل خاص بـ ${books.length} دفتر بنجاح إلى ملف Excel`, { toast: true, type: 'success' });
+                    }
+                } catch (err) {
+                    console.error("Export Receipts Excel Error:", err);
+                    alert("حدث خطأ أثناء تصدير وصولات الدفاتر إلى Excel: " + err.message);
+                } finally {
+                    actionBtns.forEach(btn => {
+                        btn.disabled = false;
+                        btn.classList.remove('opacity-70', 'cursor-wait');
+                    });
                 }
             };
         });
