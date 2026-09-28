@@ -201,6 +201,20 @@
                         <button id="saveServiceKeyBtn" class="bg-primary text-white px-4 py-2 rounded-xl text-xs font-black hover:scale-105 transition-all">حفظ</button>
                     </div>
                 </div>
+                <!-- Circle Name Setting -->
+                <div class="w-full p-5 bg-white rounded-2xl shadow-sm border border-primary/10">
+                    <div class="flex items-center gap-4 mb-3">
+                        <span class="material-symbols-outlined text-primary">domain</span>
+                        <div class="flex-1">
+                            <span class="text-sm font-bold text-primary block">اسم الدائرة (شامل لكامل التطبيق والتصدير)</span>
+                            <span class="text-[10px] text-on-surface-variant font-bold">يتغير الاسم تلقائياً في كافة الواجهات، وملفات الطباعة PDF وكشوفات Excel</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="circleNameInput" placeholder="أدخل اسم الدائرة (مثال: الدائرة الثامنة عشر)..." class="flex-1 bg-surface-container-highest border-none rounded-xl text-xs px-3 py-2 focus:ring-2 focus:ring-primary/20 transition-all font-bold text-primary">
+                        <button id="saveCircleNameBtn" class="bg-primary text-white px-4 py-2 rounded-xl text-xs font-black hover:scale-105 transition-all">حفظ</button>
+                    </div>
+                </div>
                 <!-- Finance Manager Name Setting -->
                 <div class="w-full p-5 bg-white rounded-2xl shadow-sm border border-primary/10">
                     <div class="flex items-center gap-4 mb-3">
@@ -387,6 +401,7 @@
         import { supabase } from './lib/supabase.js';
         import { notify } from './lib/notifications.js';
         import { getGoogleFormConfig, saveGoogleFormUrl, parseGoogleFormHtml, matchGoogleFormQuestions, getCircleNumber, setCircleNumber } from './lib/googleFormSync.js';
+        import { getCircleName, setCircleName, initCircleName, applyCircleNameElements } from './lib/circle-config.js';
         
         const SUPABASE_URL = 'https://raiwctnevoqjjhgngays.supabase.co';
 
@@ -819,8 +834,60 @@
                     });
                 }
 
+                // Circle Name initialization
+                await initCircleName(supabase);
+                const circleNameInput = document.getElementById('circleNameInput');
+                const saveCircleNameBtn = document.getElementById('saveCircleNameBtn');
+
+                if (circleNameInput && saveCircleNameBtn) {
+                    circleNameInput.value = getCircleName();
+
+                    saveCircleNameBtn.addEventListener('click', async () => {
+                        const newName = circleNameInput.value.trim();
+                        if (!newName) {
+                            alert('يرجى إدخال اسم صحيح للدائرة.');
+                            return;
+                        }
+
+                        saveCircleNameBtn.disabled = true;
+                        saveCircleNameBtn.innerHTML = `<span class="animate-spin material-symbols-outlined text-[10px] ml-1">sync</span> جاري الحفظ...`;
+
+                        try {
+                            const res = await setCircleName(newName, supabase);
+                            circleNameInput.value = newName;
+                            applyCircleNameElements(newName);
+
+                            saveCircleNameBtn.disabled = false;
+
+                            if (res.remoteSynced) {
+                                saveCircleNameBtn.textContent = 'تم الحفظ والمزامنة ✓';
+                                saveCircleNameBtn.classList.replace('bg-primary', 'bg-green-500');
+                                alert(`✅ تم حفظ اسم "${newName}" ومزامنته سحابياً بنجاح!\nسيظهر الاسم الجديد على كافة الحسابات والأجهزة تلقائياً.`);
+                                setTimeout(() => {
+                                    saveCircleNameBtn.classList.replace('bg-green-500', 'bg-primary');
+                                    saveCircleNameBtn.textContent = 'حفظ';
+                                }, 2500);
+                            } else {
+                                saveCircleNameBtn.textContent = 'حُفظ محلياً فقط ⚠️';
+                                saveCircleNameBtn.classList.replace('bg-primary', 'bg-amber-600');
+                                alert(`⚠️ تنبيه هام:\nتم حفظ الاسم "${newName}" في متصفحك الحالي، لكن لم يتم تعميمه على بقية الحسابات لأن جدول app_settings لم يُنشأ بعد في قاعدة بيانات Supabase.`);
+                                setTimeout(() => {
+                                    saveCircleNameBtn.classList.replace('bg-amber-600', 'bg-primary');
+                                    saveCircleNameBtn.textContent = 'حفظ';
+                                }, 4000);
+                            }
+                        } catch (err) {
+                            console.error('Error saving circle name:', err);
+                            saveCircleNameBtn.textContent = 'حفظ';
+                            saveCircleNameBtn.disabled = false;
+                            alert('حدث خطأ أثناء حفظ اسم الدائرة: ' + err.message);
+                        }
+                    });
+                }
+
                 // Finance Manager Name initialization
                 const financeManagerInput = document.getElementById('financeManagerInput');
+
                 const saveFinanceManagerBtn = document.getElementById('saveFinanceManagerBtn');
                 
                 if (financeManagerInput && saveFinanceManagerBtn) {
